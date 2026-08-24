@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root{
   --bg-1:#04060b;
@@ -381,6 +383,18 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 }
 
 /* ---------- MODO PANTALLA (PC / segunda pantalla) ---------- */
+.image-preview-overlay{
+  position:fixed; inset:0; background:rgba(2,4,9,0.92); backdrop-filter:blur(4px);
+  z-index:280; display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.image-preview-card{
+  background:linear-gradient(165deg, var(--panel-2), var(--panel) 70%); border:1px solid var(--line-accent);
+  border-radius:var(--r-lg); padding:18px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; position:relative;
+  box-shadow:0 30px 60px rgba(0,0,0,0.6);
+}
+.image-preview-close{position:absolute; top:10px; right:10px; z-index:2;}
+.image-preview-img{width:100%; border-radius:var(--r-md); display:block; margin-top:6px;}
+
 .tv-mode-overlay{
   position:fixed; inset:0; background:
     radial-gradient(1400px 700px at 20% -10%, rgba(59,130,246,0.14), transparent 60%),
@@ -424,6 +438,7 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
         <div class="sub">Organizá. Jugá. Presumí.</div>
       </div>
       <div class="spacer">
+        <button id="btnAdminToggle" class="icon-btn" title="Modo solo visualizar (tocá para ingresar como admin)">🔒</button>
         <button id="btnTvMode" class="icon-btn" title="Modo pantalla (PC)">🖥️</button>
         <button id="btnExport" class="icon-btn" title="Exportar datos">📤</button>
         <button id="btnImportTrigger" class="icon-btn" title="Importar datos">📥</button>
@@ -502,27 +517,29 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
   <section class="tabpanel" id="tab-cartelera">
     <div class="card">
       <h2>🗓️ Próximo torneo</h2>
-      <p class="desc">Cargá fecha, hora y lugar del próximo torneo. Queda publicado acá abajo hasta que cargues el siguiente, y podés descargar una imagen lista para compartir.</p>
-      <label class="field-label">Fecha</label>
-      <input type="text" id="nextEventDate" placeholder="Ej: Sábado 6 de septiembre" style="margin-bottom:14px;">
-      <label class="field-label">Hora</label>
-      <input type="text" id="nextEventTime" placeholder="Ej: 21:00hs" style="margin-bottom:14px;">
-      <label class="field-label">Lugar</label>
-      <input type="text" id="nextEventPlace" placeholder="Ej: Lo de Fede" style="margin-bottom:14px;">
-      <label class="field-label">Selección asociada al lugar (opcional)</label>
-      <select id="nextEventHostTeam" style="margin-bottom:14px;"></select>
+      <div id="nextEventEditForm">
+        <p class="desc">Cargá fecha, hora y lugar del próximo torneo. Queda publicado acá abajo hasta que cargues el siguiente, y podés descargar una imagen lista para compartir.</p>
+        <label class="field-label">Fecha</label>
+        <input type="text" id="nextEventDate" placeholder="Ej: Sábado 6 de septiembre" style="margin-bottom:14px;">
+        <label class="field-label">Hora</label>
+        <input type="text" id="nextEventTime" placeholder="Ej: 21:00hs" style="margin-bottom:14px;">
+        <label class="field-label">Lugar</label>
+        <input type="text" id="nextEventPlace" placeholder="Ej: Lo de Fede" style="margin-bottom:14px;">
+        <label class="field-label">Selección asociada al lugar (opcional)</label>
+        <select id="nextEventHostTeam" style="margin-bottom:14px;"></select>
 
-      <div class="hr"></div>
+        <div class="hr"></div>
 
-      <label class="field-label">Participantes confirmados (opcional, hasta 10)</label>
-      <div class="extra-row">
-        <select id="nextEventParticipantSelect"></select>
-        <button class="btn btn-outline btn-sm" id="btnAddParticipant">➕ Agregar</button>
+        <label class="field-label">Participantes confirmados (opcional, hasta 10)</label>
+        <div class="extra-row">
+          <select id="nextEventParticipantSelect"></select>
+          <button class="btn btn-outline btn-sm" id="btnAddParticipant">➕ Agregar</button>
+        </div>
+        <div class="extra-chip-list" id="nextEventParticipantChips" style="margin-bottom:14px;"></div>
+
+        <button class="btn btn-gold btn-block" id="btnSaveEvent">📌 Publicar próximo torneo</button>
+        <div class="hr"></div>
       </div>
-      <div class="extra-chip-list" id="nextEventParticipantChips" style="margin-bottom:14px;"></div>
-
-      <button class="btn btn-gold btn-block" id="btnSaveEvent">📌 Publicar próximo torneo</button>
-      <div class="hr"></div>
       <div id="nextEventPreviewWrap"></div>
     </div>
   </section>
@@ -548,6 +565,8 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 </main>
 
 <footer class="credit">PES6 Liga Manager · hecho para reírnos entre amigos ⚽</footer>
+
+<div id="imagePreviewOverlay" class="image-preview-overlay" style="display:none;"></div>
 
 <div id="tvModeOverlay" class="tv-mode-overlay" style="display:none;">
   <button id="btnExitTv" class="icon-btn tv-exit-btn" title="Salir de modo pantalla">✕</button>
@@ -667,20 +686,118 @@ function normalizeState(s){
 function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.warn('No se pudo guardar', e); }
+  if(firebaseEnabled && db){
+    db.doc(FIRESTORE_DOC).set(state).catch(e=> console.warn('No se pudo sincronizar con Firebase', e));
+  }
+}
+
+/* =========================================================
+   FIREBASE (sincronización en vivo entre dispositivos)
+   Pegá acá la config que te da Firebase al crear tu app web.
+   Si dejás los valores como están, la app funciona igual
+   pero solo en modo local (sin sincronizar entre celulares).
+========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyC4b07yuxN4LlAIUlWT_6CGNktHSmID938",
+  authDomain: "pes6-liga-32801.firebaseapp.com",
+  projectId: "pes6-liga-32801",
+  storageBucket: "pes6-liga-32801.firebasestorage.app",
+  messagingSenderId: "681957220881",
+  appId: "1:681957220881:web:be1b1a60c4b3d19a4dc7b0"
+};
+const FIRESTORE_DOC = 'pes6_liga/estado';
+let firebaseEnabled = false;
+let db = null;
+try{
+  if(firebaseConfig.apiKey && firebaseConfig.apiKey !== 'TU_API_KEY' && window.firebase){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseEnabled = true;
+  }
+}catch(e){ console.warn('Firebase no se pudo inicializar', e); }
+
+function startFirebaseSync(){
+  if(!firebaseEnabled || !db) return;
+  db.doc(FIRESTORE_DOC).onSnapshot(docSnap=>{
+    if(docSnap.exists){
+      state = normalizeState(docSnap.data());
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+      renderAll();
+    } else {
+      db.doc(FIRESTORE_DOC).set(state).catch(()=>{});
+    }
+  }, err=>{ console.warn('Error de sincronización con Firebase', err); });
+}
+
+/* =========================================================
+   MODO ADMINISTRADOR / SOLO VISUALIZAR
+   Cambiá este PIN por el que quieras usar entre tus amigos.
+========================================================= */
+const ADMIN_PIN = '2026';
+let isAdmin = localStorage.getItem('pes6_admin_flag') === 'yes';
+let currentTab = 'nuevo';
+function renderAll(){ switchTab(currentTab); }
+function promptAdminLogin(){
+  const pin = prompt('Ingresá el PIN de administrador:');
+  if(pin === null) return;
+  if(pin === ADMIN_PIN){
+    isAdmin = true;
+    localStorage.setItem('pes6_admin_flag', 'yes');
+    toast('Modo administrador activado ✅');
+    updateAdminBtn();
+    renderAll();
+  } else {
+    toast('PIN incorrecto');
+  }
+}
+function logoutAdmin(){
+  if(!confirm('¿Salir del modo administrador?')) return;
+  isAdmin = false;
+  localStorage.removeItem('pes6_admin_flag');
+  toast('Ahora estás en modo solo visualizar');
+  updateAdminBtn();
+  renderAll();
+}
+function updateAdminBtn(){
+  const btn = document.getElementById('btnAdminToggle');
+  if(!btn) return;
+  btn.textContent = isAdmin ? '🔓' : '🔒';
+  btn.title = isAdmin ? 'Modo administrador (tocá para salir)' : 'Modo solo visualizar (tocá para ingresar como admin)';
 }
 
 function exportData(){
   const dataStr = JSON.stringify(state, null, 2);
-  const blob = new Blob([dataStr], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `pes6-datos-${new Date().toISOString().slice(0,10)}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  toast('Datos exportados 📤');
+  const filename = `pes6-datos-${new Date().toISOString().slice(0,10)}.json`;
+  showTextExportPreview(dataStr, filename);
+}
+function showTextExportPreview(text, filename){
+  const overlay = document.getElementById('imagePreviewOverlay');
+  overlay.innerHTML = `
+    <div class="image-preview-card">
+      <button class="icon-btn image-preview-close" id="btnCloseImagePreview" title="Cerrar">✕</button>
+      <p class="desc" style="text-align:center; margin:6px 0 10px;">Copiá este texto y guardalo (por ejemplo en Notas o enviándotelo por WhatsApp) para tener un respaldo de tus datos.</p>
+      <textarea readonly id="exportTextArea" style="width:100%; height:220px; background:rgba(0,0,0,0.3); color:var(--text); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px; font-family:'Space Mono',monospace; font-size:11px; box-sizing:border-box;">${escapeHtml(text)}</textarea>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn btn-gold btn-sm" id="btnCopyExport">📋 Copiar</button>
+      </div>
+    </div>`;
+  overlay.style.display = 'flex';
+  document.getElementById('btnCloseImagePreview').addEventListener('click', ()=>{ overlay.style.display='none'; });
+  document.getElementById('btnCopyExport').addEventListener('click', ()=>{
+    const ta = document.getElementById('exportTextArea');
+    ta.select();
+    ta.setSelectionRange(0, 999999);
+    let copied = false;
+    try{ copied = document.execCommand('copy'); }catch(e){}
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=> toast('Copiado al portapapeles ✅')).catch(()=>{ if(copied) toast('Copiado al portapapeles ✅'); });
+    } else if(copied){
+      toast('Copiado al portapapeles ✅');
+    }
+  });
 }
 function importDataFile(file){
+  if(!isAdmin){ toast('Solo el administrador puede importar datos 🔒'); return; }
   const reader = new FileReader();
   reader.onload = (e)=>{
     try{
@@ -1256,6 +1373,11 @@ const TAB_LABELS = {
 document.getElementById('navDropdown').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-tab]');
   if(!btn) return;
+  if(btn.dataset.tab==='nuevo' && !isAdmin){
+    toast('Solo el administrador puede crear torneos 🔒');
+    closeNavDropdown();
+    return;
+  }
   switchTab(btn.dataset.tab);
   closeNavDropdown();
 });
@@ -1279,6 +1401,7 @@ function closeNavDropdown(){
   document.getElementById('btnMenuToggle').classList.remove('open');
 }
 function switchTab(tab){
+  currentTab = tab;
   document.querySelectorAll('#navDropdown button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   document.getElementById('navCurrentLabel').textContent = TAB_LABELS[tab] || tab;
   document.querySelectorAll('.tabpanel').forEach(p=> p.classList.toggle('active', p.id === 'tab-'+tab));
@@ -1298,6 +1421,11 @@ function toast(msg){
   window._toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
 }
 
+document.getElementById('btnAdminToggle').addEventListener('click', ()=>{
+  if(isAdmin) logoutAdmin();
+  else promptAdminLogin();
+});
+updateAdminBtn();
 document.getElementById('btnSound').addEventListener('click', ()=>{
   state.soundOn = !state.soundOn;
   saveState();
@@ -1307,7 +1435,10 @@ document.getElementById('btnSound').addEventListener('click', ()=>{
 function updateSoundBtn(){ document.getElementById('btnSound').textContent = state.soundOn ? '🔊' : '🔇'; }
 updateSoundBtn();
 document.getElementById('btnExport').addEventListener('click', exportData);
-document.getElementById('btnImportTrigger').addEventListener('click', ()=> document.getElementById('importFileInput').click());
+document.getElementById('btnImportTrigger').addEventListener('click', ()=>{
+  if(!isAdmin){ toast('Solo el administrador puede importar datos 🔒'); return; }
+  document.getElementById('importFileInput').click();
+});
 document.getElementById('importFileInput').addEventListener('change', (e)=>{
   const file = e.target.files[0];
   if(file) importDataFile(file);
@@ -1371,6 +1502,14 @@ document.getElementById('btnSaveEvent').addEventListener('click', ()=>{
 function renderNextEventSection(){
   const wrap = document.getElementById('nextEventPreviewWrap');
   if(!wrap) return;
+  const editForm = document.getElementById('nextEventEditForm');
+  if(editForm) editForm.style.display = isAdmin ? 'block' : 'none';
+  if(!isAdmin){
+    if(!state.nextEvent){
+      wrap.innerHTML = `<div class="empty"><div class="big">🗓️</div><p>Todavía no se publicó la fecha del próximo torneo.</p></div>`;
+      return;
+    }
+  }
   const dateInp = document.getElementById('nextEventDate');
   const timeInp = document.getElementById('nextEventTime');
   const placeInp = document.getElementById('nextEventPlace');
@@ -1430,11 +1569,9 @@ function generarImagenEvento(){
     <div class="sc-footer">¡Los esperamos! · PES6 Liga Manager</div>
   `;
   html2canvas(card, {backgroundColor:null, scale:2}).then(canvas=>{
-    const link = document.createElement('a');
-    link.download = `proximo-torneo.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast('¡Imagen lista! Revisá tus descargas 📥');
+    const dataUrl = canvas.toDataURL('image/png');
+    showImagePreview(dataUrl, 'proximo-torneo.png');
+    toast('¡Imagen lista! Guardala desde la vista previa 📥');
   }).catch(()=>{ toast('No se pudo generar la imagen'); });
 }
 function renderCartelera(){
@@ -1545,8 +1682,17 @@ let selectedAdvancePerGroup = 1;
 function getActiveTournament(){ return state.tournaments.find(t=> !t.finished); }
 
 function renderNuevo(){
-  const active = getActiveTournament();
   const el = document.getElementById('newTournamentCard');
+  if(!isAdmin){
+    el.innerHTML = `
+      <h2>🆕 Nuevo torneo</h2>
+      <div class="empty">
+        <div class="big">🔒</div>
+        <p>Solo el administrador puede crear torneos. Si sos el organizador, tocá el candado 🔒 arriba a la derecha para ingresar con el PIN.</p>
+      </div>`;
+    return;
+  }
+  const active = getActiveTournament();
   if(active){
     el.innerHTML = `
       <h2>🆕 Nuevo torneo</h2>
@@ -1785,9 +1931,9 @@ function renderCursoLiga(el, t){
       ${matchdaysGrouped[day].map(m=>`
         <div class="match-row ${m.played?'played':''}">
           <div class="match-team home"><span class="tname">${nameOf(m.home)}</span><span class="flag">${flagOf(m.home)}</span></div>
-          <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="hg" value="${m.hg??''}" placeholder="-">
+          <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="hg" value="${m.hg??''}" placeholder="-" ${isAdmin?'':'disabled'}>
           <span class="vs-sep">VS</span>
-          <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="ag" value="${m.ag??''}" placeholder="-">
+          <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="ag" value="${m.ag??''}" placeholder="-" ${isAdmin?'':'disabled'}>
           <div class="match-team away"><span class="flag">${flagOf(m.away)}</span><span class="tname">${nameOf(m.away)}</span></div>
         </div>`).join('')}
     </div>
@@ -1800,7 +1946,7 @@ function renderCursoLiga(el, t){
         <h2>⚔️ Desempate por el título</h2>
         ${!t.playoff ? `
           <p class="desc">Terminaron empatados en puntos: ${tiedLeaders.map(id=>flagOf(id)+' '+nameOf(id)).join(', ')}. Se define con ${playoffKindLabel(tiedLeaders.length)}.</p>
-          <button class="btn btn-gold" id="btnGenPlayoff">⚔️ Generar ${playoffKindLabel(tiedLeaders.length)}</button>
+          ${isAdmin? `<button class="btn btn-gold" id="btnGenPlayoff">⚔️ Generar ${playoffKindLabel(tiedLeaders.length)}</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador genere el desempate.</p>`}
         ` : renderPlayoffMatches(t)}
       </div>`;
   }
@@ -1815,12 +1961,14 @@ function renderCursoLiga(el, t){
         <span class="pill">${prog.played}/${prog.total} partidos · ${prog.pct}%</span>
       </div>
       <div class="hr"></div>
+      ${isAdmin? `
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn btn-gold" id="btnFinalizar" ${canFinish?'':'disabled'}>🏆 Finalizar torneo</button>
         <button class="btn btn-red" id="btnCancelar">🗑️ Cancelar torneo</button>
       </div>
       ${!groupComplete? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Cargá todos los resultados para poder finalizar el torneo.</div>' : ''}
       ${groupComplete && needsPlayoff && !canFinish? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Resolvé el desempate por el título para poder finalizar.</div>' : ''}
+      ` : `<p class="desc" style="margin-bottom:0;">🔒 Modo solo visualizar — el administrador es quien carga los resultados.</p>`}
     </div>
 
     <div class="card">
@@ -1845,71 +1993,74 @@ function renderCursoLiga(el, t){
     </div>
   `;
 
-  el.querySelectorAll('.score-input:not(.playoff-score)').forEach(inp=>{
-    inp.addEventListener('change', ()=>{
-      const mid = Number(inp.dataset.mid);
-      const side = inp.dataset.side;
-      const match = t.matches.find(m=>m.id===mid);
-      const wasPlayed = match.played;
-      const val = inp.value === '' ? null : Math.max(0, parseInt(inp.value,10)||0);
-      match[side] = val;
-      match.played = (match.hg !== null && match.ag !== null);
-      saveState();
-      if(match.played && !wasPlayed){
-        const margin = Math.abs(match.hg - match.ag);
-        if(margin>=3){ playDerrotaSound(); toast('🔥 Goleada registrada en el fixture'); }
-        else{ playGolSound(); }
-      }
-      renderCurso();
-    });
-  });
-
-  if(needsPlayoff){
-    const btnGen = document.getElementById('btnGenPlayoff');
-    if(btnGen) btnGen.addEventListener('click', ()=>{
-      t.playoff = buildPlayoffMatches(tiedLeaders);
-      saveState();
-      renderCurso();
-    });
-  }
-
-  if(needsPlayoff && t.playoff){
-    el.querySelectorAll('.playoff-score').forEach(inp=>{
+  if(isAdmin){
+    el.querySelectorAll('.score-input:not(.playoff-score)').forEach(inp=>{
       inp.addEventListener('change', ()=>{
-        const mid=Number(inp.dataset.mid); const side=inp.dataset.side;
-        const m = t.playoff.matches.find(x=>x.id===mid);
-        const val = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0);
-        m[side]=val;
-        m.played = m.hg!==null && m.ag!==null;
-        if(m.played && m.hg!==m.ag) m.winnerOverride=null;
-        if(t.playoff.kind==='semis') ensurePlayoffFinal(t);
-        if(m.played) playGolSound();
+        const mid = Number(inp.dataset.mid);
+        const side = inp.dataset.side;
+        const match = t.matches.find(m=>m.id===mid);
+        const wasPlayed = match.played;
+        const val = inp.value === '' ? null : Math.max(0, parseInt(inp.value,10)||0);
+        match[side] = val;
+        match.played = (match.hg !== null && match.ag !== null);
         saveState();
+        if(match.played && !wasPlayed){
+          const margin = Math.abs(match.hg - match.ag);
+          if(margin>=3){ playDerrotaSound(); toast('🔥 Goleada registrada en el fixture'); }
+          else{ playGolSound(); }
+        }
         renderCurso();
       });
     });
-    el.querySelectorAll('.penalty-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const mid=Number(btn.dataset.mid);
-        const m=t.playoff.matches.find(x=>x.id===mid);
-        m.winnerOverride = btn.dataset.winner;
-        if(t.playoff.kind==='semis') ensurePlayoffFinal(t);
+
+    if(needsPlayoff){
+      const btnGen = document.getElementById('btnGenPlayoff');
+      if(btnGen) btnGen.addEventListener('click', ()=>{
+        t.playoff = buildPlayoffMatches(tiedLeaders);
         saveState();
         renderCurso();
       });
+    }
+
+    if(needsPlayoff && t.playoff){
+      el.querySelectorAll('.playoff-score').forEach(inp=>{
+        inp.addEventListener('change', ()=>{
+          const mid=Number(inp.dataset.mid); const side=inp.dataset.side;
+          const m = t.playoff.matches.find(x=>x.id===mid);
+          const val = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0);
+          m[side]=val;
+          m.played = m.hg!==null && m.ag!==null;
+          if(m.played && m.hg!==m.ag) m.winnerOverride=null;
+          if(t.playoff.kind==='semis') ensurePlayoffFinal(t);
+          if(m.played) playGolSound();
+          saveState();
+          renderCurso();
+        });
+      });
+      el.querySelectorAll('.penalty-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const mid=Number(btn.dataset.mid);
+          const m=t.playoff.matches.find(x=>x.id===mid);
+          m.winnerOverride = btn.dataset.winner;
+          if(t.playoff.kind==='semis') ensurePlayoffFinal(t);
+          saveState();
+          renderCurso();
+        });
+      });
+    }
+
+    const btnFin = document.getElementById('btnFinalizar');
+    if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
+    const btnCanc = document.getElementById('btnCancelar');
+    if(btnCanc) btnCanc.addEventListener('click', ()=>{
+      if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
+        state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
+        saveState();
+        toast('Torneo cancelado');
+        renderCurso();
+      }
     });
   }
-
-  const btnFin = document.getElementById('btnFinalizar');
-  if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
-  document.getElementById('btnCancelar').addEventListener('click', ()=>{
-    if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
-      state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
-      saveState();
-      toast('Torneo cancelado');
-      renderCurso();
-    }
-  });
 
   setupFixtureCarousel(dayKeys.length);
 }
@@ -1935,9 +2086,9 @@ function renderCursoGrupos(el, t){
         ${byGroup[gl].map(m=>`
           <div class="match-row ${m.played?'played':''}">
             <div class="match-team home"><span class="tname">${nameOf(m.home)}</span><span class="flag">${flagOf(m.home)}</span></div>
-            <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="hg" value="${m.hg??''}" placeholder="-">
+            <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="hg" value="${m.hg??''}" placeholder="-" ${isAdmin?'':'disabled'}>
             <span class="vs-sep">VS</span>
-            <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="ag" value="${m.ag??''}" placeholder="-">
+            <input type="number" min="0" class="score-input" data-mid="${m.id}" data-side="ag" value="${m.ag??''}" placeholder="-" ${isAdmin?'':'disabled'}>
             <div class="match-team away"><span class="flag">${flagOf(m.away)}</span><span class="tname">${nameOf(m.away)}</span></div>
           </div>`).join('')}
       `).join('')}
@@ -1957,7 +2108,7 @@ function renderCursoGrupos(el, t){
         <div class="card">
           <h2>🏆 Playoff</h2>
           <p class="desc">Fase de grupos completa. Clasificados: ${qualifiers.map(q=>`${flagOf(q.id)} ${nameOf(q.id)} (${q.groupRank}° Grupo ${q.groupLabel})`).join(', ')}.</p>
-          <button class="btn btn-gold" id="btnGenBracket">⚔️ Generar Playoff</button>
+          ${isAdmin? `<button class="btn btn-gold" id="btnGenBracket">⚔️ Generar Playoff</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador genere el playoff.</p>`}
         </div>`;
     } else {
       playoffSectionHtml = `
@@ -1980,12 +2131,14 @@ function renderCursoGrupos(el, t){
         <span class="pill">${prog.played}/${prog.total} partidos de grupos · ${prog.pct}%</span>
       </div>
       <div class="hr"></div>
+      ${isAdmin? `
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn btn-gold" id="btnFinalizar" ${canFinish?'':'disabled'}>🏆 Finalizar torneo</button>
         <button class="btn btn-red" id="btnCancelar">🗑️ Cancelar torneo</button>
       </div>
       ${!groupStageDone? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Completá la fase de grupos para pasar al playoff.</div>' : ''}
       ${groupStageDone && !canFinish? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Jugá el playoff hasta tener campeón para poder finalizar.</div>' : ''}
+      ` : `<p class="desc" style="margin-bottom:0;">🔒 Modo solo visualizar — el administrador es quien carga los resultados.</p>`}
     </div>
 
     <div class="card">
@@ -2010,69 +2163,72 @@ function renderCursoGrupos(el, t){
     </div>
   `;
 
-  el.querySelectorAll('.score-input:not(.bracket-score)').forEach(inp=>{
-    inp.addEventListener('change', ()=>{
-      const mid = Number(inp.dataset.mid);
-      const side = inp.dataset.side;
-      const match = t.matches.find(m=>m.id===mid);
-      const wasPlayed = match.played;
-      const val = inp.value === '' ? null : Math.max(0, parseInt(inp.value,10)||0);
-      match[side] = val;
-      match.played = (match.hg !== null && match.ag !== null);
+  if(isAdmin){
+    el.querySelectorAll('.score-input:not(.bracket-score)').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const mid = Number(inp.dataset.mid);
+        const side = inp.dataset.side;
+        const match = t.matches.find(m=>m.id===mid);
+        const wasPlayed = match.played;
+        const val = inp.value === '' ? null : Math.max(0, parseInt(inp.value,10)||0);
+        match[side] = val;
+        match.played = (match.hg !== null && match.ag !== null);
+        saveState();
+        if(match.played && !wasPlayed){
+          const margin = Math.abs(match.hg - match.ag);
+          if(margin>=3){ playDerrotaSound(); toast('🔥 Goleada registrada en el fixture'); }
+          else{ playGolSound(); }
+        }
+        renderCurso();
+      });
+    });
+
+    const btnGenBracket = document.getElementById('btnGenBracket');
+    if(btnGenBracket) btnGenBracket.addEventListener('click', ()=>{
+      buildPlayoffBracket(t);
       saveState();
-      if(match.played && !wasPlayed){
-        const margin = Math.abs(match.hg - match.ag);
-        if(margin>=3){ playDerrotaSound(); toast('🔥 Goleada registrada en el fixture'); }
-        else{ playGolSound(); }
-      }
       renderCurso();
     });
-  });
 
-  const btnGenBracket = document.getElementById('btnGenBracket');
-  if(btnGenBracket) btnGenBracket.addEventListener('click', ()=>{
-    buildPlayoffBracket(t);
-    saveState();
-    renderCurso();
-  });
+    if(t.playoffBracket){
+      el.querySelectorAll('.bracket-score').forEach(inp=>{
+        inp.addEventListener('change', ()=>{
+          const mid=Number(inp.dataset.mid); const side=inp.dataset.side;
+          const m = t.playoffBracket.matches.find(x=>x.id===mid);
+          const val = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0);
+          m[side]=val;
+          m.played = m.hg!==null && m.ag!==null;
+          if(m.played && m.hg!==m.ag) m.winnerOverride=null;
+          ensureBracketProgress(t);
+          if(m.played) playGolSound();
+          saveState();
+          renderCurso();
+        });
+      });
+      el.querySelectorAll('.bracket-penalty-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const mid=Number(btn.dataset.mid);
+          const m=t.playoffBracket.matches.find(x=>x.id===mid);
+          m.winnerOverride = btn.dataset.winner;
+          ensureBracketProgress(t);
+          saveState();
+          renderCurso();
+        });
+      });
+    }
 
-  if(t.playoffBracket){
-    el.querySelectorAll('.bracket-score').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const mid=Number(inp.dataset.mid); const side=inp.dataset.side;
-        const m = t.playoffBracket.matches.find(x=>x.id===mid);
-        const val = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0);
-        m[side]=val;
-        m.played = m.hg!==null && m.ag!==null;
-        if(m.played && m.hg!==m.ag) m.winnerOverride=null;
-        ensureBracketProgress(t);
-        if(m.played) playGolSound();
+    const btnFin = document.getElementById('btnFinalizar');
+    if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
+    const btnCanc = document.getElementById('btnCancelar');
+    if(btnCanc) btnCanc.addEventListener('click', ()=>{
+      if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
+        state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
         saveState();
+        toast('Torneo cancelado');
         renderCurso();
-      });
-    });
-    el.querySelectorAll('.bracket-penalty-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const mid=Number(btn.dataset.mid);
-        const m=t.playoffBracket.matches.find(x=>x.id===mid);
-        m.winnerOverride = btn.dataset.winner;
-        ensureBracketProgress(t);
-        saveState();
-        renderCurso();
-      });
+      }
     });
   }
-
-  const btnFin = document.getElementById('btnFinalizar');
-  if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
-  document.getElementById('btnCancelar').addEventListener('click', ()=>{
-    if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
-      state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
-      saveState();
-      toast('Torneo cancelado');
-      renderCurso();
-    }
-  });
 
   setupFixtureCarousel(dayKeys.length);
 }
@@ -2474,15 +2630,17 @@ function renderGestion(){
           ${table[2]? `<div class="podio-box podio-3"><div class="podio-flag">${flagOf(table[2].id)}</div><div class="podio-med">🥉</div><div class="podio-name">${nameOf(table[2].id)}</div></div>`:''}
         </div>` : ''}
         ${t.format==='grupos' && t.playoffBracket ? `<div class="scroll-x">${renderBracketTree(t)}</div>` : `<div class="scroll-x">${renderTableHtml(table)}</div>`}
+        ${isAdmin? `
         <div class="mgmt-actions">
           <button class="btn btn-red btn-sm" onclick="borrarTorneo(${t.id})">🗑️ Borrar torneo</button>
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 function toggleMgmt(id){ document.getElementById('mgmt-'+id).classList.toggle('open'); }
 function borrarTorneo(id){
+  if(!isAdmin){ toast('Solo el administrador puede borrar torneos 🔒'); return; }
   const t = state.tournaments.find(x=>x.id===id);
   if(!t) return;
   if(!confirm(`¿Borrar "${t.name}"? Esta acción no se puede deshacer y afectará vitrinas y récords.`)) return;
@@ -2568,11 +2726,10 @@ function generarImagen(t, table){
     <div class="sc-footer">${new Date(t.finishedDate).toLocaleDateString('es-AR')} · Organizá tu propia liga en PES6 Liga Manager</div>
   `;
   html2canvas(card, {backgroundColor:null, scale:2}).then(canvas=>{
-    const link = document.createElement('a');
-    link.download = `${t.name.replace(/[^a-z0-9]+/gi,'_')}_resultado.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast('¡Imagen lista! Revisá tus descargas 📥');
+    const dataUrl = canvas.toDataURL('image/png');
+    const filename = `${t.name.replace(/[^a-z0-9]+/gi,'_')}_resultado.png`;
+    showImagePreview(dataUrl, filename);
+    toast('¡Imagen lista! Guardala desde la vista previa 📥');
   }).catch(()=>{ toast('No se pudo generar la imagen'); });
 }
 
@@ -2709,6 +2866,7 @@ function renderTablaAnual(el){
 
   document.querySelectorAll('button[data-delcup]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
+      if(!isAdmin) return;
       const cupId = btn.dataset.delcup;
       const cup = (state.annualCups||[]).find(c=> String(c.id)===String(cupId));
       if(!cup) return;
@@ -2732,7 +2890,7 @@ function renderAllAnnualCupsList(){
       ${sorted.map(c=>`
         <div class="record-item">
           <div class="left"><b>Copa Anual ${c.year}</b>${flagOf(c.champion)} ${nameOf(c.champion)}</div>
-          <div class="right"><button class="btn btn-red btn-sm" data-delcup="${c.id}">🗑️ Borrar</button></div>
+          <div class="right">${isAdmin? `<button class="btn btn-red btn-sm" data-delcup="${c.id}">🗑️ Borrar</button>` : ''}</div>
         </div>`).join('')}
     </div>`;
 }
@@ -2804,12 +2962,12 @@ function renderCupMatch(m, key){
   let html = `
     <div class="match-row ${(m.hg!==null&&m.ag!==null)?'played':''}">
       <div class="match-team home"><span class="tname">${nameOf(m.home)}</span><span class="flag">${flagOf(m.home)}</span></div>
-      <input type="number" min="0" class="score-input cup-score" data-key="${key}" data-side="hg" value="${m.hg??''}" placeholder="-">
+      <input type="number" min="0" class="score-input cup-score" data-key="${key}" data-side="hg" value="${m.hg??''}" placeholder="-" ${isAdmin?'':'disabled'}>
       <span class="vs-sep">VS</span>
-      <input type="number" min="0" class="score-input cup-score" data-key="${key}" data-side="ag" value="${m.ag??''}" placeholder="-">
+      <input type="number" min="0" class="score-input cup-score" data-key="${key}" data-side="ag" value="${m.ag??''}" placeholder="-" ${isAdmin?'':'disabled'}>
       <div class="match-team away"><span class="flag">${flagOf(m.away)}</span><span class="tname">${nameOf(m.away)}</span></div>
     </div>`;
-  if(drawn){
+  if(drawn && isAdmin){
     html += `
     <div class="desc" style="margin:-2px 0 10px; text-align:center;">
       Empate — definí quién avanza por penales:
@@ -2831,7 +2989,7 @@ function renderAnnualCupSection(year, annualStandings){
         <div class="flag" style="font-size:40px;">${flagOf(already.champion)}</div>
         <div class="label">Copa Anual ${year}</div>
         <div class="team" style="font-size:20px;">${nameOf(already.champion)}</div>
-        <div style="margin-top:12px;"><button class="btn btn-red btn-sm" id="btnBorrarCopaAnual">🗑️ Borrar Copa Anual ${year}</button></div>
+        ${isAdmin? `<div style="margin-top:12px;"><button class="btn btn-red btn-sm" id="btnBorrarCopaAnual">🗑️ Borrar Copa Anual ${year}</button></div>` : ''}
       </div>`;
   }
 
@@ -2853,7 +3011,7 @@ function renderAnnualCupSection(year, annualStandings){
           ? `${flagOf(matchup.leader)} ${nameOf(matchup.leader)} lidera la tabla anual y la tabla de títulos ${year}. ${flagOf(matchup.deciderTeams[0])} ${nameOf(matchup.deciderTeams[0])} y ${flagOf(matchup.deciderTeams[1])} ${nameOf(matchup.deciderTeams[1])} (segundos de cada tabla) definen quién lo enfrenta en la final.`
           : `Se enfrentan ${flagOf(matchup.finalTeams[0])} ${nameOf(matchup.finalTeams[0])} (líder de la tabla anual ${year}) y ${flagOf(matchup.finalTeams[1])} ${nameOf(matchup.finalTeams[1])} (líder de la tabla de títulos ${year}).`}
       </p>
-      <button class="btn btn-gold" id="btnArmarCopaAnual">⚔️ Armar Copa Anual ${year}</button>`;
+      ${isAdmin? `<button class="btn btn-gold" id="btnArmarCopaAnual">⚔️ Armar Copa Anual ${year}</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador arme la Copa Anual.</p>`}`;
   }
 
   let html = `<h2>🏆 Copa Anual ${year}</h2>`;
@@ -2868,15 +3026,18 @@ function renderAnnualCupSection(year, annualStandings){
     html += `<p class="desc">Final de la Copa Anual ${year}:</p>`;
     html += renderCupMatch(cup.finalMatch, 'final');
     const champ = cupMatchWinner(cup.finalMatch);
-    if(champ){
+    if(champ && isAdmin){
       html += `<div class="desc" style="margin-top:10px;">🏆 Campeón: <b>${flagOf(champ)} ${nameOf(champ)}</b></div>
       <button class="btn btn-gold" id="btnConfirmarCopaAnual" style="margin-top:8px;">✅ Confirmar Copa Anual ${year}</button>`;
+    } else if(champ){
+      html += `<div class="desc" style="margin-top:10px; margin-bottom:0;">🏆 Campeón: <b>${flagOf(champ)} ${nameOf(champ)}</b> (falta que el administrador lo confirme)</div>`;
     }
   }
   return html;
 }
 
 function attachAnnualCupListeners(year){
+  if(!isAdmin) return;
   const btnBorrarCopa = document.getElementById('btnBorrarCopaAnual');
   if(btnBorrarCopa){
     btnBorrarCopa.addEventListener('click', ()=>{
@@ -2969,6 +3130,17 @@ function attachAnnualCupListeners(year){
 /* =========================================================
    UTILS
 ========================================================= */
+function showImagePreview(dataUrl, filename){
+  const overlay = document.getElementById('imagePreviewOverlay');
+  overlay.innerHTML = `
+    <div class="image-preview-card">
+      <button class="icon-btn image-preview-close" id="btnCloseImagePreview" title="Cerrar">✕</button>
+      <p class="desc" style="text-align:center; margin:6px 0 0;">Mantené presionada la imagen y elegí "Guardar imagen" o "Descargar imagen" para guardarla en tu galería.</p>
+      <img src="${dataUrl}" alt="Imagen generada" class="image-preview-img">
+    </div>`;
+  overlay.style.display = 'flex';
+  document.getElementById('btnCloseImagePreview').addEventListener('click', ()=>{ overlay.style.display='none'; });
+}
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -2976,7 +3148,8 @@ function escapeHtml(str){
 /* =========================================================
    INIT
 ========================================================= */
-renderNuevo();
+switchTab(isAdmin ? 'nuevo' : 'curso');
+startFirebaseSync();
 </script>
 </body>
 </html>
