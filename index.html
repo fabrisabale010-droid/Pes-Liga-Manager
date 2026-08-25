@@ -376,16 +376,20 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 }
 @keyframes sorteoSpin{ to{ transform:rotate(360deg);} }
 
-.bracket-wrap{display:flex; gap:18px; overflow-x:auto; padding-bottom:8px;}
-.bracket-round{display:flex; flex-direction:column; justify-content:space-around; min-width:180px; flex:0 0 auto;}
-.bracket-round-title{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent-3); font-weight:700; text-align:center; margin-bottom:10px;}
-.bracket-match{background:rgba(0,0,0,0.28); border:1px solid var(--line); border-radius:var(--r-sm); padding:8px 10px; margin-bottom:16px; font-size:12.5px;}
-.bracket-match .bm-team{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:3px 0;}
+.bracket-wrap{display:flex; gap:16px; overflow-x:auto; padding:4px 2px 10px; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
+.bracket-round{display:flex; flex-direction:column; justify-content:center; gap:12px; min-width:190px; max-width:190px; flex:0 0 190px;}
+.bracket-round-title{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent-3); font-weight:700; text-align:center; margin-bottom:2px;}
+.bracket-match{background:rgba(0,0,0,0.28); border:1px solid var(--line); border-radius:var(--r-sm); padding:9px 10px; font-size:12.5px;}
+.bracket-match .bm-team{display:flex; justify-content:space-between; align-items:center; gap:6px; padding:4px 0;}
+.bracket-match .bm-team span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
 .bracket-match .bm-team.winner{color:var(--accent-3); font-weight:700;}
-.bracket-match .bm-score{font-family:'Space Mono',monospace; font-weight:700;}
+.bracket-match .bm-score{font-family:'Space Mono',monospace; font-weight:700; flex:0 0 auto;}
 .bracket-champion-box{
   text-align:center; padding:16px; border:1px solid var(--accent-deep); border-radius:var(--r-md);
   background:rgba(59,130,246,0.14); min-width:150px; display:flex; flex-direction:column; justify-content:center; align-items:center;
+}
+@media (min-width:760px){
+  .bracket-wrap{justify-content:center; overflow-x:visible; flex-wrap:wrap;}
 }
 
 /* ---------- MODO PANTALLA (PC / segunda pantalla) ---------- */
@@ -1633,7 +1637,7 @@ function renderInicio(){
         return `<div class="matchday-title">Grupo ${g.label}</div><div class="scroll-x">${renderTableHtml(gt)}</div>`;
       }).join('<div class="hr"></div>') + `</div>`;
       if(active.playoffBracket){
-        html += `<div class="card"><h2>🏆 Playoff</h2><div class="scroll-x">${renderBracketTree(active)}</div></div>`;
+        html += `<div class="card"><h2>🏆 Playoff</h2>${renderBracketTree(active)}</div>`;
       }
     } else {
       const table = getDisplayTable(active);
@@ -1745,7 +1749,7 @@ function renderTvMode(){
       return `<div class="matchday-title">Grupo ${g.label}</div><div class="scroll-x">${renderTableHtml(gt)}</div>`;
     }).join('<div class="hr"></div>') + `</div>`;
     if(t.playoffBracket){
-      bodyHtml += `<div class="card"><div class="matchday-title" style="margin-bottom:12px;">Playoff</div><div class="scroll-x">${renderBracketTree(t)}</div></div>`;
+      bodyHtml += `<div class="card"><div class="matchday-title" style="margin-bottom:12px;">Playoff</div>${renderBracketTree(t)}</div>`;
     }
   } else {
     const table = getDisplayTable(t);
@@ -2732,7 +2736,7 @@ function renderGestion(){
           ${table[1]? `<div class="podio-box podio-2"><div class="podio-flag">${flagOf(table[1].id)}</div><div class="podio-med">🥈</div><div class="podio-name">${nameOf(table[1].id)}</div></div>`:''}
           ${table[2]? `<div class="podio-box podio-3"><div class="podio-flag">${flagOf(table[2].id)}</div><div class="podio-med">🥉</div><div class="podio-name">${nameOf(table[2].id)}</div></div>`:''}
         </div>` : ''}
-        ${t.format==='grupos' && t.playoffBracket ? `<div class="scroll-x">${renderBracketTree(t)}</div>` : `<div class="scroll-x">${renderTableHtml(table)}</div>`}
+        ${t.format==='grupos' && t.playoffBracket ? renderBracketTree(t) : `<div class="scroll-x">${renderTableHtml(table)}</div>`}
         ${isAdmin? `
         <div class="mgmt-actions">
           <button class="btn btn-red btn-sm" onclick="borrarTorneo(${t.id})">🗑️ Borrar torneo</button>
@@ -2790,7 +2794,7 @@ function renderUltimo(){
     <div class="card">
       <h2>${t.format==='grupos'? '🏆 Llaves del playoff' : '📋 Tabla final'}</h2>
       ${runnerUp? `<p class="desc">🥈 Subcampeón: <b>${flagOf(runnerUp.id)} ${nameOf(runnerUp.id)}</b>${third? ` · 🥉 Tercero: <b>${flagOf(third.id)} ${nameOf(third.id)}</b>`:''}</p>`:''}
-      ${t.format==='grupos' && t.playoffBracket ? `<div class="scroll-x">${renderBracketTree(t)}</div>` : `<div class="scroll-x">${renderTableHtml(table)}</div>`}
+      ${t.format==='grupos' && t.playoffBracket ? renderBracketTree(t) : `<div class="scroll-x">${renderTableHtml(table)}</div>`}
     </div>
 
     <div class="card">
