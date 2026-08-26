@@ -229,6 +229,7 @@ table.std td{padding:8px 6px; border-bottom:1px solid var(--line);}
 table.std tr:last-child td{border-bottom:none;}
 table.std td.num, table.std th.num{text-align:center; font-family:'Space Mono',monospace;}
 table.std tr.rank-1{background:rgba(59,130,246,0.09);}
+.flag-img{width:1.3em; height:auto; vertical-align:-0.22em; border-radius:2px; display:inline-block; box-shadow:0 0 0 1px rgba(255,255,255,0.08); background:rgba(255,255,255,0.05);}
 .team-cell{display:flex; align-items:center; gap:7px; font-weight:600; white-space:nowrap;}
 .team-cell .pos-num{font-family:'Space Mono',monospace; color:var(--text-dim); font-size:11px; min-width:15px; display:inline-block;}
 tr.rank-1 .team-cell .pos-num{color:var(--accent-3); font-weight:700;}
@@ -310,6 +311,11 @@ table.std th.sticky-left{background:#0c1120;}
 .stat-box{background:rgba(0,0,0,0.24); border:1px solid var(--line); border-radius:var(--r-sm); padding:12px; text-align:center;}
 .stat-box .v{font-family:'Space Mono',monospace; font-size:19px; font-weight:700; color:var(--accent-3);}
 .stat-box .l{font-size:10px; text-transform:uppercase; color:var(--text-dim); margin-top:3px; letter-spacing:0.04em;}
+
+.countdown-box{display:flex; gap:8px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
+.countdown-item{background:rgba(0,0,0,0.3); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 10px; min-width:56px; text-align:center;}
+.countdown-item .cd-num{font-family:'Space Mono',monospace; font-size:20px; font-weight:700; color:var(--accent-3);}
+.countdown-item .cd-lbl{font-size:9px; text-transform:uppercase; color:var(--text-dim); margin-top:2px; letter-spacing:0.06em;}
 
 #shareCard{position:absolute; left:-9999px; top:0; width:640px; background:linear-gradient(160deg,#04060b,#0a1220 60%,#0e1526); padding:34px; font-family:'Inter',sans-serif; color:#e9edf6;}
 #shareCard .sc-header{text-align:center; margin-bottom:22px;}
@@ -533,11 +539,11 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
     <div class="card">
       <h2>🗓️ Próximo torneo</h2>
       <div id="nextEventEditForm">
-        <p class="desc">Cargá fecha, hora y lugar del próximo torneo. Queda publicado acá abajo hasta que cargues el siguiente, y podés descargar una imagen lista para compartir.</p>
+        <p class="desc">Cargá sede, fecha, hora y los equipos que participan. Al confirmar con al menos 2 participantes cargados, la app sortea el fixture automáticamente y arranca la cuenta regresiva hasta el día del torneo.</p>
         <label class="field-label">Fecha</label>
-        <input type="text" id="nextEventDate" placeholder="Ej: Sábado 6 de septiembre" style="margin-bottom:14px;">
-        <label class="field-label">Hora</label>
-        <input type="text" id="nextEventTime" placeholder="Ej: 21:00hs" style="margin-bottom:14px;">
+        <input type="date" id="nextEventDate" style="margin-bottom:14px;">
+        <label class="field-label">Hora (opcional)</label>
+        <input type="time" id="nextEventTime" style="margin-bottom:14px;">
         <label class="field-label">Lugar</label>
         <input type="text" id="nextEventPlace" placeholder="Ej: Lo de Fede" style="margin-bottom:14px;">
         <label class="field-label">Selección asociada al lugar (opcional)</label>
@@ -545,14 +551,17 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 
         <div class="hr"></div>
 
-        <label class="field-label">Participantes confirmados (opcional, hasta 10)</label>
+        <label class="field-label">Participantes (hasta 10) — hacen falta al menos 2 para sortear</label>
         <div class="extra-row">
           <select id="nextEventParticipantSelect"></select>
           <button class="btn btn-outline btn-sm" id="btnAddParticipant">➕ Agregar</button>
         </div>
         <div class="extra-chip-list" id="nextEventParticipantChips" style="margin-bottom:14px;"></div>
 
-        <button class="btn btn-gold btn-block" id="btnSaveEvent">📌 Publicar próximo torneo</button>
+        <div id="nextEventFormatSection"></div>
+
+        <div class="hr"></div>
+        <button class="btn btn-gold btn-block" id="btnSaveEvent">📌 Confirmar sede, equipos y fecha</button>
         <div class="hr"></div>
       </div>
       <div id="nextEventPreviewWrap"></div>
@@ -596,39 +605,39 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
    DATOS BASE
 ========================================================= */
 const TEAMS = [
-  {id:'BRA', name:'Brasil',      flag:'🇧🇷'},
-  {id:'ARG', name:'Argentina',   flag:'🇦🇷'},
-  {id:'FRA', name:'Francia',     flag:'🇫🇷'},
-  {id:'ITA', name:'Italia',      flag:'🇮🇹'},
-  {id:'ENG', name:'Inglaterra',  flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-  {id:'ESP', name:'España',      flag:'🇪🇸'},
-  {id:'GER', name:'Alemania',    flag:'🇩🇪'},
-  {id:'POR', name:'Portugal',    flag:'🇵🇹'},
-  {id:'NED', name:'Holanda',     flag:'🇳🇱'},
-  {id:'URU', name:'Uruguay',     flag:'🇺🇾'},
+  {id:'BRA', name:'Brasil',      flag:'🇧🇷', code:'br'},
+  {id:'ARG', name:'Argentina',   flag:'🇦🇷', code:'ar'},
+  {id:'FRA', name:'Francia',     flag:'🇫🇷', code:'fr'},
+  {id:'ITA', name:'Italia',      flag:'🇮🇹', code:'it'},
+  {id:'ENG', name:'Inglaterra',  flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', code:'gb-eng'},
+  {id:'ESP', name:'España',      flag:'🇪🇸', code:'es'},
+  {id:'GER', name:'Alemania',    flag:'🇩🇪', code:'de'},
+  {id:'POR', name:'Portugal',    flag:'🇵🇹', code:'pt'},
+  {id:'NED', name:'Holanda',     flag:'🇳🇱', code:'nl'},
+  {id:'URU', name:'Uruguay',     flag:'🇺🇾', code:'uy'},
 ];
 
 const EXTRA_TEAMS = [
-  {id:'MEX', name:'México',        flag:'🇲🇽'},
-  {id:'COL', name:'Colombia',      flag:'🇨🇴'},
-  {id:'CHI', name:'Chile',         flag:'🇨🇱'},
-  {id:'PAR', name:'Paraguay',      flag:'🇵🇾'},
-  {id:'ECU', name:'Ecuador',       flag:'🇪🇨'},
-  {id:'PER', name:'Perú',          flag:'🇵🇪'},
-  {id:'USA', name:'Estados Unidos',flag:'🇺🇸'},
-  {id:'CRO', name:'Croacia',       flag:'🇭🇷'},
-  {id:'BEL', name:'Bélgica',       flag:'🇧🇪'},
-  {id:'DEN', name:'Dinamarca',     flag:'🇩🇰'},
-  {id:'SWE', name:'Suecia',        flag:'🇸🇪'},
-  {id:'POL', name:'Polonia',       flag:'🇵🇱'},
-  {id:'RUS', name:'Rusia',         flag:'🇷🇺'},
-  {id:'SRB', name:'Serbia',        flag:'🇷🇸'},
-  {id:'SUI', name:'Suiza',         flag:'🇨🇭'},
-  {id:'AUT', name:'Austria',       flag:'🇦🇹'},
-  {id:'TUR', name:'Turquía',       flag:'🇹🇷'},
-  {id:'JPN', name:'Japón',         flag:'🇯🇵'},
-  {id:'KOR', name:'Corea del Sur', flag:'🇰🇷'},
-  {id:'MAR', name:'Marruecos',     flag:'🇲🇦'},
+  {id:'MEX', name:'México',        flag:'🇲🇽', code:'mx'},
+  {id:'COL', name:'Colombia',      flag:'🇨🇴', code:'co'},
+  {id:'CHI', name:'Chile',         flag:'🇨🇱', code:'cl'},
+  {id:'PAR', name:'Paraguay',      flag:'🇵🇾', code:'py'},
+  {id:'ECU', name:'Ecuador',       flag:'🇪🇨', code:'ec'},
+  {id:'PER', name:'Perú',          flag:'🇵🇪', code:'pe'},
+  {id:'USA', name:'Estados Unidos',flag:'🇺🇸', code:'us'},
+  {id:'CRO', name:'Croacia',       flag:'🇭🇷', code:'hr'},
+  {id:'BEL', name:'Bélgica',       flag:'🇧🇪', code:'be'},
+  {id:'DEN', name:'Dinamarca',     flag:'🇩🇰', code:'dk'},
+  {id:'SWE', name:'Suecia',        flag:'🇸🇪', code:'se'},
+  {id:'POL', name:'Polonia',       flag:'🇵🇱', code:'pl'},
+  {id:'RUS', name:'Rusia',         flag:'🇷🇺', code:'ru'},
+  {id:'SRB', name:'Serbia',        flag:'🇷🇸', code:'rs'},
+  {id:'SUI', name:'Suiza',         flag:'🇨🇭', code:'ch'},
+  {id:'AUT', name:'Austria',       flag:'🇦🇹', code:'at'},
+  {id:'TUR', name:'Turquía',       flag:'🇹🇷', code:'tr'},
+  {id:'JPN', name:'Japón',         flag:'🇯🇵', code:'jp'},
+  {id:'KOR', name:'Corea del Sur', flag:'🇰🇷', code:'kr'},
+  {id:'MAR', name:'Marruecos',     flag:'🇲🇦', code:'ma'},
 ];
 
 const ALL_TEAMS = TEAMS.concat(EXTRA_TEAMS);
@@ -664,7 +673,11 @@ function playGolSound(){ playTone([440,660,880], 0.1); }
 function playDerrotaSound(){ playTone([300,220,150], 0.14); }
 
 function teamById(id){ return ALL_TEAMS.find(t=>t.id===id); }
-function flagOf(id){ const t=teamById(id); return t? t.flag : '🏳️'; }
+function flagOf(id){
+  const t = teamById(id);
+  if(!t) return '🏳️';
+  return `<img src="https://flagcdn.com/24x18/${t.code}.png" srcset="https://flagcdn.com/48x36/${t.code}.png 2x, https://flagcdn.com/72x54/${t.code}.png 3x" alt="${t.name}" class="flag-img" loading="lazy">`;
+}
 function nameOf(id){ const t=teamById(id); return t? t.name : id; }
 
 /* =========================================================
@@ -690,6 +703,9 @@ function normalizeState(s){
   if(s.nextEvent){
     s.nextEvent.hostTeam = s.nextEvent.hostTeam || null;
     s.nextEvent.participants = s.nextEvent.participants || [];
+    s.nextEvent.format = s.nextEvent.format || 'ida';
+    s.nextEvent.groupsConfig = s.nextEvent.groupsConfig || null;
+    s.nextEvent.tournamentId = s.nextEvent.tournamentId || null;
   }
   s.tournaments.forEach(t=>{
     t.playoff = t.playoff || null;
@@ -1465,6 +1481,9 @@ document.getElementById('importFileInput').addEventListener('change', (e)=>{
 
 let nextEventDraftHostTeam = '';
 let nextEventDraftParticipants = [];
+let nextEventDraftFormat = 'ida';
+let nextEventDraftNumGroups = 2;
+let nextEventDraftAdvancePerGroup = 1;
 
 document.getElementById('nextEventHostTeam').innerHTML =
   `<option value="">Sin asignar</option>` + ALL_TEAMS.map(t=>`<option value="${t.id}">${t.flag} ${t.name}</option>`).join('');
@@ -1500,22 +1519,126 @@ function renderParticipantPicker(){
       renderParticipantPicker();
     });
   });
+  renderNextEventFormatSection();
+}
+function renderNextEventFormatSection(){
+  const el = document.getElementById('nextEventFormatSection');
+  if(!el) return;
+  const enough = nextEventDraftParticipants.length >= 2;
+  el.innerHTML = `
+    <div class="hr"></div>
+    <label class="field-label">Formato del torneo (se usa cuando se sortee)</label>
+    <div class="format-choice" id="nextEventFormatChoice">
+      <div class="format-opt ${nextEventDraftFormat==='ida'?'checked':''}" data-fmt="ida">
+        <div class="t">Solo ida</div>
+      </div>
+      <div class="format-opt ${nextEventDraftFormat==='idavuelta'?'checked':''}" data-fmt="idavuelta">
+        <div class="t">Ida y vuelta</div>
+      </div>
+      <div class="format-opt ${nextEventDraftFormat==='grupos'?'checked':''}" data-fmt="grupos">
+        <div class="t">Grupos + Playoff</div>
+      </div>
+    </div>
+    ${nextEventDraftFormat==='grupos' ? `
+      <div class="hr"></div>
+      <label class="field-label">Cantidad de grupos</label>
+      <select id="nextEventNumGroups" style="margin-bottom:14px;">
+        <option value="2">2 grupos</option><option value="3">3 grupos</option><option value="4">4 grupos</option>
+      </select>
+      <label class="field-label">Clasificados por grupo</label>
+      <select id="nextEventAdvancePerGroup" style="margin-bottom:14px;">
+        <option value="1">1° de cada grupo</option><option value="2">1° y 2° de cada grupo</option>
+      </select>
+    ` : ''}
+    ${!enough ? `<p class="desc" style="margin-bottom:0;">Agregá al menos 2 participantes arriba para que el sorteo se pueda hacer.</p>` : ''}
+  `;
+  el.querySelectorAll('.format-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      nextEventDraftFormat = opt.dataset.fmt;
+      renderNextEventFormatSection();
+    });
+  });
+  const ng = document.getElementById('nextEventNumGroups');
+  if(ng){ ng.value = String(nextEventDraftNumGroups); ng.addEventListener('change', ()=>{ nextEventDraftNumGroups = Number(ng.value); }); }
+  const ap = document.getElementById('nextEventAdvancePerGroup');
+  if(ap){ ap.value = String(nextEventDraftAdvancePerGroup); ap.addEventListener('change', ()=>{ nextEventDraftAdvancePerGroup = Number(ap.value); }); }
 }
 
+function getEventDateTime(){
+  if(!state.nextEvent || !state.nextEvent.date) return null;
+  const d = new Date(state.nextEvent.date + 'T' + (state.nextEvent.time || '00:00'));
+  if(isNaN(d.getTime())) return null;
+  return d;
+}
+function renderCountdownBox(){
+  const target = getEventDateTime();
+  if(!target) return '';
+  const diff = target.getTime() - Date.now();
+  if(diff <= 0){ return `<div class="pill" style="margin-top:10px;">🔴 ¡Es hoy!</div>`; }
+  const days = Math.floor(diff/86400000);
+  const hours = Math.floor((diff/3600000)%24);
+  const mins = Math.floor((diff/60000)%60);
+  const secs = Math.floor((diff/1000)%60);
+  return `
+    <div class="countdown-box">
+      <div class="countdown-item"><div class="cd-num">${days}</div><div class="cd-lbl">días</div></div>
+      <div class="countdown-item"><div class="cd-num">${String(hours).padStart(2,'0')}</div><div class="cd-lbl">hs</div></div>
+      <div class="countdown-item"><div class="cd-num">${String(mins).padStart(2,'0')}</div><div class="cd-lbl">min</div></div>
+      <div class="countdown-item"><div class="cd-num">${String(secs).padStart(2,'0')}</div><div class="cd-lbl">seg</div></div>
+    </div>`;
+}
+setInterval(()=>{
+  document.querySelectorAll('.countdown-live').forEach(w=>{ w.innerHTML = renderCountdownBox(); });
+}, 1000);
+
 document.getElementById('btnSaveEvent').addEventListener('click', ()=>{
-  const date = document.getElementById('nextEventDate').value.trim();
-  const time = document.getElementById('nextEventTime').value.trim();
+  const date = document.getElementById('nextEventDate').value;
+  const time = document.getElementById('nextEventTime').value;
   const place = document.getElementById('nextEventPlace').value.trim();
   if(!date){ toast('Poné al menos la fecha'); return; }
+
+  const alreadyActive = getActiveTournament();
+  const canSortear = nextEventDraftParticipants.length >= 2 && !alreadyActive;
+
+  if(canSortear && nextEventDraftFormat==='grupos'){
+    if(nextEventDraftParticipants.length < nextEventDraftNumGroups*2){
+      toast(`Necesitás al menos ${nextEventDraftNumGroups*2} participantes para ${nextEventDraftNumGroups} grupos`);
+      return;
+    }
+    const groupsPreview = assignGroups(nextEventDraftParticipants, nextEventDraftNumGroups);
+    const smallestGroupSize = Math.min(...groupsPreview.map(g=>g.teamIds.length));
+    if(nextEventDraftAdvancePerGroup > smallestGroupSize){
+      toast('Elegiste más clasificados que participantes tiene el grupo más chico');
+      return;
+    }
+  }
+
   state.nextEvent = {
     date, time, place,
     hostTeam: nextEventDraftHostTeam || null,
     participants: [...nextEventDraftParticipants],
+    format: nextEventDraftFormat,
+    groupsConfig: nextEventDraftFormat==='grupos' ? {numGroups: nextEventDraftNumGroups, advancePerGroup: nextEventDraftAdvancePerGroup} : null,
+    tournamentId: (state.nextEvent && state.nextEvent.tournamentId) || null,
     updatedAt: new Date().toISOString()
   };
   saveState();
-  toast('¡Próximo torneo publicado! 📌');
-  renderNextEventSection();
+
+  if(canSortear){
+    const dateLabel = new Date(date+'T00:00').toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+    const tournament = buildTournamentObject(`Torneo del ${dateLabel}`, nextEventDraftParticipants, nextEventDraftFormat, {numGroups: nextEventDraftNumGroups, advancePerGroup: nextEventDraftAdvancePerGroup});
+    showSorteoAnimation(tournament, ()=>{
+      state.tournaments.push(tournament);
+      state.nextEvent.tournamentId = tournament.id;
+      saveState();
+      toast('📌 ¡Fecha confirmada y sorteo realizado! El torneo ya arrancó 🎉');
+      renderAll();
+    });
+  } else {
+    if(alreadyActive) toast('Fecha publicada. Terminá el torneo en curso para poder sortear este.');
+    else toast('¡Próximo torneo publicado! 📌');
+    renderNextEventSection();
+  }
 });
 function renderNextEventSection(){
   const wrap = document.getElementById('nextEventPreviewWrap');
@@ -1533,6 +1656,9 @@ function renderNextEventSection(){
   const placeInp = document.getElementById('nextEventPlace');
   nextEventDraftHostTeam = (state.nextEvent && state.nextEvent.hostTeam) || '';
   nextEventDraftParticipants = (state.nextEvent && state.nextEvent.participants) ? [...state.nextEvent.participants] : [];
+  nextEventDraftFormat = (state.nextEvent && state.nextEvent.format) || 'ida';
+  nextEventDraftNumGroups = (state.nextEvent && state.nextEvent.groupsConfig && state.nextEvent.groupsConfig.numGroups) || 2;
+  nextEventDraftAdvancePerGroup = (state.nextEvent && state.nextEvent.groupsConfig && state.nextEvent.groupsConfig.advancePerGroup) || 1;
   if(state.nextEvent){
     dateInp.value = state.nextEvent.date || '';
     timeInp.value = state.nextEvent.time || '';
@@ -1552,15 +1678,22 @@ function renderNextEventSection(){
          ${state.nextEvent.participants.map(id=>`<span title="${escapeHtml(nameOf(id))}">${flagOf(id)}</span>`).join('')}
        </div>`
     : '';
+  const linkedTournament = state.nextEvent.tournamentId ? state.tournaments.find(x=>x.id===state.nextEvent.tournamentId) : null;
+  const dateLabel = (()=>{ const d = getEventDateTime(); return d ? d.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'}) : escapeHtml(state.nextEvent.date); })();
   wrap.innerHTML = `
     <div class="champion-banner">
       <div class="flag" style="font-size:40px;">${state.nextEvent.hostTeam? flagOf(state.nextEvent.hostTeam) : '🗓️'}</div>
       <div class="label">Próximo torneo</div>
-      <div class="team" style="font-size:22px;">${escapeHtml(state.nextEvent.date)}</div>
-      <div class="tname-t">${state.nextEvent.time? '🕒 '+escapeHtml(state.nextEvent.time):''}${state.nextEvent.time && state.nextEvent.place? ' · ':''}${state.nextEvent.place? '📍 '+escapeHtml(state.nextEvent.place):''}</div>
+      <div class="team" style="font-size:22px; text-transform:capitalize;">${dateLabel}</div>
+      <div class="tname-t">${state.nextEvent.time? '🕒 '+escapeHtml(state.nextEvent.time)+'hs':''}${state.nextEvent.time && state.nextEvent.place? ' · ':''}${state.nextEvent.place? '📍 '+escapeHtml(state.nextEvent.place):''}</div>
       ${state.nextEvent.hostTeam? `<div class="tname-t" style="margin-top:4px;">Sede: ${flagOf(state.nextEvent.hostTeam)} ${escapeHtml(nameOf(state.nextEvent.hostTeam))}</div>`:''}
       ${participantsPreview}
-      <div style="margin-top:14px;"><button class="btn btn-gold btn-sm" id="btnDownloadEvent">📥 Descargar imagen</button></div>
+      <div class="countdown-live">${renderCountdownBox()}</div>
+      ${linkedTournament? `<div class="pill" style="margin-top:12px;">${linkedTournament.finished? '🏁 Torneo finalizado':'🔴 Fixture ya sorteado'}</div>`:''}
+      <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-gold btn-sm" id="btnDownloadEvent">📥 Descargar imagen</button>
+        ${linkedTournament? `<button class="btn btn-outline btn-sm" onclick="switchTab('curso')">Ver fixture y tabla →</button>`:''}
+      </div>
     </div>`;
   document.getElementById('btnDownloadEvent').addEventListener('click', generarImagenEvento);
 }
@@ -1572,6 +1705,8 @@ function generarImagenEvento(){
     ? `<div style="margin-top:18px; font-size:32px; letter-spacing:6px;">${state.nextEvent.participants.map(id=>flagOf(id)).join(' ')}</div>
        <div style="margin-top:6px; font-size:10px; letter-spacing:0.12em; color:#8f9bb3; text-transform:uppercase;">Participantes confirmados</div>`
     : '';
+  const d = getEventDateTime();
+  const dateLabel = d ? d.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'}) : escapeHtml(state.nextEvent.date);
   card.innerHTML = `
     <div class="sc-header">
       <div class="k">PES6 Liga Manager</div>
@@ -1579,8 +1714,8 @@ function generarImagenEvento(){
     </div>
     <div class="sc-champ">
       <div class="fl">${state.nextEvent.hostTeam? flagOf(state.nextEvent.hostTeam) : '⚽'}</div>
-      <div class="nm">${escapeHtml(state.nextEvent.date)}</div>
-      ${state.nextEvent.time? `<div class="lb">🕒 ${escapeHtml(state.nextEvent.time)}</div>`:''}
+      <div class="nm" style="text-transform:capitalize;">${dateLabel}</div>
+      ${state.nextEvent.time? `<div class="lb">🕒 ${escapeHtml(state.nextEvent.time)}hs</div>`:''}
       ${state.nextEvent.place? `<div class="lb" style="margin-top:4px;">📍 ${escapeHtml(state.nextEvent.place)}${state.nextEvent.hostTeam? ' · '+flagOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>`:''}
       ${participantsHtml}
     </div>
@@ -1629,6 +1764,7 @@ function renderInicio(){
             <div class="meta">${fmtLabel} · ${active.teamIds.length} selecciones</div>
           </div>
         </div>
+        ${state.nextEvent && getEventDateTime() && state.nextEvent.tournamentId===active.id ? `<div class="countdown-live">${renderCountdownBox()}</div>` : ''}
       </div>`;
 
     if(active.format==='grupos'){
@@ -1872,7 +2008,7 @@ function renderNuevo(){
   grid.innerHTML = TEAMS.map(t=>`
     <label class="team-check ${selectedTeams.includes(t.id)?'checked':''}" data-team="${t.id}">
       <input type="checkbox" ${selectedTeams.includes(t.id)?'checked':''}>
-      <span class="flag">${t.flag}</span>
+      <span class="flag">${flagOf(t.id)}</span>
       <span class="name">${t.name}</span>
     </label>
   `).join('');
@@ -1948,37 +2084,44 @@ function renderExtraTeamPicker(){
   });
 }
 
+function buildTournamentObject(name, teamIds, format, groupsConfig){
+  const today = new Date();
+  if(format === 'grupos'){
+    const groups = assignGroups(teamIds, groupsConfig.numGroups);
+    const matches = buildGroupStageMatches(groups);
+    return {
+      id: state.nextId++, name, date: today.toISOString(), format: 'grupos',
+      teamIds: [...teamIds], matches, finished: false, finishedDate: null, champion: null, playoff: null,
+      groups, groupsConfig: {...groupsConfig}, playoffBracket: null,
+    };
+  }
+  const matches = buildMatches(teamIds, format);
+  return {
+    id: state.nextId++, name, date: today.toISOString(), format,
+    teamIds: [...teamIds], matches, finished: false, finishedDate: null, champion: null, playoff: null,
+  };
+}
+
 function crearTorneo(){
   if(selectedTeams.length < 2){ toast('Elegí al menos 2 selecciones'); return; }
   const nameInput = document.getElementById('tName').value.trim();
   const today = new Date();
   const name = nameInput || ('Torneo ' + today.toLocaleDateString('es-AR'));
 
-  let tournament;
   if(selectedFormat === 'grupos'){
     if(selectedTeams.length < selectedNumGroups*2){
       toast(`Necesitás al menos ${selectedNumGroups*2} selecciones para ${selectedNumGroups} grupos`);
       return;
     }
-    const groups = assignGroups(selectedTeams, selectedNumGroups);
-    const smallestGroupSize = Math.min(...groups.map(g=>g.teamIds.length));
+    const groupsPreview = assignGroups(selectedTeams, selectedNumGroups);
+    const smallestGroupSize = Math.min(...groupsPreview.map(g=>g.teamIds.length));
     if(selectedAdvancePerGroup > smallestGroupSize){
       toast('Elegiste más clasificados que selecciones tiene el grupo más chico');
       return;
     }
-    const matches = buildGroupStageMatches(groups);
-    tournament = {
-      id: state.nextId++, name, date: today.toISOString(), format: 'grupos',
-      teamIds: [...selectedTeams], matches, finished: false, finishedDate: null, champion: null, playoff: null,
-      groups, groupsConfig: {numGroups: selectedNumGroups, advancePerGroup: selectedAdvancePerGroup}, playoffBracket: null,
-    };
-  } else {
-    const matches = buildMatches(selectedTeams, selectedFormat);
-    tournament = {
-      id: state.nextId++, name, date: today.toISOString(), format: selectedFormat,
-      teamIds: [...selectedTeams], matches, finished: false, finishedDate: null, champion: null, playoff: null,
-    };
   }
+
+  const tournament = buildTournamentObject(name, selectedTeams, selectedFormat, {numGroups: selectedNumGroups, advancePerGroup: selectedAdvancePerGroup});
 
   selectedTeams = [];
   selectedFormat = 'ida';
