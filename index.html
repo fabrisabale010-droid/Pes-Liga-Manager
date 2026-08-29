@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
@@ -129,16 +130,30 @@ input[type=text], input[type=number], select{
   border-radius:var(--r-sm); padding:9px 11px; font-size:14px; width:100%;
 }
 input[type=text]:focus, input[type=number]:focus, select:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
-.team-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:8px; margin-top:6px;}
-.team-check{
-  display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:var(--r-sm);
-  padding:9px 10px; cursor:pointer; transition:all .15s ease; user-select:none; background:rgba(0,0,0,0.22);
+.team-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(128px,1fr)); gap:10px; margin-top:6px;}
+.team-card{
+  position:relative; display:flex; flex-direction:column; align-items:center; gap:6px;
+  border:1px solid var(--line); border-radius:var(--r-md);
+  padding:14px 8px 12px; cursor:pointer; user-select:none;
+  background:linear-gradient(165deg, rgba(255,255,255,0.03), rgba(0,0,0,0.22));
+  box-shadow:0 4px 10px rgba(0,0,0,0.25);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
-.team-check:hover{border-color:var(--accent-2);}
-.team-check.checked{background:rgba(59,130,246,0.16); border-color:var(--accent);}
-.team-check input{accent-color:var(--accent); width:16px; height:16px;}
-.team-check .flag{font-size:19px;}
-.team-check .name{font-size:13px; font-weight:600;}
+.team-card:hover{transform:translateY(-3px); box-shadow:0 10px 20px rgba(0,0,0,0.4); border-color:var(--accent-2);}
+.team-card:active{transform:translateY(-1px) scale(0.98);}
+.team-card.checked{
+  border-color:var(--accent); background:linear-gradient(165deg, rgba(59,130,246,0.22), rgba(59,130,246,0.06));
+  box-shadow:0 8px 20px rgba(59,130,246,0.3);
+}
+.team-card.checked::after{
+  content:"✓"; position:absolute; top:6px; right:7px; width:16px; height:16px; border-radius:50%;
+  background:var(--accent); color:#04060b; font-size:10px; font-weight:800; line-height:16px; text-align:center;
+}
+.team-card input{position:absolute; opacity:0; pointer-events:none;}
+.team-card .fi, .team-card .flag-img{width:2em; height:1.5em; box-shadow:0 0 0 1px rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.4);}
+.team-card .tc-fifa{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:14px; letter-spacing:0.05em; color:var(--text); margin-top:2px;}
+.team-card .tc-name{font-size:10.5px; color:var(--text-dim); text-align:center; line-height:1.2;}
+.team-card.checked .tc-fifa{color:var(--accent-3);}
 
 .extra-row{display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
 .extra-row select{flex:1; min-width:180px;}
@@ -229,7 +244,14 @@ table.std td{padding:8px 6px; border-bottom:1px solid var(--line);}
 table.std tr:last-child td{border-bottom:none;}
 table.std td.num, table.std th.num{text-align:center; font-family:'Space Mono',monospace;}
 table.std tr.rank-1{background:rgba(59,130,246,0.09);}
-.flag-img{width:1.3em; height:auto; vertical-align:-0.22em; border-radius:2px; display:inline-block; box-shadow:0 0 0 1px rgba(255,255,255,0.08); background:rgba(255,255,255,0.05);}
+.fi{border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35); vertical-align:-0.2em;}
+.flag-img{width:1.33em; height:1em; object-fit:cover; vertical-align:-0.2em; border-radius:2px; display:inline-block; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35);}
+.crest-img{border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 2px 6px rgba(0,0,0,0.4);}
+.crest-fallback{
+  display:inline-flex; align-items:center; justify-content:center; border-radius:50%;
+  background:linear-gradient(160deg, var(--panel-2), var(--panel)); border:1px solid var(--line-accent);
+  color:var(--accent-3); font-family:'Rajdhani',sans-serif; font-weight:800; letter-spacing:0.02em; vertical-align:middle;
+}
 .team-cell{display:flex; align-items:center; gap:7px; font-weight:600; white-space:nowrap;}
 .team-cell .pos-num{font-family:'Space Mono',monospace; color:var(--text-dim); font-size:11px; min-width:15px; display:inline-block;}
 tr.rank-1 .team-cell .pos-num{color:var(--accent-3); font-weight:700;}
@@ -604,40 +626,42 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 /* =========================================================
    DATOS BASE
 ========================================================= */
+/* Estructura de cada selección: id = código FIFA (3 letras), code = ISO 3166-1 alpha-2 (para Flag Icons),
+   crest = URL de escudo oficial (null = todavía no cargado, se usa una placa con el código FIFA). */
 const TEAMS = [
-  {id:'BRA', name:'Brasil',      flag:'🇧🇷', code:'br'},
-  {id:'ARG', name:'Argentina',   flag:'🇦🇷', code:'ar'},
-  {id:'FRA', name:'Francia',     flag:'🇫🇷', code:'fr'},
-  {id:'ITA', name:'Italia',      flag:'🇮🇹', code:'it'},
-  {id:'ENG', name:'Inglaterra',  flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', code:'gb-eng'},
-  {id:'ESP', name:'España',      flag:'🇪🇸', code:'es'},
-  {id:'GER', name:'Alemania',    flag:'🇩🇪', code:'de'},
-  {id:'POR', name:'Portugal',    flag:'🇵🇹', code:'pt'},
-  {id:'NED', name:'Holanda',     flag:'🇳🇱', code:'nl'},
-  {id:'URU', name:'Uruguay',     flag:'🇺🇾', code:'uy'},
+  {id:'BRA', name:'Brasil',      code:'br', crest:null},
+  {id:'ARG', name:'Argentina',   code:'ar', crest:null},
+  {id:'FRA', name:'Francia',     code:'fr', crest:null},
+  {id:'ITA', name:'Italia',      code:'it', crest:null},
+  {id:'ENG', name:'Inglaterra',  code:'gb-eng', crest:null},
+  {id:'ESP', name:'España',      code:'es', crest:null},
+  {id:'GER', name:'Alemania',    code:'de', crest:null},
+  {id:'POR', name:'Portugal',    code:'pt', crest:null},
+  {id:'NED', name:'Holanda',     code:'nl', crest:null},
+  {id:'URU', name:'Uruguay',     code:'uy', crest:null},
 ];
 
 const EXTRA_TEAMS = [
-  {id:'MEX', name:'México',        flag:'🇲🇽', code:'mx'},
-  {id:'COL', name:'Colombia',      flag:'🇨🇴', code:'co'},
-  {id:'CHI', name:'Chile',         flag:'🇨🇱', code:'cl'},
-  {id:'PAR', name:'Paraguay',      flag:'🇵🇾', code:'py'},
-  {id:'ECU', name:'Ecuador',       flag:'🇪🇨', code:'ec'},
-  {id:'PER', name:'Perú',          flag:'🇵🇪', code:'pe'},
-  {id:'USA', name:'Estados Unidos',flag:'🇺🇸', code:'us'},
-  {id:'CRO', name:'Croacia',       flag:'🇭🇷', code:'hr'},
-  {id:'BEL', name:'Bélgica',       flag:'🇧🇪', code:'be'},
-  {id:'DEN', name:'Dinamarca',     flag:'🇩🇰', code:'dk'},
-  {id:'SWE', name:'Suecia',        flag:'🇸🇪', code:'se'},
-  {id:'POL', name:'Polonia',       flag:'🇵🇱', code:'pl'},
-  {id:'RUS', name:'Rusia',         flag:'🇷🇺', code:'ru'},
-  {id:'SRB', name:'Serbia',        flag:'🇷🇸', code:'rs'},
-  {id:'SUI', name:'Suiza',         flag:'🇨🇭', code:'ch'},
-  {id:'AUT', name:'Austria',       flag:'🇦🇹', code:'at'},
-  {id:'TUR', name:'Turquía',       flag:'🇹🇷', code:'tr'},
-  {id:'JPN', name:'Japón',         flag:'🇯🇵', code:'jp'},
-  {id:'KOR', name:'Corea del Sur', flag:'🇰🇷', code:'kr'},
-  {id:'MAR', name:'Marruecos',     flag:'🇲🇦', code:'ma'},
+  {id:'MEX', name:'México',        code:'mx', crest:null},
+  {id:'COL', name:'Colombia',      code:'co', crest:null},
+  {id:'CHI', name:'Chile',         code:'cl', crest:null},
+  {id:'PAR', name:'Paraguay',      code:'py', crest:null},
+  {id:'ECU', name:'Ecuador',       code:'ec', crest:null},
+  {id:'PER', name:'Perú',          code:'pe', crest:null},
+  {id:'USA', name:'Estados Unidos',code:'us', crest:null},
+  {id:'CRO', name:'Croacia',       code:'hr', crest:null},
+  {id:'BEL', name:'Bélgica',       code:'be', crest:null},
+  {id:'DEN', name:'Dinamarca',     code:'dk', crest:null},
+  {id:'SWE', name:'Suecia',        code:'se', crest:null},
+  {id:'POL', name:'Polonia',       code:'pl', crest:null},
+  {id:'RUS', name:'Rusia',         code:'ru', crest:null},
+  {id:'SRB', name:'Serbia',        code:'rs', crest:null},
+  {id:'SUI', name:'Suiza',         code:'ch', crest:null},
+  {id:'AUT', name:'Austria',       code:'at', crest:null},
+  {id:'TUR', name:'Turquía',       code:'tr', crest:null},
+  {id:'JPN', name:'Japón',         code:'jp', crest:null},
+  {id:'KOR', name:'Corea del Sur', code:'kr', crest:null},
+  {id:'MAR', name:'Marruecos',     code:'ma', crest:null},
 ];
 
 const ALL_TEAMS = TEAMS.concat(EXTRA_TEAMS);
@@ -673,11 +697,39 @@ function playGolSound(){ playTone([440,660,880], 0.1); }
 function playDerrotaSound(){ playTone([300,220,150], 0.14); }
 
 function teamById(id){ return ALL_TEAMS.find(t=>t.id===id); }
+
+/* Bandera para la interfaz en vivo: Flag Icons (SVG vía CDN), nítida en cualquier dispositivo.
+   Los códigos con guión (ej. gb-eng) no tienen clase en Flag Icons, así que esos usan
+   una imagen suelta de respaldo (mismo resultado visual, sin romper el resto del sistema). */
 function flagOf(id){
   const t = teamById(id);
-  if(!t) return '🏳️';
-  return `<img src="https://flagcdn.com/24x18/${t.code}.png" srcset="https://flagcdn.com/48x36/${t.code}.png 2x, https://flagcdn.com/72x54/${t.code}.png 3x" alt="${t.name}" class="flag-img" loading="lazy">`;
+  if(!t) return `<span class="fi fi-xx"></span>`;
+  if(t.code.includes('-')){
+    return `<img src="https://flagcdn.com/48x36/${t.code}.png" alt="${t.name}" class="flag-img" loading="lazy">`;
+  }
+  return `<span class="fi fi-${t.code}" title="${t.name}"></span>`;
 }
+
+/* Bandera para las imágenes descargables (html2canvas): siempre <img> real,
+   porque captura imágenes sueltas de forma mucho más confiable que fondos CSS. */
+function flagImgOf(id){
+  const t = teamById(id);
+  if(!t) return '';
+  return `<img src="https://cdn.jsdelivr.net/npm/flag-icons/flags/4x3/${t.code}.svg" alt="${t.name}" style="width:28px; height:auto; border-radius:2px; vertical-align:middle;" crossorigin="anonymous">`;
+}
+
+/* Escudo: si en el futuro se carga team.crest con una URL, se muestra automáticamente.
+   Mientras tanto, placa circular prolija con el código FIFA como respaldo. */
+function crestOf(id, size){
+  const t = teamById(id);
+  size = size || 28;
+  if(!t) return '';
+  if(t.crest){
+    return `<img src="${t.crest}" alt="Escudo ${t.name}" class="crest-img" style="width:${size}px; height:${size}px;">`;
+  }
+  return `<span class="crest-fallback" style="width:${size}px; height:${size}px; font-size:${Math.round(size*0.32)}px;">${t.id}</span>`;
+}
+
 function nameOf(id){ const t=teamById(id); return t? t.name : id; }
 
 /* =========================================================
@@ -1322,13 +1374,13 @@ function buildShareBracketHtml(t){
     rounds[r].forEach(m=>{
       const w = bracketMatchWinner(m);
       if(m.bye){
-        html += `<div style="padding:6px 0; font-size:13px;">${flagOf(w)} ${escapeHtml(nameOf(w))} — pasa de ronda</div>`;
+        html += `<div style="padding:6px 0; font-size:13px;">${flagImgOf(w)} ${escapeHtml(nameOf(w))} — pasa de ronda</div>`;
       } else {
         html += `
         <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(233,237,246,0.08); font-size:13px;">
-          <span style="text-align:left; ${w===m.home?'color:#8fc0ff; font-weight:700;':''}">${flagOf(m.home)} ${escapeHtml(nameOf(m.home))}</span>
+          <span style="text-align:left; ${w===m.home?'color:#8fc0ff; font-weight:700;':''}">${flagImgOf(m.home)} ${escapeHtml(nameOf(m.home))}</span>
           <span style="font-family:'Space Mono',monospace; text-align:center; white-space:nowrap;">${m.hg??'-'} - ${m.ag??'-'}</span>
-          <span style="text-align:right; ${w===m.away?'color:#8fc0ff; font-weight:700;':''}">${escapeHtml(nameOf(m.away))} ${flagOf(m.away)}</span>
+          <span style="text-align:right; ${w===m.away?'color:#8fc0ff; font-weight:700;':''}">${escapeHtml(nameOf(m.away))} ${flagImgOf(m.away)}</span>
         </div>`;
       }
     });
@@ -1486,7 +1538,7 @@ let nextEventDraftNumGroups = 2;
 let nextEventDraftAdvancePerGroup = 1;
 
 document.getElementById('nextEventHostTeam').innerHTML =
-  `<option value="">Sin asignar</option>` + ALL_TEAMS.map(t=>`<option value="${t.id}">${t.flag} ${t.name}</option>`).join('');
+  `<option value="">Sin asignar</option>` + ALL_TEAMS.map(t=>`<option value="${t.id}">${t.id} · ${t.name}</option>`).join('');
 document.getElementById('nextEventHostTeam').addEventListener('change', (e)=>{
   nextEventDraftHostTeam = e.target.value;
 });
@@ -1503,7 +1555,7 @@ function renderParticipantPicker(){
   const available = ALL_TEAMS.filter(t=> !nextEventDraftParticipants.includes(t.id));
   sel.innerHTML = (nextEventDraftParticipants.length>=10)
     ? `<option value="">Ya agregaste 10 participantes</option>`
-    : `<option value="">Elegí una selección...</option>` + available.map(t=>`<option value="${t.id}">${t.flag} ${t.name}</option>`).join('');
+    : `<option value="">Elegí una selección...</option>` + available.map(t=>`<option value="${t.id}">${t.id} · ${t.name}</option>`).join('');
   const chipList = document.getElementById('nextEventParticipantChips');
   chipList.innerHTML = nextEventDraftParticipants.length
     ? nextEventDraftParticipants.map(id=>`
@@ -1702,7 +1754,7 @@ function generarImagenEvento(){
   toast('Generando imagen...');
   const card = document.getElementById('shareCard');
   const participantsHtml = (state.nextEvent.participants && state.nextEvent.participants.length)
-    ? `<div style="margin-top:18px; font-size:32px; letter-spacing:6px;">${state.nextEvent.participants.map(id=>flagOf(id)).join(' ')}</div>
+    ? `<div style="margin-top:18px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">${state.nextEvent.participants.map(id=>flagImgOf(id).replace('width:28px','width:34px')).join('')}</div>
        <div style="margin-top:6px; font-size:10px; letter-spacing:0.12em; color:#8f9bb3; text-transform:uppercase;">Participantes confirmados</div>`
     : '';
   const d = getEventDateTime();
@@ -1713,15 +1765,15 @@ function generarImagenEvento(){
       <div class="t">Próximo Torneo</div>
     </div>
     <div class="sc-champ">
-      <div class="fl">${state.nextEvent.hostTeam? flagOf(state.nextEvent.hostTeam) : '⚽'}</div>
+      <div class="fl">${state.nextEvent.hostTeam? flagImgOf(state.nextEvent.hostTeam).replace('width:28px','width:54px') : '⚽'}</div>
       <div class="nm" style="text-transform:capitalize;">${dateLabel}</div>
       ${state.nextEvent.time? `<div class="lb">🕒 ${escapeHtml(state.nextEvent.time)}hs</div>`:''}
-      ${state.nextEvent.place? `<div class="lb" style="margin-top:4px;">📍 ${escapeHtml(state.nextEvent.place)}${state.nextEvent.hostTeam? ' · '+flagOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>`:''}
+      ${state.nextEvent.place? `<div class="lb" style="margin-top:4px;">📍 ${escapeHtml(state.nextEvent.place)}${state.nextEvent.hostTeam? ' · '+flagImgOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>`:''}
       ${participantsHtml}
     </div>
     <div class="sc-footer">¡Los esperamos! · PES6 Liga Manager</div>
   `;
-  html2canvas(card, {backgroundColor:null, scale:2}).then(canvas=>{
+  html2canvas(card, {backgroundColor:null, scale:2, useCORS:true, allowTaint:false}).then(canvas=>{
     const dataUrl = canvas.toDataURL('image/png');
     showImagePreview(dataUrl, 'proximo-torneo.png');
     toast('¡Imagen lista! Guardala desde la vista previa 📥');
@@ -2006,15 +2058,16 @@ function renderNuevo(){
 
   const grid = document.getElementById('teamGrid');
   grid.innerHTML = TEAMS.map(t=>`
-    <label class="team-check ${selectedTeams.includes(t.id)?'checked':''}" data-team="${t.id}">
+    <label class="team-card ${selectedTeams.includes(t.id)?'checked':''}" data-team="${t.id}">
       <input type="checkbox" ${selectedTeams.includes(t.id)?'checked':''}>
-      <span class="flag">${flagOf(t.id)}</span>
-      <span class="name">${t.name}</span>
+      ${flagOf(t.id)}
+      <span class="tc-fifa">${t.id}</span>
+      <span class="tc-name">${t.name}</span>
     </label>
   `).join('');
   document.getElementById('selCount').textContent = selectedTeams.length;
 
-  grid.querySelectorAll('.team-check').forEach(box=>{
+  grid.querySelectorAll('.team-card').forEach(box=>{
     box.addEventListener('click', e=>{
       e.preventDefault();
       const id = box.dataset.team;
@@ -2063,7 +2116,7 @@ function renderExtraTeamPicker(){
   const sel = document.getElementById('extraTeamSelect');
   const available = EXTRA_TEAMS.filter(t=> !selectedTeams.includes(t.id));
   sel.innerHTML = available.length
-    ? `<option value="">Elegí una selección para agregar...</option>` + available.map(t=>`<option value="${t.id}">${t.flag} ${t.name}</option>`).join('')
+    ? `<option value="">Elegí una selección para agregar...</option>` + available.map(t=>`<option value="${t.id}">${t.id} · ${t.name}</option>`).join('')
     : `<option value="">Ya agregaste las 20 selecciones adicionales</option>`;
 
   const chipList = document.getElementById('extraChipList');
@@ -2818,7 +2871,7 @@ function populateH2HSelects(){
   const selA = document.getElementById('h2hTeamA');
   const selB = document.getElementById('h2hTeamB');
   if(selA.options.length===0){
-    const opts = ALL_TEAMS.map(t=>`<option value="${t.id}">${t.flag} ${t.name}</option>`).join('');
+    const opts = ALL_TEAMS.map(t=>`<option value="${t.id}">${t.id} · ${t.name}</option>`).join('');
     selA.innerHTML = opts; selB.innerHTML = opts;
     selA.value = ALL_TEAMS[0].id; selB.value = ALL_TEAMS[1].id;
     selA.addEventListener('change', renderH2H);
@@ -2964,18 +3017,18 @@ function generarImagen(t, table){
         <thead><tr><th></th><th>Selección</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PE</th><th class="num">PP</th><th class="num">DG</th><th class="num">Pts</th></tr></thead>
         <tbody>
           ${table.map((s,i)=>`
-            <tr><td>${i+1}</td><td>${flagOf(s.id)} ${escapeHtml(nameOf(s.id))}</td>
+            <tr><td>${i+1}</td><td>${flagImgOf(s.id)} ${escapeHtml(nameOf(s.id))}</td>
               <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
               <td class="num">${s.dg>0?'+':''}${s.dg}</td><td class="num">${s.pts}</td></tr>`).join('')}
         </tbody>
       </table>`;
   card.innerHTML = `
     <div class="sc-header"><div class="k">PES6 Liga Manager</div><div class="t">${escapeHtml(t.name)}</div></div>
-    <div class="sc-champ"><div class="fl">${flagOf(t.champion)}</div><div class="nm">${nameOf(t.champion)}</div><div class="lb">🏆 Campeón${t.format==='grupos'?' de la Copa':''}</div></div>
+    <div class="sc-champ"><div class="fl">${flagImgOf(t.champion).replace('width:28px','width:54px')}</div><div class="nm">${nameOf(t.champion)}</div><div class="lb">🏆 Campeón${t.format==='grupos'?' de la Copa':''}</div></div>
     ${bodyHtml}
     <div class="sc-footer">${new Date(t.finishedDate).toLocaleDateString('es-AR')} · Organizá tu propia liga en PES6 Liga Manager</div>
   `;
-  html2canvas(card, {backgroundColor:null, scale:2}).then(canvas=>{
+  html2canvas(card, {backgroundColor:null, scale:2, useCORS:true, allowTaint:false}).then(canvas=>{
     const dataUrl = canvas.toDataURL('image/png');
     const filename = `${t.name.replace(/[^a-z0-9]+/gi,'_')}_resultado.png`;
     showImagePreview(dataUrl, filename);
