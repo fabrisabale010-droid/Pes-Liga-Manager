@@ -150,7 +150,7 @@ input[type=text]:focus, input[type=number]:focus, select:focus{outline:2px solid
   background:var(--accent); color:#04060b; font-size:10px; font-weight:800; line-height:16px; text-align:center;
 }
 .team-card input{position:absolute; opacity:0; pointer-events:none;}
-.team-card .fi, .team-card .flag-img{width:2em; height:1.5em; box-shadow:0 0 0 1px rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.4);}
+.team-card .fi, .team-card .flag-img, .team-card .fi-fallback{width:2em; height:1.5em; display:inline-block; background-size:cover; background-position:center; box-shadow:0 0 0 1px rgba(255,255,255,0.12), 0 2px 6px rgba(0,0,0,0.4);}
 .team-card .tc-fifa{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:14px; letter-spacing:0.05em; color:var(--text); margin-top:2px;}
 .team-card .tc-name{font-size:10.5px; color:var(--text-dim); text-align:center; line-height:1.2;}
 .team-card.checked .tc-fifa{color:var(--accent-3);}
@@ -246,6 +246,8 @@ table.std td.num, table.std th.num{text-align:center; font-family:'Space Mono',m
 table.std tr.rank-1{background:rgba(59,130,246,0.09);}
 .fi{border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35); vertical-align:-0.2em;}
 .flag-img{width:1.33em; height:1em; object-fit:cover; vertical-align:-0.2em; border-radius:2px; display:inline-block; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35);}
+.fi-fallback{width:1.33em;height:1em;display:inline-block;background-size:100% 100%;background-position:50% 50%;background-repeat:no-repeat;vertical-align:middle;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,0.1),0 1px 3px rgba(0,0,0,0.35);}
+.fi-eng-fallback{transform:translateY(0);}
 .crest-img{border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 2px 6px rgba(0,0,0,0.4);}
 .crest-fallback{
   display:inline-flex; align-items:center; justify-content:center; border-radius:50%;
@@ -478,11 +480,8 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
       <div class="spacer">
         <button id="btnAdminToggle" class="icon-btn" title="Modo solo visualizar (tocá para ingresar como admin)">🔒</button>
         <button id="btnTvMode" class="icon-btn" title="Modo pantalla (PC)">🖥️</button>
-        <button id="btnExport" class="icon-btn" title="Exportar datos">📤</button>
-        <button id="btnImportTrigger" class="icon-btn" title="Importar datos">📥</button>
         <button id="btnSound" class="icon-btn" title="Sonido">🔊</button>
       </div>
-      <input type="file" id="importFileInput" accept="application/json" style="display:none;">
     </div>
     <div class="nav-bar">
       <button class="nav-current" id="btnMenuToggle">
@@ -699,13 +698,13 @@ function playDerrotaSound(){ playTone([300,220,150], 0.14); }
 function teamById(id){ return ALL_TEAMS.find(t=>t.id===id); }
 
 /* Bandera para la interfaz en vivo: Flag Icons (SVG vía CDN), nítida en cualquier dispositivo.
-   Los códigos con guión (ej. gb-eng) no tienen clase en Flag Icons, así que esos usan
-   una imagen suelta de respaldo (mismo resultado visual, sin romper el resto del sistema). */
+   Los códigos con guión (ej. gb-eng) no tienen clase CSS en Flag Icons, así que esos usan
+   el mismo SVG del paquete como fondo suelto, con el mismo tamaño/estilo que el resto. */
 function flagOf(id){
   const t = teamById(id);
   if(!t) return `<span class="fi fi-xx"></span>`;
   if(t.code.includes('-')){
-    return `<img src="https://flagcdn.com/48x36/${t.code}.png" alt="${t.name}" class="flag-img" loading="lazy">`;
+    return `<span class="fi-fallback fi-eng-fallback" style="background-image:url('https://cdn.jsdelivr.net/npm/flag-icons/flags/4x3/${t.code}.svg')" title="${t.name}"></span>`;
   }
   return `<span class="fi fi-${t.code}" title="${t.name}"></span>`;
 }
@@ -820,7 +819,7 @@ function startFirebaseSync(){
 const ADMIN_PIN = '2026';
 let isAdmin = localStorage.getItem('pes6_admin_flag') === 'yes';
 let currentTab = 'nuevo';
-function renderAll(){ switchTab(currentTab); }
+function renderAll(){ updateCarteleraNav(); switchTab(currentTab); }
 function promptAdminLogin(){
   const pin = prompt('Ingresá el PIN de administrador:');
   if(pin === null) return;
@@ -849,53 +848,6 @@ function updateAdminBtn(){
   btn.title = isAdmin ? 'Modo administrador (tocá para salir)' : 'Modo solo visualizar (tocá para ingresar como admin)';
 }
 
-function exportData(){
-  const dataStr = JSON.stringify(state, null, 2);
-  const filename = `pes6-datos-${new Date().toISOString().slice(0,10)}.json`;
-  showTextExportPreview(dataStr, filename);
-}
-function showTextExportPreview(text, filename){
-  const overlay = document.getElementById('imagePreviewOverlay');
-  overlay.innerHTML = `
-    <div class="image-preview-card">
-      <button class="icon-btn image-preview-close" id="btnCloseImagePreview" title="Cerrar">✕</button>
-      <p class="desc" style="text-align:center; margin:6px 0 10px;">Copiá este texto y guardalo (por ejemplo en Notas o enviándotelo por WhatsApp) para tener un respaldo de tus datos.</p>
-      <textarea readonly id="exportTextArea" style="width:100%; height:220px; background:rgba(0,0,0,0.3); color:var(--text); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px; font-family:'Space Mono',monospace; font-size:11px; box-sizing:border-box;">${escapeHtml(text)}</textarea>
-      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px; flex-wrap:wrap;">
-        <button class="btn btn-gold btn-sm" id="btnCopyExport">📋 Copiar</button>
-      </div>
-    </div>`;
-  overlay.style.display = 'flex';
-  document.getElementById('btnCloseImagePreview').addEventListener('click', ()=>{ overlay.style.display='none'; });
-  document.getElementById('btnCopyExport').addEventListener('click', ()=>{
-    const ta = document.getElementById('exportTextArea');
-    ta.select();
-    ta.setSelectionRange(0, 999999);
-    let copied = false;
-    try{ copied = document.execCommand('copy'); }catch(e){}
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(()=> toast('Copiado al portapapeles ✅')).catch(()=>{ if(copied) toast('Copiado al portapapeles ✅'); });
-    } else if(copied){
-      toast('Copiado al portapapeles ✅');
-    }
-  });
-}
-function importDataFile(file){
-  if(!isAdmin){ toast('Solo el administrador puede importar datos 🔒'); return; }
-  const reader = new FileReader();
-  reader.onload = (e)=>{
-    try{
-      const parsed = JSON.parse(e.target.result);
-      state = normalizeState(parsed);
-      saveState();
-      toast('Datos importados ✅');
-      switchTab('nuevo');
-    }catch(err){
-      toast('El archivo no es válido');
-    }
-  };
-  reader.readAsText(file);
-}
 
 /* =========================================================
    FIXTURE (round robin - método del círculo)
@@ -1485,7 +1437,18 @@ function closeNavDropdown(){
   document.getElementById('navDropdown').classList.remove('open');
   document.getElementById('btnMenuToggle').classList.remove('open');
 }
+function updateCarteleraNav(){
+  const btn = document.querySelector('#navDropdown button[data-tab="cartelera"]');
+  if(!btn) return;
+  // Los visitantes solo ven Cartelera cuando existe un próximo torneo publicado.
+  // El administrador mantiene acceso para poder publicar el siguiente.
+  btn.style.display = (state.nextEvent || isAdmin) ? 'flex' : 'none';
+}
 function switchTab(tab){
+  updateCarteleraNav();
+  if(tab==='cartelera' && !state.nextEvent && !isAdmin){
+    tab='inicio';
+  }
   currentTab = tab;
   document.querySelectorAll('#navDropdown button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   document.getElementById('navCurrentLabel').textContent = TAB_LABELS[tab] || tab;
@@ -1520,16 +1483,6 @@ document.getElementById('btnSound').addEventListener('click', ()=>{
 });
 function updateSoundBtn(){ document.getElementById('btnSound').textContent = state.soundOn ? '🔊' : '🔇'; }
 updateSoundBtn();
-document.getElementById('btnExport').addEventListener('click', exportData);
-document.getElementById('btnImportTrigger').addEventListener('click', ()=>{
-  if(!isAdmin){ toast('Solo el administrador puede importar datos 🔒'); return; }
-  document.getElementById('importFileInput').click();
-});
-document.getElementById('importFileInput').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
-  if(file) importDataFile(file);
-  e.target.value = '';
-});
 
 let nextEventDraftHostTeam = '';
 let nextEventDraftParticipants = [];
@@ -1742,42 +1695,8 @@ function renderNextEventSection(){
       ${participantsPreview}
       <div class="countdown-live">${renderCountdownBox()}</div>
       ${linkedTournament? `<div class="pill" style="margin-top:12px;">${linkedTournament.finished? '🏁 Torneo finalizado':'🔴 Fixture ya sorteado'}</div>`:''}
-      <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-gold btn-sm" id="btnDownloadEvent">📥 Descargar imagen</button>
-        ${linkedTournament? `<button class="btn btn-outline btn-sm" onclick="switchTab('curso')">Ver fixture y tabla →</button>`:''}
-      </div>
+      ${linkedTournament? `<div style="margin-top:14px; display:flex; justify-content:center;"><button class="btn btn-outline btn-sm" onclick="switchTab('curso')">Ver fixture y tabla →</button></div>`:''}
     </div>`;
-  document.getElementById('btnDownloadEvent').addEventListener('click', generarImagenEvento);
-}
-function generarImagenEvento(){
-  if(!state.nextEvent) return;
-  toast('Generando imagen...');
-  const card = document.getElementById('shareCard');
-  const participantsHtml = (state.nextEvent.participants && state.nextEvent.participants.length)
-    ? `<div style="margin-top:18px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">${state.nextEvent.participants.map(id=>flagImgOf(id).replace('width:28px','width:34px')).join('')}</div>
-       <div style="margin-top:6px; font-size:10px; letter-spacing:0.12em; color:#8f9bb3; text-transform:uppercase;">Participantes confirmados</div>`
-    : '';
-  const d = getEventDateTime();
-  const dateLabel = d ? d.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'}) : escapeHtml(state.nextEvent.date);
-  card.innerHTML = `
-    <div class="sc-header">
-      <div class="k">PES6 Liga Manager</div>
-      <div class="t">Próximo Torneo</div>
-    </div>
-    <div class="sc-champ">
-      <div class="fl">${state.nextEvent.hostTeam? flagImgOf(state.nextEvent.hostTeam).replace('width:28px','width:54px') : '⚽'}</div>
-      <div class="nm" style="text-transform:capitalize;">${dateLabel}</div>
-      ${state.nextEvent.time? `<div class="lb">🕒 ${escapeHtml(state.nextEvent.time)}hs</div>`:''}
-      ${state.nextEvent.place? `<div class="lb" style="margin-top:4px;">📍 ${escapeHtml(state.nextEvent.place)}${state.nextEvent.hostTeam? ' · '+flagImgOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>`:''}
-      ${participantsHtml}
-    </div>
-    <div class="sc-footer">¡Los esperamos! · PES6 Liga Manager</div>
-  `;
-  html2canvas(card, {backgroundColor:null, scale:2, useCORS:true, allowTaint:false}).then(canvas=>{
-    const dataUrl = canvas.toDataURL('image/png');
-    showImagePreview(dataUrl, 'proximo-torneo.png');
-    toast('¡Imagen lista! Guardala desde la vista previa 📥');
-  }).catch(()=>{ toast('No se pudo generar la imagen'); });
 }
 function renderInicio(){
   const el = document.getElementById('inicioContent');
@@ -1848,7 +1767,7 @@ function renderInicio(){
     }
 
     html += `<div style="text-align:center; margin-bottom:16px;"><button class="btn btn-gold" onclick="switchTab('curso')">Ver completo →</button></div>`;
-  } else {
+  } else if(state.nextEvent){
     html += `<div class="card"><h2>🗓️ Próximo torneo</h2>`;
     if(state.nextEvent){
       html += `
@@ -1858,12 +1777,9 @@ function renderInicio(){
           <div class="tname-t">${state.nextEvent.time? '🕒 '+escapeHtml(state.nextEvent.time):''}${state.nextEvent.time && state.nextEvent.place? ' · ':''}${state.nextEvent.place? '📍 '+escapeHtml(state.nextEvent.place):''}${state.nextEvent.hostTeam? ' · '+flagOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>
           ${state.nextEvent.participants && state.nextEvent.participants.length? `<div style="margin-top:10px; font-size:20px;">${state.nextEvent.participants.map(id=>`<span title="${escapeHtml(nameOf(id))}">${flagOf(id)}</span>`).join(' ')}</div>`:''}
         </div>`;
-    } else {
-      html += `<div class="empty"><div class="big">🏟️</div><p>No hay ningún torneo en curso y todavía no se publicó la fecha del próximo.${isAdmin? ' Creá uno nuevo o publicalo en Cartelera.':''}</p></div>`;
     }
     html += `<div style="text-align:center; margin-top:6px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
       <button class="btn btn-outline btn-sm" onclick="switchTab('cartelera')">Ver Cartelera →</button>
-      ${isAdmin? `<button class="btn btn-gold btn-sm" onclick="switchTab('nuevo')">⚽ Crear torneo nuevo</button>`:''}
     </div></div>`;
   }
 
@@ -2623,6 +2539,9 @@ function finalizarTorneo(id){
   t.finished = true;
   t.finishedDate = new Date().toISOString();
   t.champion = championId;
+  // La cartelera corresponde únicamente al próximo torneo publicado.
+  // Al finalizar el actual se limpia para que no siga mostrando una fecha vieja.
+  state.nextEvent = null;
   saveState();
   toast(`🏆 ¡${nameOf(t.champion)} campeón de ${t.name}!`);
   switchTab('ultimo');
