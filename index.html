@@ -245,7 +245,28 @@ table.std tr:last-child td{border-bottom:none;}
 table.std td.num, table.std th.num{text-align:center; font-family:'Space Mono',monospace;}
 table.std tr.rank-1{background:rgba(59,130,246,0.09);}
 .fi{border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35); vertical-align:-0.2em;}
+.fi-fallback{
+  display:inline-block; width:1.33333333em; height:1em; line-height:1em;
+  background-size:contain; background-position:50%; background-repeat:no-repeat;
+  border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35);
+  vertical-align:-0.2em; position:relative;
+}
 .flag-img{width:1.33em; height:1em; object-fit:cover; vertical-align:-0.2em; border-radius:2px; display:inline-block; box-shadow:0 0 0 1px rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.35);}
+/* Caja uniforme para todas las banderas, incluida Inglaterra (gb-eng). */
+.flag-uniform{
+  display:inline-block !important;
+  width:1.33333333em !important;
+  height:1em !important;
+  line-height:1em !important;
+  vertical-align:-0.2em !important;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.fi-fallback.flag-uniform{
+  background-size:100% 100% !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+}
 .crest-img{border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 2px 6px rgba(0,0,0,0.4);}
 .crest-fallback{
   display:inline-flex; align-items:center; justify-content:center; border-radius:50%;
@@ -699,15 +720,15 @@ function playDerrotaSound(){ playTone([300,220,150], 0.14); }
 function teamById(id){ return ALL_TEAMS.find(t=>t.id===id); }
 
 /* Bandera para la interfaz en vivo: Flag Icons (SVG vía CDN), nítida en cualquier dispositivo.
-   Los códigos con guión (ej. gb-eng) no tienen clase en Flag Icons, así que esos usan
-   una imagen suelta de respaldo (mismo resultado visual, sin romper el resto del sistema). */
+   Los códigos con guión (ej. gb-eng) no tienen clase CSS en Flag Icons, así que esos usan
+   el mismo SVG del paquete como fondo suelto, con el mismo tamaño/estilo que el resto. */
 function flagOf(id){
   const t = teamById(id);
-  if(!t) return `<span class="fi fi-xx"></span>`;
+  if(!t) return `<span class="fi fi-xx flag-uniform"></span>`;
   if(t.code.includes('-')){
-    return `<img src="https://flagcdn.com/48x36/${t.code}.png" alt="${t.name}" class="flag-img" loading="lazy">`;
+    return `<span class="fi-fallback flag-uniform" style="background-image:url('https://cdn.jsdelivr.net/npm/flag-icons/flags/4x3/${t.code}.svg')" title="${t.name}"></span>`;
   }
-  return `<span class="fi fi-${t.code}" title="${t.name}"></span>`;
+  return `<span class="fi fi-${t.code} flag-uniform" title="${t.name}"></span>`;
 }
 
 /* Bandera para las imágenes descargables (html2canvas): siempre <img> real,
@@ -1743,11 +1764,9 @@ function renderNextEventSection(){
       <div class="countdown-live">${renderCountdownBox()}</div>
       ${linkedTournament? `<div class="pill" style="margin-top:12px;">${linkedTournament.finished? '🏁 Torneo finalizado':'🔴 Fixture ya sorteado'}</div>`:''}
       <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-gold btn-sm" id="btnDownloadEvent">📥 Descargar imagen</button>
         ${linkedTournament? `<button class="btn btn-outline btn-sm" onclick="switchTab('curso')">Ver fixture y tabla →</button>`:''}
       </div>
     </div>`;
-  document.getElementById('btnDownloadEvent').addEventListener('click', generarImagenEvento);
 }
 function generarImagenEvento(){
   if(!state.nextEvent) return;
@@ -1805,7 +1824,32 @@ function renderInicio(){
       </div>`;
   }
 
-  if(active){
+  // Si el torneo en curso nació de la publicación de Cartelera, Inicio muestra
+  // esa misma publicación con su contador y no duplica la tarjeta "Torneo en curso".
+  const linkedActive = active && state.nextEvent && state.nextEvent.tournamentId === active.id ? active : null;
+
+  if(linkedActive){
+    const fmtLabel = linkedActive.format==='ida'?'Solo ida':linkedActive.format==='idavuelta'?'Ida y vuelta':'Grupos + Playoff';
+    const participants = state.nextEvent.participants && state.nextEvent.participants.length
+      ? `<div style="margin-top:12px; display:flex; justify-content:center; align-items:center; gap:7px; flex-wrap:wrap; font-size:20px;">${state.nextEvent.participants.map(id=>`<span title="${escapeHtml(nameOf(id))}">${flagOf(id)}</span>`).join('')}</div>`
+      : '';
+    const dateLabel = (()=>{ const d=getEventDateTime(); return d ? d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) : escapeHtml(state.nextEvent.date); })();
+    html += `
+      <div class="card">
+        <h2>📌 Próximo torneo</h2>
+        <div class="champion-banner" style="padding:18px 14px;">
+          <div class="flag" style="font-size:40px;">${state.nextEvent.hostTeam ? flagOf(state.nextEvent.hostTeam) : '🗓️'}</div>
+          <div class="label">${escapeHtml(fmtLabel)} · En curso</div>
+          <div class="team" style="font-size:22px; text-transform:capitalize;">${dateLabel}</div>
+          <div class="tname-t">${state.nextEvent.time ? '🕒 '+escapeHtml(state.nextEvent.time)+'hs' : ''}${state.nextEvent.time && state.nextEvent.place ? ' · ' : ''}${state.nextEvent.place ? '📍 '+escapeHtml(state.nextEvent.place) : ''}</div>
+          ${state.nextEvent.hostTeam ? `<div class="tname-t" style="margin-top:4px;">Sede: ${flagOf(state.nextEvent.hostTeam)} ${escapeHtml(nameOf(state.nextEvent.hostTeam))}</div>` : ''}
+          ${participants}
+          <div class="countdown-live">${renderCountdownBox()}</div>
+          <div style="margin-top:12px;"><button class="btn btn-gold btn-sm" onclick="switchTab('curso')">Ver fixture y tabla →</button></div>
+        </div>
+      </div>`;
+  } else if(active){
+    // Conservamos la vista tradicional para torneos creados directamente desde Nuevo.
     const fmtLabel = active.format==='ida'?'Solo ida':active.format==='idavuelta'?'Ida y vuelta':'Grupos + Playoff';
     html += `
       <div class="card">
@@ -1824,47 +1868,35 @@ function renderInicio(){
         const gt = computeGroupTable(active, g.label);
         return `<div class="matchday-title">Grupo ${g.label}</div><div class="scroll-x">${renderTableHtml(gt)}</div>`;
       }).join('<div class="hr"></div>') + `</div>`;
-      if(active.playoffBracket){
-        html += `<div class="card"><h2>🏆 Playoff</h2>${renderBracketTree(active)}</div>`;
-      }
+      if(active.playoffBracket){ html += `<div class="card"><h2>🏆 Playoff</h2>${renderBracketTree(active)}</div>`; }
     } else {
       const table = getDisplayTable(active);
       html += `<div class="card"><h2>📋 Tabla de posiciones</h2><div class="scroll-x">${renderTableHtml(table)}</div></div>`;
     }
-
     const currentMd = getCurrentMatchdayInfo(active);
     if(currentMd){
-      const byGroup = active.format==='grupos' ? groupBy(currentMd.matches, m=>m.group) : {'': currentMd.matches};
-      html += `<div class="card"><h2>🗓️ Fecha ${currentMd.day} del fixture</h2>${
-        Object.keys(byGroup).sort().map(gl=>`
-          ${gl? `<div class="matchday-title" style="margin-top:10px;">Grupo ${gl}</div>`:''}
-          ${byGroup[gl].map(renderLiveMatchRow).join('')}
-        `).join('')
-      }</div>`;
+      const byGroup = active.format==='grupos' ? groupBy(currentMd.matches,m=>m.group) : {'':currentMd.matches};
+      html += `<div class="card"><h2>🗓️ Fecha ${currentMd.day} del fixture</h2>${Object.keys(byGroup).sort().map(gl=>`${gl?`<div class="matchday-title" style="margin-top:10px;">Grupo ${gl}</div>`:''}${byGroup[gl].map(renderLiveMatchRow).join('')}`).join('')}</div>`;
     }
     const currentRound = getCurrentBracketRoundInfo(active);
-    if(currentRound){
-      html += `<div class="card"><h2>🗓️ ${bracketRoundLabel(currentRound.round, active.playoffBracket.totalRounds)}</h2>${currentRound.matches.filter(m=>!m.bye).map(renderLiveMatchRow).join('')}</div>`;
-    }
-
+    if(currentRound){ html += `<div class="card"><h2>🗓️ ${bracketRoundLabel(currentRound.round,active.playoffBracket.totalRounds)}</h2>${currentRound.matches.filter(m=>!m.bye).map(renderLiveMatchRow).join('')}</div>`; }
     html += `<div style="text-align:center; margin-bottom:16px;"><button class="btn btn-gold" onclick="switchTab('curso')">Ver completo →</button></div>`;
-  } else {
-    html += `<div class="card"><h2>🗓️ Próximo torneo</h2>`;
-    if(state.nextEvent){
-      html += `
-        <div class="champion-banner" style="padding:18px 14px;">
-          <div class="flag" style="font-size:36px;">${state.nextEvent.hostTeam? flagOf(state.nextEvent.hostTeam):'🗓️'}</div>
-          <div class="team" style="font-size:19px;">${escapeHtml(state.nextEvent.date)}</div>
-          <div class="tname-t">${state.nextEvent.time? '🕒 '+escapeHtml(state.nextEvent.time):''}${state.nextEvent.time && state.nextEvent.place? ' · ':''}${state.nextEvent.place? '📍 '+escapeHtml(state.nextEvent.place):''}${state.nextEvent.hostTeam? ' · '+flagOf(state.nextEvent.hostTeam)+' '+escapeHtml(nameOf(state.nextEvent.hostTeam)):''}</div>
-          ${state.nextEvent.participants && state.nextEvent.participants.length? `<div style="margin-top:10px; font-size:20px;">${state.nextEvent.participants.map(id=>`<span title="${escapeHtml(nameOf(id))}">${flagOf(id)}</span>`).join(' ')}</div>`:''}
-        </div>`;
-    } else {
-      html += `<div class="empty"><div class="big">🏟️</div><p>No hay ningún torneo en curso y todavía no se publicó la fecha del próximo.${isAdmin? ' Creá uno nuevo o publicalo en Cartelera.':''}</p></div>`;
-    }
-    html += `<div style="text-align:center; margin-top:6px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="btn btn-outline btn-sm" onclick="switchTab('cartelera')">Ver Cartelera →</button>
-      ${isAdmin? `<button class="btn btn-gold btn-sm" onclick="switchTab('nuevo')">⚽ Crear torneo nuevo</button>`:''}
+  } else if(state.nextEvent){
+    // Publicación futura todavía no sorteada.
+    const participants = state.nextEvent.participants && state.nextEvent.participants.length
+      ? `<div style="margin-top:10px; display:flex; justify-content:center; gap:7px; flex-wrap:wrap; font-size:20px;">${state.nextEvent.participants.map(id=>`<span title="${escapeHtml(nameOf(id))}">${flagOf(id)}</span>`).join('')}</div>` : '';
+    const dateLabel = (()=>{ const d=getEventDateTime(); return d ? d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) : escapeHtml(state.nextEvent.date); })();
+    html += `<div class="card"><h2>🗓️ Próximo torneo</h2><div class="champion-banner" style="padding:18px 14px;">
+      <div class="flag" style="font-size:36px;">${state.nextEvent.hostTeam?flagOf(state.nextEvent.hostTeam):'🗓️'}</div>
+      <div class="label">Publicado en Cartelera</div>
+      <div class="team" style="font-size:19px; text-transform:capitalize;">${dateLabel}</div>
+      <div class="tname-t">${state.nextEvent.time?'🕒 '+escapeHtml(state.nextEvent.time)+'hs':''}${state.nextEvent.time&&state.nextEvent.place?' · ':''}${state.nextEvent.place?'📍 '+escapeHtml(state.nextEvent.place):''}</div>
+      ${state.nextEvent.hostTeam?`<div class="tname-t" style="margin-top:4px;">Sede: ${flagOf(state.nextEvent.hostTeam)} ${escapeHtml(nameOf(state.nextEvent.hostTeam))}</div>`:''}
+      ${participants}
+      <div class="countdown-live">${renderCountdownBox()}</div>
     </div></div>`;
+  } else {
+    html += `<div class="card"><div class="empty"><div class="big">🏟️</div><p>No hay ningún torneo en curso ni una fecha próxima publicada.${isAdmin?' Creá uno nuevo o publicalo en Cartelera.':''}</p></div></div>`;
   }
 
   el.innerHTML = html;
@@ -2358,9 +2390,12 @@ function renderCursoLiga(el, t){
     if(btnCanc) btnCanc.addEventListener('click', ()=>{
       if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
         state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
+        if(state.nextEvent && state.nextEvent.tournamentId === t.id){
+          state.nextEvent = null;
+        }
         saveState();
         toast('Torneo cancelado');
-        renderCurso();
+        renderAll();
       }
     });
   }
@@ -2526,9 +2561,12 @@ function renderCursoGrupos(el, t){
     if(btnCanc) btnCanc.addEventListener('click', ()=>{
       if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
         state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
+        if(state.nextEvent && state.nextEvent.tournamentId === t.id){
+          state.nextEvent = null;
+        }
         saveState();
         toast('Torneo cancelado');
-        renderCurso();
+        renderAll();
       }
     });
   }
@@ -2623,7 +2661,11 @@ function finalizarTorneo(id){
   t.finished = true;
   t.finishedDate = new Date().toISOString();
   t.champion = championId;
+  if(state.nextEvent && state.nextEvent.tournamentId === t.id){
+    state.nextEvent = null;
+  }
   saveState();
+  renderAll();
   toast(`🏆 ¡${nameOf(t.champion)} campeón de ${t.name}!`);
   switchTab('ultimo');
 }
