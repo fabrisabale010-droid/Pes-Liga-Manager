@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PES6 Liga Manager</title>
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlBFUzYgTGlnYSBNYW5hZ2VyIiwgInNob3J0X25hbWUiOiAiUEVTNiBMaWdhIiwgImRlc2NyaXB0aW9uIjogIk9yZ2FuaXpcdTAwZTEgdG9ybmVvcyBkZSBzZWxlY2Npb25lcyBlbiBQRVM2IGNvbiB0dXMgYW1pZ29zIiwgInN0YXJ0X3VybCI6ICIuIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwNDA2MGIiLCAidGhlbWVfY29sb3IiOiAiIzNiODJmNiIsICJpY29ucyI6IFt7InNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBeU1EQWdNakF3SWo0S0lDQThaR1ZtY3o0S0lDQWdJRHh5WVdScFlXeEhjbUZrYVdWdWRDQnBaRDBpWnlJZ1kzZzlJak0xSlNJZ1kzazlJak13SlNJZ2NqMGlPREFsSWo0S0lDQWdJQ0FnUEhOMGIzQWdiMlptYzJWMFBTSXdKU0lnYzNSdmNDMWpiMnh2Y2owaUl6aG1ZekJtWmlJdlBnb2dJQ0FnSUNBOGMzUnZjQ0J2Wm1aelpYUTlJalUxSlNJZ2MzUnZjQzFqYjJ4dmNqMGlJek5pT0RKbU5pSXZQZ29nSUNBZ0lDQThjM1J2Y0NCdlptWnpaWFE5SWpFd01DVWlJSE4wYjNBdFkyOXNiM0k5SWlNeFlUTm1PR1lpTHo0S0lDQWdJRHd2Y21Ga2FXRnNSM0poWkdsbGJuUStDaUFnUEM5a1pXWnpQZ29nSUR4amFYSmpiR1VnWTNnOUlqRXdNQ0lnWTNrOUlqRXdNQ0lnY2owaU9UWWlJR1pwYkd3OUluVnliQ2dqWnlraUlITjBjbTlyWlQwaUkyWm1abVptWmlJZ2MzUnliMnRsTFc5d1lXTnBkSGs5SWpBdU1qSWlJSE4wY205clpTMTNhV1IwYUQwaU5pSXZQZ29nSUR4MFpYaDBJSGc5SWpFd01DSWdlVDBpTVRNeUlpQm1iMjUwTFdaaGJXbHNlVDBpUVhKcFlXd3NJRWhsYkhabGRHbGpZU3dnYzJGdWN5MXpaWEpwWmlJZ1ptOXVkQzF6YVhwbFBTSTVNaUlnWm05dWRDMTNaV2xuYUhROUlqa3dNQ0lnWm1sc2JEMGlJekEwTURZd1lpSWdkR1Y0ZEMxaGJtTm9iM0k5SW0xcFpHUnNaU0krVURZOEwzUmxlSFErQ2p3dmMzWm5QZz09IiwgInNpemVzIjogIjE5MngxOTIiLCAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIn0sIHsic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGRDYjNnOUlqQWdNQ0F5TURBZ01qQXdJajRLSUNBOFpHVm1jejRLSUNBZ0lEeHlZV1JwWVd4SGNtRmthV1Z1ZENCcFpEMGlaeUlnWTNnOUlqTTFKU0lnWTNrOUlqTXdKU0lnY2owaU9EQWxJajRLSUNBZ0lDQWdQSE4wYjNBZ2IyWm1jMlYwUFNJd0pTSWdjM1J2Y0MxamIyeHZjajBpSXpobVl6Qm1aaUl2UGdvZ0lDQWdJQ0E4YzNSdmNDQnZabVp6WlhROUlqVTFKU0lnYzNSdmNDMWpiMnh2Y2owaUl6TmlPREptTmlJdlBnb2dJQ0FnSUNBOGMzUnZjQ0J2Wm1aelpYUTlJakV3TUNVaUlITjBiM0F0WTI5c2IzSTlJaU14WVRObU9HWWlMejRLSUNBZ0lEd3ZjbUZrYVdGc1IzSmhaR2xsYm5RK0NpQWdQQzlrWldaelBnb2dJRHhqYVhKamJHVWdZM2c5SWpFd01DSWdZM2s5SWpFd01DSWdjajBpT1RZaUlHWnBiR3c5SW5WeWJDZ2paeWtpSUhOMGNtOXJaVDBpSTJabVptWm1aaUlnYzNSeWIydGxMVzl3WVdOcGRIazlJakF1TWpJaUlITjBjbTlyWlMxM2FXUjBhRDBpTmlJdlBnb2dJRHgwWlhoMElIZzlJakV3TUNJZ2VUMGlNVE15SWlCbWIyNTBMV1poYldsc2VUMGlRWEpwWVd3c0lFaGxiSFpsZEdsallTd2djMkZ1Y3kxelpYSnBaaUlnWm05dWRDMXphWHBsUFNJNU1pSWdabTl1ZEMxM1pXbG5hSFE5SWprd01DSWdabWxzYkQwaUl6QTBNRFl3WWlJZ2RHVjRkQzFoYm1Ob2IzSTlJbTFwWkdSc1pTSStVRFk4TDNSbGVIUStDand2YzNablBnPT0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLCAicHVycG9zZSI6ICJhbnkgbWFza2FibGUifV19">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZyIgY3g9IjM1JSIgY3k9IjMwJSIgcj0iODAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhmYzBmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjU1JSIgc3RvcC1jb2xvcj0iIzNiODJmNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTNmOGYiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTYiIGZpbGw9InVybCgjZykiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9IjAuMjIiIHN0cm9rZS13aWR0aD0iNiIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTMyIiBmb250LWZhbWlseT0iQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI5MiIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iIzA0MDYwYiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UDY8L3RleHQ+Cjwvc3ZnPg==">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZyIgY3g9IjM1JSIgY3k9IjMwJSIgcj0iODAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhmYzBmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjU1JSIgc3RvcC1jb2xvcj0iIzNiODJmNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTNmOGYiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTYiIGZpbGw9InVybCgjZykiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9IjAuMjIiIHN0cm9rZS13aWR0aD0iNiIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTMyIiBmb250LWZhbWlseT0iQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI5MiIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iIzA0MDYwYiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UDY8L3RleHQ+Cjwvc3ZnPg==">
+<meta name="theme-color" content="#3b82f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PES6 Liga">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
@@ -160,7 +167,11 @@ main{max-width:980px; margin:0 auto; padding:18px 16px 60px;}
 .hr{height:1px; background:var(--line); margin:14px 0;}
 
 .empty{text-align:center; padding:34px 14px; color:var(--text-dim);}
-.empty .big{font-size:34px; margin-bottom:8px;}
+.empty .big{font-size:34px; margin-bottom:8px; display:inline-block; animation:emptyFloat 3s ease-in-out infinite;}
+@keyframes emptyFloat{
+  0%, 100%{ transform:translateY(0) rotate(0deg); }
+  50%{ transform:translateY(-6px) rotate(-3deg); }
+}
 .empty p{font-size:13px; line-height:1.5; max-width:340px; margin:0 auto;}
 
 label.field-label{font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent-3); font-weight:600; display:block; margin-bottom:6px;}
@@ -384,6 +395,16 @@ table.std th.sticky-left{background:#0c1120;}
 .countdown-item{background:rgba(0,0,0,0.3); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 10px; min-width:56px; text-align:center;}
 .countdown-item .cd-num{font-family:'Space Mono',monospace; font-size:20px; font-weight:700; color:var(--accent-3);}
 .countdown-item .cd-lbl{font-size:9px; text-transform:uppercase; color:var(--text-dim); margin-top:2px; letter-spacing:0.06em;}
+
+.confetti-container{position:fixed; inset:0; pointer-events:none; z-index:300; overflow:hidden;}
+.confetti-piece{
+  position:absolute; top:-20px; opacity:0.95;
+  animation-name:confettiFall; animation-timing-function:ease-in; animation-fill-mode:forwards;
+}
+@keyframes confettiFall{
+  0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(105vh) rotate(540deg); opacity:0; }
+}
 
 .toast{
   position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
@@ -674,39 +695,39 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 /* Estructura de cada selección: id = código FIFA (3 letras), code = ISO 3166-1 alpha-2 (para Flag Icons),
    crest = URL de escudo oficial (null = todavía no cargado, se usa una placa con el código FIFA). */
 const TEAMS = [
-  {id:'BRA', name:'Brasil',      code:'br', crest:null},
-  {id:'ARG', name:'Argentina',   code:'ar', crest:null},
-  {id:'FRA', name:'Francia',     code:'fr', crest:null},
-  {id:'ITA', name:'Italia',      code:'it', crest:null},
-  {id:'ENG', name:'Inglaterra',  code:'gb-eng', crest:null},
-  {id:'ESP', name:'España',      code:'es', crest:null},
-  {id:'GER', name:'Alemania',    code:'de', crest:null},
-  {id:'POR', name:'Portugal',    code:'pt', crest:null},
-  {id:'NED', name:'Holanda',     code:'nl', crest:null},
-  {id:'URU', name:'Uruguay',     code:'uy', crest:null},
+  {id:'BRA', name:'Brasil',      code:'br', crest:null, colors:['#009c3b','#ffdf00','#002776']},
+  {id:'ARG', name:'Argentina',   code:'ar', crest:null, colors:['#75aadb','#ffffff','#f6b40e']},
+  {id:'FRA', name:'Francia',     code:'fr', crest:null, colors:['#0055a4','#ffffff','#ef4135']},
+  {id:'ITA', name:'Italia',      code:'it', crest:null, colors:['#008c45','#f4f5f0','#cd212a']},
+  {id:'ENG', name:'Inglaterra',  code:'gb-eng', crest:null, colors:['#ffffff','#cf142b']},
+  {id:'ESP', name:'España',      code:'es', crest:null, colors:['#aa151b','#f1bf00']},
+  {id:'GER', name:'Alemania',    code:'de', crest:null, colors:['#000000','#dd0000','#ffce00']},
+  {id:'POR', name:'Portugal',    code:'pt', crest:null, colors:['#046a38','#da291c','#ffe900']},
+  {id:'NED', name:'Holanda',     code:'nl', crest:null, colors:['#ae1c28','#ffffff','#21468b']},
+  {id:'URU', name:'Uruguay',     code:'uy', crest:null, colors:['#75aadb','#ffffff','#fcd116']},
 ];
 
 const EXTRA_TEAMS = [
-  {id:'MEX', name:'México',        code:'mx', crest:null},
-  {id:'COL', name:'Colombia',      code:'co', crest:null},
-  {id:'CHI', name:'Chile',         code:'cl', crest:null},
-  {id:'PAR', name:'Paraguay',      code:'py', crest:null},
-  {id:'ECU', name:'Ecuador',       code:'ec', crest:null},
-  {id:'PER', name:'Perú',          code:'pe', crest:null},
-  {id:'USA', name:'Estados Unidos',code:'us', crest:null},
-  {id:'CRO', name:'Croacia',       code:'hr', crest:null},
-  {id:'BEL', name:'Bélgica',       code:'be', crest:null},
-  {id:'DEN', name:'Dinamarca',     code:'dk', crest:null},
-  {id:'SWE', name:'Suecia',        code:'se', crest:null},
-  {id:'POL', name:'Polonia',       code:'pl', crest:null},
-  {id:'RUS', name:'Rusia',         code:'ru', crest:null},
-  {id:'SRB', name:'Serbia',        code:'rs', crest:null},
-  {id:'SUI', name:'Suiza',         code:'ch', crest:null},
-  {id:'AUT', name:'Austria',       code:'at', crest:null},
-  {id:'TUR', name:'Turquía',       code:'tr', crest:null},
-  {id:'JPN', name:'Japón',         code:'jp', crest:null},
-  {id:'KOR', name:'Corea del Sur', code:'kr', crest:null},
-  {id:'MAR', name:'Marruecos',     code:'ma', crest:null},
+  {id:'MEX', name:'México',        code:'mx', crest:null, colors:['#006341','#ffffff','#ce1126']},
+  {id:'COL', name:'Colombia',      code:'co', crest:null, colors:['#fcd116','#003893','#ce1126']},
+  {id:'CHI', name:'Chile',         code:'cl', crest:null, colors:['#d52b1e','#ffffff','#0033a0']},
+  {id:'PAR', name:'Paraguay',      code:'py', crest:null, colors:['#d52b1e','#ffffff','#0038a8']},
+  {id:'ECU', name:'Ecuador',       code:'ec', crest:null, colors:['#ffd100','#034ea2','#ed1c24']},
+  {id:'PER', name:'Perú',          code:'pe', crest:null, colors:['#d91023','#ffffff']},
+  {id:'USA', name:'Estados Unidos',code:'us', crest:null, colors:['#b22234','#ffffff','#3c3b6e']},
+  {id:'CRO', name:'Croacia',       code:'hr', crest:null, colors:['#ff0000','#ffffff','#171796']},
+  {id:'BEL', name:'Bélgica',       code:'be', crest:null, colors:['#000000','#fdda24','#ef3340']},
+  {id:'DEN', name:'Dinamarca',     code:'dk', crest:null, colors:['#c60c30','#ffffff']},
+  {id:'SWE', name:'Suecia',        code:'se', crest:null, colors:['#006aa7','#fecc02']},
+  {id:'POL', name:'Polonia',       code:'pl', crest:null, colors:['#ffffff','#dc143c']},
+  {id:'RUS', name:'Rusia',         code:'ru', crest:null, colors:['#ffffff','#0039a6','#d52b1e']},
+  {id:'SRB', name:'Serbia',        code:'rs', crest:null, colors:['#c6363c','#0c4076','#ffffff']},
+  {id:'SUI', name:'Suiza',         code:'ch', crest:null, colors:['#d52b1e','#ffffff']},
+  {id:'AUT', name:'Austria',       code:'at', crest:null, colors:['#ed2939','#ffffff']},
+  {id:'TUR', name:'Turquía',       code:'tr', crest:null, colors:['#e30a17','#ffffff']},
+  {id:'JPN', name:'Japón',         code:'jp', crest:null, colors:['#ffffff','#bc002d']},
+  {id:'KOR', name:'Corea del Sur', code:'kr', crest:null, colors:['#ffffff','#c60c30','#003478']},
+  {id:'MAR', name:'Marruecos',     code:'ma', crest:null, colors:['#c1272d','#006233']},
 ];
 
 const ALL_TEAMS = TEAMS.concat(EXTRA_TEAMS);
@@ -768,6 +789,8 @@ function crestOf(id, size){
 }
 
 function nameOf(id){ const t=teamById(id); return t? t.name : id; }
+function colorOf(id){ const t=teamById(id); return t? (t.colors? t.colors[0] : '#3b82f6') : '#3b82f6'; }
+function flagColorsOf(id){ const t=teamById(id); return t && t.colors ? t.colors : ['#3b82f6','#63a4ff','#22d3ee']; }
 
 /* =========================================================
    ESTADO / PERSISTENCIA
@@ -2575,7 +2598,7 @@ function renderTableHtml(table){
       <tbody>
         ${table.map((s,i)=>`
           <tr class="rank-${i+1}">
-            <td class="sticky-left"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+            <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
             <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
             <td class="num">${s.gf}</td><td class="num">${s.gc}</td><td class="num">${s.dg>0?'+':''}${s.dg}</td>
             <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.pts}</td>
@@ -2609,7 +2632,37 @@ function finalizarTorneo(id){
   }
   saveState();
   toast(`🏆 ¡${nameOf(t.champion)} campeón de ${t.name}!`);
+  launchConfetti(t.champion);
   switchTab('ultimo');
+}
+
+function launchConfetti(championId){
+  const colors = championId ? flagColorsOf(championId) : ['#3b82f6','#63a4ff','#22d3ee'];
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+  const pieceCount = 80;
+  for(let i=0;i<pieceCount;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    const left = Math.random()*100;
+    const delay = Math.random()*0.6;
+    const duration = 2.4 + Math.random()*1.6;
+    const size = 6 + Math.random()*6;
+    const rotate = Math.random()*360;
+    const isCircle = Math.random() > 0.5;
+    piece.style.left = left+'vw';
+    piece.style.width = size+'px';
+    piece.style.height = (isCircle? size : size*1.6)+'px';
+    piece.style.background = color;
+    piece.style.borderRadius = isCircle? '50%' : '2px';
+    piece.style.animationDelay = delay+'s';
+    piece.style.animationDuration = duration+'s';
+    piece.style.transform = `rotate(${rotate}deg)`;
+    container.appendChild(piece);
+  }
+  setTimeout(()=>{ container.remove(); }, 4500);
 }
 
 /* =========================================================
@@ -3026,7 +3079,7 @@ function renderTablasClasico(el){
           <tbody>
             ${sorted.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.torneosJugados}</td>
                 <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
                 <td class="num">${s.gf}</td><td class="num">${s.gc}</td>
@@ -3045,7 +3098,7 @@ function renderTablasClasico(el){
           <tbody>
             ${sorted.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.torneosJugados}</td>
                 <td class="num">${s.avgGf.toFixed(3)}</td>
                 <td class="num">${s.avgGc.toFixed(3)}</td>
@@ -3103,7 +3156,7 @@ function renderTablaAnual(el){
           <tbody>
             ${list.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
                 <td class="num">${s.gf}</td><td class="num">${s.gc}</td><td class="num">${s.dg>0?'+':''}${s.dg}</td>
                 <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.pts}</td>
@@ -3180,7 +3233,7 @@ function renderTablaTitulos(el){
           <tbody>
             ${titles.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.titulos}</td>
               </tr>`).join('')}
           </tbody>
@@ -3397,6 +3450,11 @@ function escapeHtml(str){
 updateNavAdminVisibility();
 switchTab('inicio');
 startFirebaseSync();
+setTimeout(()=>{
+  const last = getLastFinished();
+  const champId = last ? last.champion : LAST_HISTORIC_CHAMPION;
+  launchConfetti(champId);
+}, 600);
 if(pendingRepairSave){
   pendingRepairSave = false;
   saveState();
