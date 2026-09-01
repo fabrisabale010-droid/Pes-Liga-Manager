@@ -453,6 +453,22 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 }
 
 /* ---------- MODO PANTALLA (PC / segunda pantalla) ---------- */
+.admin-login-overlay{
+  position:fixed; inset:0; background:rgba(2,4,9,0.88); backdrop-filter:blur(4px);
+  z-index:280; display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.admin-login-card{
+  position:relative; background:linear-gradient(165deg, var(--panel-2), var(--panel) 70%); border:1px solid var(--line-accent);
+  border-radius:var(--r-lg); padding:26px 22px 22px; max-width:340px; width:100%; text-align:center;
+  box-shadow:0 30px 60px rgba(0,0,0,0.6);
+}
+.admin-login-close{position:absolute; top:10px; right:10px;}
+.admin-login-icon{font-size:36px; color:var(--accent-3); margin-bottom:8px;}
+.admin-login-card h3{font-family:'Rajdhani',sans-serif; font-size:20px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;}
+.admin-login-card input{
+  text-align:center; letter-spacing:0.3em; font-size:18px; font-weight:700; margin-top:14px;
+}
+
 .tv-mode-overlay{
   position:fixed; inset:0; background:
     radial-gradient(1400px 700px at 20% -10%, rgba(59,130,246,0.14), transparent 60%),
@@ -641,6 +657,8 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 </main>
 
 <footer class="credit">PES6 Liga Manager · hecho para reírnos entre amigos ⚽</footer>
+
+<div id="adminLoginOverlay" class="admin-login-overlay" style="display:none;"></div>
 
 <div id="tvModeOverlay" class="tv-mode-overlay" style="display:none;">
   <button id="btnExitTv" class="icon-btn tv-exit-btn" title="Salir de modo pantalla"><i class="ti ti-x"></i></button>
@@ -851,24 +869,78 @@ function startFirebaseSync(){
 
 /* =========================================================
    MODO ADMINISTRADOR / SOLO VISUALIZAR
-   Cambiá este PIN por el que quieras usar entre tus amigos.
+   El PIN NO está en texto plano: se guarda su hash SHA-256.
+   Para cambiar el PIN, calculá el hash de tu nuevo PIN (por
+   ejemplo en la consola del navegador con:
+     crypto.subtle.digest('SHA-256', new TextEncoder().encode('TU_PIN'))
+   convertido a hexadecimal) y reemplazá el valor de abajo.
 ========================================================= */
-const ADMIN_PIN = '2026';
+const ADMIN_PIN_HASH = '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab';
 let isAdmin = localStorage.getItem('pes6_admin_flag') === 'yes';
 let currentTab = 'nuevo';
+let adminLoginAttempts = 0;
+let adminLoginLockUntil = 0;
 function renderAll(){ switchTab(currentTab); }
-function promptAdminLogin(){
-  const pin = prompt('Ingresá el PIN de administrador:');
-  if(pin === null) return;
-  if(pin === ADMIN_PIN){
+
+async function sha256Hex(text){
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function openAdminLoginModal(){
+  if(Date.now() < adminLoginLockUntil){
+    const secs = Math.ceil((adminLoginLockUntil-Date.now())/1000);
+    toast(`Esperá ${secs}s antes de volver a intentar`);
+    return;
+  }
+  const overlay = document.getElementById('adminLoginOverlay');
+  overlay.innerHTML = `
+    <div class="admin-login-card">
+      <button class="icon-btn admin-login-close" id="btnCloseAdminLogin"><i class="ti ti-x"></i></button>
+      <div class="admin-login-icon"><i class="ti ti-shield-lock"></i></div>
+      <h3>Acceso administrador</h3>
+      <p class="desc" style="text-align:center;">Ingresá el PIN para poder cargar resultados y gestionar los torneos.</p>
+      <input type="password" inputmode="numeric" id="adminPinInput" placeholder="PIN" autocomplete="off" maxlength="16">
+      <button class="btn btn-gold btn-block" id="btnSubmitAdminPin" style="margin-top:12px;">Ingresar</button>
+    </div>`;
+  overlay.style.display = 'flex';
+  const input = document.getElementById('adminPinInput');
+  input.focus();
+  const submit = ()=> verifyAdminPin(input.value);
+  document.getElementById('btnSubmitAdminPin').addEventListener('click', submit);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+  document.getElementById('btnCloseAdminLogin').addEventListener('click', closeAdminLoginModal);
+}
+function closeAdminLoginModal(){
+  const overlay = document.getElementById('adminLoginOverlay');
+  overlay.style.display = 'none';
+  overlay.innerHTML = '';
+}
+async function verifyAdminPin(pin){
+  if(!pin) return;
+  const hash = await sha256Hex(pin);
+  if(hash === ADMIN_PIN_HASH){
     isAdmin = true;
+    adminLoginAttempts = 0;
     localStorage.setItem('pes6_admin_flag', 'yes');
+    closeAdminLoginModal();
     toast('Modo administrador activado ✅');
     updateAdminBtn();
     updateNavAdminVisibility();
     renderAll();
   } else {
-    toast('PIN incorrecto');
+    adminLoginAttempts++;
+    if(adminLoginAttempts >= 5){
+      adminLoginLockUntil = Date.now() + 60000;
+      adminLoginAttempts = 0;
+      closeAdminLoginModal();
+      toast('Demasiados intentos. Esperá 1 minuto.');
+    } else {
+      toast('PIN incorrecto');
+      const input = document.getElementById('adminPinInput');
+      if(input){ input.value=''; input.focus(); }
+    }
   }
 }
 function logoutAdmin(){
@@ -1418,7 +1490,6 @@ function handleNavClick(e){
   const btn = e.target.closest('button[data-tab]');
   if(!btn) return;
   if(btn.dataset.tab==='nuevo' && !isAdmin){
-    toast('Solo el administrador puede crear torneos 🔒');
     closeMoreSheet();
     return;
   }
@@ -1459,7 +1530,7 @@ function toast(msg){
 
 document.getElementById('btnAdminToggle').addEventListener('click', ()=>{
   if(isAdmin) logoutAdmin();
-  else promptAdminLogin();
+  else openAdminLoginModal();
 });
 updateAdminBtn();
 document.getElementById('btnSound').addEventListener('click', ()=>{
@@ -1885,7 +1956,6 @@ function renderNuevo(){
       <h2>🆕 Nuevo torneo</h2>
       <div class="empty">
         <div class="big">🔒</div>
-        <p>Solo el administrador puede crear torneos. Si sos el organizador, tocá el candado 🔒 arriba a la derecha para ingresar con el PIN.</p>
       </div>`;
     return;
   }
@@ -2154,7 +2224,7 @@ function renderCursoLiga(el, t){
         <h2>⚔️ Desempate por el título</h2>
         ${!t.playoff ? `
           <p class="desc">Terminaron empatados en puntos: ${tiedLeaders.map(id=>flagOf(id)+' '+nameOf(id)).join(', ')}. Se define con ${playoffKindLabel(tiedLeaders.length)}.</p>
-          ${isAdmin? `<button class="btn btn-gold" id="btnGenPlayoff">⚔️ Generar ${playoffKindLabel(tiedLeaders.length)}</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador genere el desempate.</p>`}
+          ${isAdmin? `<button class="btn btn-gold" id="btnGenPlayoff">⚔️ Generar ${playoffKindLabel(tiedLeaders.length)}</button>` : ''}
         ` : renderPlayoffMatches(t)}
       </div>`;
   }
@@ -2176,7 +2246,7 @@ function renderCursoLiga(el, t){
       </div>
       ${!groupComplete? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Cargá todos los resultados para poder finalizar el torneo.</div>' : ''}
       ${groupComplete && needsPlayoff && !canFinish? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Resolvé el desempate por el título para poder finalizar.</div>' : ''}
-      ` : `<p class="desc" style="margin-bottom:0;">🔒 Modo solo visualizar — el administrador es quien carga los resultados.</p>`}
+      ` : ''}
     </div>
 
     <div class="card">
@@ -2319,7 +2389,7 @@ function renderCursoGrupos(el, t){
         <div class="card">
           <h2>🏆 Playoff</h2>
           <p class="desc">Fase de grupos completa. Clasificados: ${qualifiers.map(q=>`${flagOf(q.id)} ${nameOf(q.id)} (${q.groupRank}° Grupo ${q.groupLabel})`).join(', ')}.</p>
-          ${isAdmin? `<button class="btn btn-gold" id="btnGenBracket">⚔️ Generar Playoff</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador genere el playoff.</p>`}
+          ${isAdmin? `<button class="btn btn-gold" id="btnGenBracket">⚔️ Generar Playoff</button>` : ''}
         </div>`;
     } else {
       playoffSectionHtml = `
@@ -2349,7 +2419,7 @@ function renderCursoGrupos(el, t){
       </div>
       ${!groupStageDone? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Completá la fase de grupos para pasar al playoff.</div>' : ''}
       ${groupStageDone && !canFinish? '<div class="desc" style="margin-top:10px; margin-bottom:0;">Jugá el playoff hasta tener campeón para poder finalizar.</div>' : ''}
-      ` : `<p class="desc" style="margin-bottom:0;">🔒 Modo solo visualizar — el administrador es quien carga los resultados.</p>`}
+      ` : ''}
     </div>
 
     <div class="card">
@@ -2857,7 +2927,7 @@ function renderGestion(){
 }
 function toggleMgmt(id){ document.getElementById('mgmt-'+id).classList.toggle('open'); }
 function borrarTorneo(id){
-  if(!isAdmin){ toast('Solo el administrador puede borrar torneos 🔒'); return; }
+  if(!isAdmin) return;
   const t = state.tournaments.find(x=>x.id===id);
   if(!t) return;
   if(!confirm(`¿Borrar "${t.name}"? Esta acción no se puede deshacer y afectará vitrinas y récords.`)) return;
@@ -3198,7 +3268,7 @@ function renderAnnualCupSection(year, annualStandings){
           ? `${flagOf(matchup.leader)} ${nameOf(matchup.leader)} lidera la tabla anual y la tabla de títulos ${year}. ${flagOf(matchup.deciderTeams[0])} ${nameOf(matchup.deciderTeams[0])} y ${flagOf(matchup.deciderTeams[1])} ${nameOf(matchup.deciderTeams[1])} (segundos de cada tabla) definen quién lo enfrenta en la final.`
           : `Se enfrentan ${flagOf(matchup.finalTeams[0])} ${nameOf(matchup.finalTeams[0])} (líder de la tabla anual ${year}) y ${flagOf(matchup.finalTeams[1])} ${nameOf(matchup.finalTeams[1])} (líder de la tabla de títulos ${year}).`}
       </p>
-      ${isAdmin? `<button class="btn btn-gold" id="btnArmarCopaAnual">⚔️ Armar Copa Anual ${year}</button>` : `<p class="desc" style="margin-bottom:0;">Esperando a que el administrador arme la Copa Anual.</p>`}`;
+      ${isAdmin? `<button class="btn btn-gold" id="btnArmarCopaAnual">⚔️ Armar Copa Anual ${year}</button>` : ''}`;
   }
 
   let html = `<h2>🏆 Copa Anual ${year}</h2>`;
