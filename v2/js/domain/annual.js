@@ -49,7 +49,9 @@ export function matchup(year) {
   const rival = segundoTitulos || segundoPuntos;
   if (!rival || rival === lider) return null;
 
-  return { kind: 'directa', lider, campeon, final: [lider, rival] };
+  /* Ganó todos los torneos del año: no hay con quién armar el repechaje,
+     así que lo espera el segundo en puntos. */
+  return { kind: 'barrida', lider, rival, final: [lider, rival] };
 }
 
 /* ---------- Armar y jugar ---------- */
