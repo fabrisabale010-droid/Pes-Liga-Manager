@@ -327,12 +327,23 @@ table.std th.sticky-left{background:#0c1120;}
 }
 .trophy-tabs button.active{background:linear-gradient(180deg, var(--accent-2), var(--accent)); color:#04060b; border-color:var(--accent);}
 .showcase-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px;}
-.showcase-item{background:rgba(0,0,0,0.24); border:1px solid var(--line); border-radius:var(--r-md); padding:14px 10px; text-align:center;}
+.showcase-item{
+  background:radial-gradient(circle at 50% 0%, rgba(255,216,115,0.10), transparent 65%), rgba(0,0,0,0.24);
+  border:1px solid #6b511a; border-radius:var(--r-md); padding:14px 10px; text-align:center;
+}
 .showcase-item .flag{font-size:30px; display:block; margin-bottom:6px;}
 .showcase-item .team{font-size:12.5px; font-weight:700; margin-bottom:4px;}
-.showcase-item .cups{font-size:22px; font-weight:800; color:var(--accent-3); font-family:'Space Mono',monospace;}
+.showcase-item .cups{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  font-size:22px; font-weight:800; font-family:'Space Mono',monospace;
+  background:linear-gradient(180deg, #fff3cf, #e0b23d 55%, #a97d1f);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#e0b23d;
+}
 .showcase-item .lbl{font-size:9.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;}
-.showcase-item.champ{border-color:var(--accent); background:rgba(59,130,246,0.14); box-shadow:0 0 0 1px rgba(59,130,246,0.25) inset;}
+.showcase-item.champ{
+  border-color:#e0b23d; background:radial-gradient(circle at 50% 0%, rgba(255,216,115,0.22), transparent 65%), rgba(0,0,0,0.24);
+  box-shadow:0 0 0 1px rgba(224,178,61,0.35) inset, 0 0 24px rgba(224,178,61,0.14);
+}
 
 .record-list{display:flex; flex-direction:column; gap:8px;}
 .record-item{display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(0,0,0,0.24); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 12px;}
@@ -378,6 +389,7 @@ table.std th.sticky-left{background:#0c1120;}
 .status-badge.progress{background:rgba(34,211,238,0.18); color:var(--cyan);}
 
 .champion-banner{
+  position:relative; overflow:hidden;
   text-align:center; padding:26px 16px; border-radius:var(--r-lg);
   background:radial-gradient(circle at 50% 0%, rgba(99,164,255,0.28), transparent 65%), rgba(0,0,0,0.26);
   border:1px solid var(--accent-deep); margin-bottom:16px;
@@ -386,6 +398,32 @@ table.std th.sticky-left{background:#0c1120;}
 .champion-banner .label{font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent-3); margin-top:6px;}
 .champion-banner .team{font-size:26px; font-weight:800; margin-top:2px;}
 .champion-banner .tname-t{font-size:12px; color:var(--text-dim); margin-top:4px;}
+.champion-banner-content{position:relative; z-index:2;}
+
+.champion-banner.gold-theme{
+  border-color:#8a6a1a;
+  background:radial-gradient(circle at 50% 0%, rgba(255,216,115,0.32), transparent 65%), rgba(0,0,0,0.28);
+  box-shadow:0 0 46px rgba(224,178,61,0.18), inset 0 0 0 1px rgba(255,216,115,0.15);
+}
+.champion-banner.gold-theme .label{color:#f5d67a;}
+.champion-banner.gold-theme .team{
+  background:linear-gradient(180deg, #fff3cf, #e0b23d 60%, #a97d1f);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#e0b23d;
+  text-shadow:0 1px 0 rgba(0,0,0,0.2);
+}
+.champion-banner.gold-theme .flag{filter:drop-shadow(0 4px 10px rgba(224,178,61,0.35));}
+.gold-pill{background:rgba(224,178,61,0.16) !important; border-color:rgba(224,178,61,0.45) !important; color:#f5d67a !important;}
+
+.card-confetti{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
+.card-confetti-piece{
+  position:absolute; top:-10px; opacity:0.95;
+  animation-name:cardConfettiFall; animation-timing-function:linear; animation-fill-mode:forwards;
+}
+@keyframes cardConfettiFall{
+  0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(280px) rotate(420deg); opacity:0; }
+}
+
 .stat-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px;}
 .stat-box{background:rgba(0,0,0,0.24); border:1px solid var(--line); border-radius:var(--r-sm); padding:12px; text-align:center;}
 .stat-box .v{font-family:'Space Mono',monospace; font-size:19px; font-weight:700; color:var(--accent-3);}
@@ -395,6 +433,15 @@ table.std th.sticky-left{background:#0c1120;}
 .countdown-item{background:rgba(0,0,0,0.3); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 10px; min-width:56px; text-align:center;}
 .countdown-item .cd-num{font-family:'Space Mono',monospace; font-size:20px; font-weight:700; color:var(--accent-3);}
 .countdown-item .cd-lbl{font-size:9px; text-transform:uppercase; color:var(--text-dim); margin-top:2px; letter-spacing:0.06em;}
+
+.sync-indicator{
+  position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:310;
+  display:flex; align-items:center; gap:7px; background:rgba(10,15,28,0.92); backdrop-filter:blur(8px);
+  border:1px solid var(--line-accent); border-radius:999px; padding:7px 16px; font-size:12px; font-weight:700;
+  color:var(--accent-3); box-shadow:0 8px 20px rgba(0,0,0,0.4);
+}
+.sync-indicator i{animation:syncSpin 1s linear infinite;}
+@keyframes syncSpin{ to{ transform:rotate(360deg); } }
 
 .confetti-container{position:fixed; inset:0; pointer-events:none; z-index:300; overflow:hidden;}
 .confetti-piece{
@@ -413,6 +460,10 @@ table.std th.sticky-left{background:#0c1120;}
   z-index:200; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+.toast-undo-btn{
+  margin-left:10px; background:rgba(4,6,11,0.25); border:1px solid rgba(4,6,11,0.4); color:#04060b;
+  font-weight:800; font-size:12px; padding:3px 10px; border-radius:999px; cursor:pointer;
+}
 
 .subtabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
 .subtabs button{background:rgba(0,0,0,0.24); border:1px solid var(--line); color:var(--text-dim); padding:7px 12px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer;}
@@ -489,6 +540,13 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 .admin-login-card input{
   text-align:center; letter-spacing:0.3em; font-size:18px; font-weight:700; margin-top:14px;
 }
+.team-quick-card{
+  position:relative; background:linear-gradient(165deg, var(--panel-2), var(--panel) 70%); border:1px solid var(--line-accent);
+  border-radius:var(--r-lg); padding:26px 20px 22px; max-width:360px; width:100%; text-align:center;
+  box-shadow:0 30px 60px rgba(0,0,0,0.6);
+}
+.team-quick-close{position:absolute; top:10px; right:10px;}
+.team-quick-card h3{font-family:'Rajdhani',sans-serif; font-size:22px; text-transform:uppercase; letter-spacing:0.04em; margin-top:6px;}
 
 .tv-mode-overlay{
   position:fixed; inset:0; background:
@@ -620,7 +678,8 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
     <div class="card">
       <h2>🗂️ Historial de torneos</h2>
       <p class="desc">Todos los torneos jugados, con su nombre, fecha y podio. Tocá uno para ver su tabla completa.</p>
-      <div id="mgmtList"></div></div>
+      <input type="text" id="historialSearch" placeholder="🔍 Buscar torneo por nombre..." style="margin-bottom:14px;">
+      <div id="mgmtList"></div>
     </div>
   </section>
 
@@ -680,6 +739,10 @@ footer.credit{text-align:center; color:var(--text-dim); font-size:11px; padding:
 <footer class="credit">PES6 Liga Manager · hecho para reírnos entre amigos ⚽</footer>
 
 <div id="adminLoginOverlay" class="admin-login-overlay" style="display:none;"></div>
+
+<div id="teamQuickOverlay" class="admin-login-overlay" style="display:none;"></div>
+
+<div id="syncIndicator" class="sync-indicator" style="display:none;"><i class="ti ti-refresh"></i> Sincronizando...</div>
 
 <div id="tvModeOverlay" class="tv-mode-overlay" style="display:none;">
   <button id="btnExitTv" class="icon-btn tv-exit-btn" title="Salir de modo pantalla"><i class="ti ti-x"></i></button>
@@ -759,8 +822,9 @@ function playTone(freqs, duration=0.12){
     osc.stop(t0+duration);
   });
 }
-function playGolSound(){ playTone([440,660,880], 0.1); }
-function playDerrotaSound(){ playTone([300,220,150], 0.14); }
+function playGolSound(){ playTone([440,660,880], 0.1); vibrate(30); }
+function playDerrotaSound(){ playTone([300,220,150], 0.14); vibrate([40,40,40]); }
+function vibrate(pattern){ if(navigator.vibrate){ try{ navigator.vibrate(pattern); }catch(e){} } }
 
 function teamById(id){ return ALL_TEAMS.find(t=>t.id===id); }
 
@@ -791,6 +855,48 @@ function crestOf(id, size){
 function nameOf(id){ const t=teamById(id); return t? t.name : id; }
 function colorOf(id){ const t=teamById(id); return t? (t.colors? t.colors[0] : '#3b82f6') : '#3b82f6'; }
 function flagColorsOf(id){ const t=teamById(id); return t && t.colors ? t.colors : ['#3b82f6','#63a4ff','#22d3ee']; }
+const TROPHY_IMG_URL = 'https://w1.pngwing.com/pngs/756/293/png-transparent-world-cup-trophy-2018-world-cup-2014-fifa-world-cup-2022-fifa-world-cup-2010-fifa-world-cup-unofficial-football-world-championships-fifa-world-cup-trophy-france-national-football-thumbnail.png';
+function trophyImg(size){
+  size = size || 18;
+  return `<i class="ti ti-trophy" style="font-size:${size}px; line-height:1; display:inline-block; vertical-align:-4px; background:linear-gradient(180deg,#fff3cf,#e0b23d 55%,#a97d1f); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#e0b23d;"></i>`;
+}
+
+function openTeamQuickCard(id){
+  const agg = computeTeamAggregate();
+  const stats = agg[id] || {pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0,torneosJugados:0};
+  const titulos = appTrophyCount()[id] || 0;
+  let nextRivalHtml = '';
+  const active = getActiveTournament();
+  if(active && active.teamIds.includes(id)){
+    const nextMatch = active.matches.find(m=> !m.played && (m.home===id || m.away===id));
+    if(nextMatch){
+      const rival = nextMatch.home===id ? nextMatch.away : nextMatch.home;
+      nextRivalHtml = `<div class="desc" style="margin-top:12px; margin-bottom:0; text-align:center;">Próximo rival: ${flagOf(rival)} ${nameOf(rival)} (Fecha ${nextMatch.matchday})</div>`;
+    } else {
+      nextRivalHtml = `<div class="desc" style="margin-top:12px; margin-bottom:0; text-align:center;">No tiene partidos pendientes en el torneo actual.</div>`;
+    }
+  }
+  const overlay = document.getElementById('teamQuickOverlay');
+  overlay.innerHTML = `
+    <div class="team-quick-card">
+      <button class="icon-btn team-quick-close" id="btnCloseTeamQuick"><i class="ti ti-x"></i></button>
+      <div style="font-size:44px;">${flagOf(id)}</div>
+      <h3>${nameOf(id)}</h3>
+      <div class="stat-grid" style="margin-top:14px;">
+        <div class="stat-box"><div class="v">${stats.torneosJugados}</div><div class="l">Torneos jugados</div></div>
+        <div class="stat-box"><div class="v">${titulos}🏆</div><div class="l">Títulos</div></div>
+        <div class="stat-box"><div class="v">${stats.pj}</div><div class="l">Partidos jugados</div></div>
+        <div class="stat-box"><div class="v">${stats.pts}</div><div class="l">Puntos totales</div></div>
+      </div>
+      ${nextRivalHtml}
+    </div>`;
+  overlay.style.display = 'flex';
+  document.getElementById('btnCloseTeamQuick').addEventListener('click', ()=>{ overlay.style.display='none'; overlay.innerHTML=''; });
+}
+document.addEventListener('click', (e)=>{
+  const el = e.target.closest('[data-team-quick]');
+  if(el){ openTeamQuickCard(el.dataset.teamQuick); }
+});
 
 /* =========================================================
    ESTADO / PERSISTENCIA
@@ -873,9 +979,13 @@ try{
   }
 }catch(e){ console.warn('Firebase no se pudo inicializar', e); }
 
+function showSyncIndicator(){ const el = document.getElementById('syncIndicator'); if(el) el.style.display = 'flex'; }
+function hideSyncIndicator(){ const el = document.getElementById('syncIndicator'); if(el) el.style.display = 'none'; }
 function startFirebaseSync(){
   if(!firebaseEnabled || !db) return;
+  showSyncIndicator();
   db.doc(FIRESTORE_DOC).onSnapshot(docSnap=>{
+    hideSyncIndicator();
     if(docSnap.exists){
       state = normalizeState(docSnap.data());
       try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
@@ -887,7 +997,7 @@ function startFirebaseSync(){
     } else {
       db.doc(FIRESTORE_DOC).set(state).catch(()=>{});
     }
-  }, err=>{ console.warn('Error de sincronización con Firebase', err); });
+  }, err=>{ hideSyncIndicator(); console.warn('Error de sincronización con Firebase', err); });
 }
 
 /* =========================================================
@@ -1531,6 +1641,7 @@ function toggleMoreSheet(){ document.getElementById('bnMoreSheet').classList.tog
 function closeMoreSheet(){ document.getElementById('bnMoreSheet').classList.remove('open'); }
 function switchTab(tab){
   if((tab==='nuevo' || tab==='cartelera') && !isAdmin) tab = 'inicio';
+  if(tab!=='inicio') stopChampionCardConfetti();
   currentTab = tab;
   document.querySelectorAll('[data-tab]').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tabpanel').forEach(p=> p.classList.toggle('active', p.id === 'tab-'+tab));
@@ -1550,6 +1661,18 @@ function toast(msg){
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
 }
+function showUndoToast(msg, onUndo){
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${escapeHtml(msg)}</span><button class="toast-undo-btn" id="toastUndoBtn">Deshacer</button>`;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  document.getElementById('toastUndoBtn').addEventListener('click', ()=>{
+    t.classList.remove('show');
+    clearTimeout(window._toastTimer);
+    onUndo();
+  });
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 5000);
+}
 
 document.getElementById('btnAdminToggle').addEventListener('click', ()=>{
   if(isAdmin) logoutAdmin();
@@ -1563,6 +1686,10 @@ document.getElementById('btnSound').addEventListener('click', ()=>{
   if(state.soundOn) playGolSound();
 });
 function updateSoundBtn(){ document.getElementById('btnSound').innerHTML = state.soundOn ? '<i class="ti ti-volume"></i>' : '<i class="ti ti-volume-3"></i>'; }
+document.getElementById('historialSearch').addEventListener('input', (e)=>{
+  historialSearchQuery = e.target.value.toLowerCase();
+  renderGestion();
+});
 updateSoundBtn();
 
 let nextEventDraftHostTeam = '';
@@ -1801,23 +1928,34 @@ function renderInicio(){
   const last = getLastFinished();
   let html = '';
 
+  let championIdForConfetti = null;
   if(last){
+    championIdForConfetti = last.champion;
     html += `
-      <div class="champion-banner">
-        <div class="flag">${flagOf(last.champion)}</div>
-        <div class="label">Último campeón</div>
-        <div class="team">${nameOf(last.champion)}</div>
-        <div class="tname-t">${escapeHtml(last.name)} · ${new Date(last.finishedDate).toLocaleDateString('es-AR')}</div>
-        ${last.playoff? `<div class="pill" style="margin-top:8px;">Definido por desempate (${playoffKindLabel(last.playoff.teams.length)})</div>`:(last.format==='grupos'? `<div class="pill" style="margin-top:8px;">Definido por Grupos + Playoff</div>`:'')}
-        <div style="margin-top:14px;"><button class="btn btn-outline btn-sm" onclick="switchTab('ultimo')">Ver detalle →</button></div>
+      <div class="champion-banner gold-theme">
+        <div class="card-confetti" id="championCardConfetti"></div>
+        <div class="champion-banner-content">
+          <div style="margin-bottom:4px;">${trophyImg(60)}</div>
+          <div class="flag">${flagOf(last.champion)}</div>
+          <div class="label">Último campeón</div>
+          <div class="team">${nameOf(last.champion)}</div>
+          <div class="tname-t">${escapeHtml(last.name)} · ${new Date(last.finishedDate).toLocaleDateString('es-AR')}</div>
+          ${last.playoff? `<div class="pill gold-pill" style="margin-top:8px;">Definido por desempate (${playoffKindLabel(last.playoff.teams.length)})</div>`:(last.format==='grupos'? `<div class="pill gold-pill" style="margin-top:8px;">Definido por Grupos + Playoff</div>`:'')}
+          <div style="margin-top:14px;"><button class="btn btn-outline btn-sm" onclick="switchTab('ultimo')">Ver detalle →</button></div>
+        </div>
       </div>`;
   } else {
+    championIdForConfetti = LAST_HISTORIC_CHAMPION;
     html += `
-      <div class="champion-banner">
-        <div class="flag">${flagOf(LAST_HISTORIC_CHAMPION)}</div>
-        <div class="label">Último campeón</div>
-        <div class="team">${nameOf(LAST_HISTORIC_CHAMPION)}</div>
-        <div class="tname-t">Campeón histórico, previo a esta app</div>
+      <div class="champion-banner gold-theme">
+        <div class="card-confetti" id="championCardConfetti"></div>
+        <div class="champion-banner-content">
+          <div style="margin-bottom:4px;">${trophyImg(60)}</div>
+          <div class="flag">${flagOf(LAST_HISTORIC_CHAMPION)}</div>
+          <div class="label">Último campeón</div>
+          <div class="team">${nameOf(LAST_HISTORIC_CHAMPION)}</div>
+          <div class="tname-t">Campeón histórico, previo a esta app</div>
+        </div>
       </div>`;
   }
 
@@ -1862,6 +2000,7 @@ function renderInicio(){
   }
 
   el.innerHTML = html;
+  startChampionCardConfetti(championIdForConfetti);
 }
 function renderCartelera(){
   renderNextEventSection();
@@ -2354,13 +2493,19 @@ function renderCursoLiga(el, t){
     if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
     const btnCanc = document.getElementById('btnCancelar');
     if(btnCanc) btnCanc.addEventListener('click', ()=>{
-      if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
+      if(confirm('¿Cancelar este torneo? Se puede deshacer justo después.')){
+        const cancelledTournament = t;
+        const cancelledNextEvent = (state.nextEvent && state.nextEvent.tournamentId === t.id) ? state.nextEvent : null;
         state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
-        if(state.nextEvent && state.nextEvent.tournamentId === t.id){
-          state.nextEvent = null;
-        }
+        if(cancelledNextEvent) state.nextEvent = null;
         saveState();
-        toast('Torneo cancelado');
+        showUndoToast('Torneo cancelado', ()=>{
+          state.tournaments.push(cancelledTournament);
+          if(cancelledNextEvent) state.nextEvent = cancelledNextEvent;
+          saveState();
+          toast('Torneo restaurado ✅');
+          renderCurso();
+        });
         renderCurso();
       }
     });
@@ -2525,13 +2670,19 @@ function renderCursoGrupos(el, t){
     if(btnFin) btnFin.addEventListener('click', ()=> finalizarTorneo(t.id));
     const btnCanc = document.getElementById('btnCancelar');
     if(btnCanc) btnCanc.addEventListener('click', ()=>{
-      if(confirm('¿Seguro que querés cancelar y borrar este torneo en curso? No se puede deshacer.')){
+      if(confirm('¿Cancelar este torneo? Se puede deshacer justo después.')){
+        const cancelledTournament = t;
+        const cancelledNextEvent = (state.nextEvent && state.nextEvent.tournamentId === t.id) ? state.nextEvent : null;
         state.tournaments = state.tournaments.filter(x=>x.id!==t.id);
-        if(state.nextEvent && state.nextEvent.tournamentId === t.id){
-          state.nextEvent = null;
-        }
+        if(cancelledNextEvent) state.nextEvent = null;
         saveState();
-        toast('Torneo cancelado');
+        showUndoToast('Torneo cancelado', ()=>{
+          state.tournaments.push(cancelledTournament);
+          if(cancelledNextEvent) state.nextEvent = cancelledNextEvent;
+          saveState();
+          toast('Torneo restaurado ✅');
+          renderCurso();
+        });
         renderCurso();
       }
     });
@@ -2598,7 +2749,7 @@ function renderTableHtml(table){
       <tbody>
         ${table.map((s,i)=>`
           <tr class="rank-${i+1}">
-            <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+            <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell" data-team-quick="${s.id}" style="cursor:pointer;"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
             <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
             <td class="num">${s.gf}</td><td class="num">${s.gc}</td><td class="num">${s.dg>0?'+':''}${s.dg}</td>
             <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.pts}</td>
@@ -2663,6 +2814,38 @@ function launchConfetti(championId){
     container.appendChild(piece);
   }
   setTimeout(()=>{ container.remove(); }, 4500);
+}
+
+let championConfettiInterval = null;
+function startChampionCardConfetti(championId){
+  stopChampionCardConfetti();
+  const container = document.getElementById('championCardConfetti');
+  if(!container) return;
+  const colors = flagColorsOf(championId);
+  function spawnPiece(){
+    const piece = document.createElement('div');
+    piece.className = 'card-confetti-piece';
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    const left = Math.random()*100;
+    const duration = 2.2 + Math.random()*1.6;
+    const size = 5 + Math.random()*5;
+    const isCircle = Math.random() > 0.5;
+    piece.style.left = left+'%';
+    piece.style.width = size+'px';
+    piece.style.height = (isCircle? size : size*1.6)+'px';
+    piece.style.background = color;
+    piece.style.borderRadius = isCircle? '50%' : '2px';
+    piece.style.animationDuration = duration+'s';
+    container.appendChild(piece);
+    setTimeout(()=>{ piece.remove(); }, duration*1000+150);
+  }
+  for(let i=0;i<10;i++){ setTimeout(spawnPiece, i*90); }
+  championConfettiInterval = setInterval(spawnPiece, 220);
+}
+function stopChampionCardConfetti(){
+  if(championConfettiInterval){ clearInterval(championConfettiInterval); championConfettiInterval = null; }
+  const container = document.getElementById('championCardConfetti');
+  if(container) container.innerHTML = '';
 }
 
 /* =========================================================
@@ -2760,7 +2943,7 @@ function computeRecords(){
     records.negative.push({label:'Peor defensa histórica', sub:`${flagOf(worstDefense.id)} ${nameOf(worstDefense.id)}`, value:`${(worstDefense.gc/worstDefense.pj).toFixed(2)} goles recibidos/partido`});
 
     const mostTitles = Object.entries(appTrophyCount()).sort((a,b)=>b[1]-a[1])[0];
-    if(mostTitles){ records.positive.push({label:'Más títulos ganados en la app', sub:`${flagOf(mostTitles[0])} ${nameOf(mostTitles[0])}`, value:`${mostTitles[1]} 🏆`}); }
+    if(mostTitles){ records.positive.push({label:'Más títulos ganados en la app', sub:`${flagOf(mostTitles[0])} ${nameOf(mostTitles[0])}`, value:`${mostTitles[1]} ${trophyImg(15)}`}); }
 
     const bestPct = [...teamsWithGames].sort((a,b)=> (b.pts/(b.pj*3))-(a.pts/(a.pj*3)))[0];
     const worstPct = [...teamsWithGames].sort((a,b)=> (a.pts/(a.pj*3))-(b.pts/(b.pj*3)))[0];
@@ -2879,7 +3062,7 @@ function renderShowcaseGrid(){
     <div class="showcase-item ${i===0?'champ':''}">
       <span class="flag">${flagOf(id)}</span>
       <div class="team">${nameOf(id)}</div>
-      <div class="cups">${count}×🏆</div>
+      <div class="cups">${count}× ${trophyImg(18)}</div>
       <div class="lbl">${count===1?singular:plural}</div>
     </div>
   `).join('');
@@ -2945,10 +3128,15 @@ function renderH2H(){
 /* =========================================================
    TAB: GESTION
 ========================================================= */
+let historialSearchQuery = '';
 function renderGestion(){
   const el = document.getElementById('mgmtList');
-  const list = [...state.tournaments].sort((a,b)=> new Date(b.date)-new Date(a.date));
-  if(list.length===0){ el.innerHTML = `<div class="empty"><div class="big">🗂️</div><p>Todavía no creaste ningún torneo.</p></div>`; return; }
+  let list = [...state.tournaments].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  if(state.tournaments.length===0){ el.innerHTML = `<div class="empty"><div class="big">🗂️</div><p>Todavía no creaste ningún torneo.</p></div>`; return; }
+  if(historialSearchQuery){
+    list = list.filter(t=> t.name.toLowerCase().includes(historialSearchQuery));
+  }
+  if(list.length===0){ el.innerHTML = `<div class="empty"><div class="big">🔍</div><p>No se encontró ningún torneo con ese nombre.</p></div>`; return; }
   el.innerHTML = list.map(t=>{
     const table = getDisplayTable(t);
     const prog = tournamentProgress(t);
@@ -2979,14 +3167,22 @@ function renderGestion(){
   }).join('');
 }
 function toggleMgmt(id){ document.getElementById('mgmt-'+id).classList.toggle('open'); }
+let lastDeletedTournament = null;
 function borrarTorneo(id){
   if(!isAdmin) return;
   const t = state.tournaments.find(x=>x.id===id);
   if(!t) return;
-  if(!confirm(`¿Borrar "${t.name}"? Esta acción no se puede deshacer y afectará vitrinas y récords.`)) return;
   state.tournaments = state.tournaments.filter(x=>x.id!==id);
   saveState();
-  toast('Torneo borrado');
+  lastDeletedTournament = t;
+  showUndoToast(`Torneo "${t.name}" borrado`, ()=>{
+    if(!lastDeletedTournament) return;
+    state.tournaments.push(lastDeletedTournament);
+    lastDeletedTournament = null;
+    saveState();
+    toast('Torneo restaurado ✅');
+    renderGestion();
+  });
   renderGestion();
 }
 
@@ -3021,6 +3217,7 @@ function renderUltimo(){
       <div class="team">${nameOf(t.champion)}</div>
       <div class="tname-t">${escapeHtml(t.name)} · finalizado el ${new Date(t.finishedDate).toLocaleDateString('es-AR')}</div>
       ${t.playoff? `<div class="pill" style="margin-top:8px;">Definido por desempate (${playoffKindLabel(t.playoff.teams.length)})</div>`:(t.format==='grupos'? `<div class="pill" style="margin-top:8px;">Definido por Grupos + Playoff</div>`:'')}
+      <div style="margin-top:14px;"><button class="btn btn-gold btn-sm" id="btnShareWhatsapp"><i class="ti ti-brand-whatsapp"></i> Compartir por WhatsApp</button></div>
     </div>
 
     <div class="card">
@@ -3041,6 +3238,21 @@ function renderUltimo(){
       ${mostGoals? `<p class="desc" style="margin-bottom:0;">Partido más goleador: ${nameOf(mostGoals.home)} ${mostGoals.hg}-${mostGoals.ag} ${nameOf(mostGoals.away)} (${maxTotal} goles).</p>`:''}
     </div>
   `;
+  document.getElementById('btnShareWhatsapp').addEventListener('click', ()=> shareUltimoPorWhatsapp(t, table, runnerUp, third));
+}
+function shareUltimoPorWhatsapp(t, table, runnerUp, third){
+  const lines = [];
+  lines.push(`🏆 ${t.name}`);
+  lines.push(`Campeón: ${nameOf(t.champion)}`);
+  if(runnerUp) lines.push(`Subcampeón: ${nameOf(runnerUp.id)}`);
+  if(third) lines.push(`Tercero: ${nameOf(third.id)}`);
+  lines.push('');
+  lines.push('Tabla final:');
+  table.slice(0,6).forEach((s,i)=> lines.push(`${i+1}. ${nameOf(s.id)} — ${s.pts} pts`));
+  lines.push('');
+  lines.push('⚽ PES6 Liga Manager');
+  const text = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 /* =========================================================
@@ -3079,7 +3291,7 @@ function renderTablasClasico(el){
           <tbody>
             ${sorted.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell" data-team-quick="${s.id}" style="cursor:pointer;"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.torneosJugados}</td>
                 <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
                 <td class="num">${s.gf}</td><td class="num">${s.gc}</td>
@@ -3098,7 +3310,7 @@ function renderTablasClasico(el){
           <tbody>
             ${sorted.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell" data-team-quick="${s.id}" style="cursor:pointer;"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.torneosJugados}</td>
                 <td class="num">${s.avgGf.toFixed(3)}</td>
                 <td class="num">${s.avgGc.toFixed(3)}</td>
@@ -3156,7 +3368,7 @@ function renderTablaAnual(el){
           <tbody>
             ${list.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell" data-team-quick="${s.id}" style="cursor:pointer;"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num">${s.pj}</td><td class="num">${s.pg}</td><td class="num">${s.pe}</td><td class="num">${s.pp}</td>
                 <td class="num">${s.gf}</td><td class="num">${s.gc}</td><td class="num">${s.dg>0?'+':''}${s.dg}</td>
                 <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.pts}</td>
@@ -3233,7 +3445,7 @@ function renderTablaTitulos(el){
           <tbody>
             ${titles.map((s,i)=>`
               <tr class="rank-${i+1}">
-                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
+                <td class="sticky-left" style="border-left:3px solid ${colorOf(s.id)};"><div class="team-cell" data-team-quick="${s.id}" style="cursor:pointer;"><span class="pos-num">${i+1}</span><span>${flagOf(s.id)}</span><span>${nameOf(s.id)}</span></div></td>
                 <td class="num sticky-right" style="color:var(--accent-3); font-weight:700;">${s.titulos}</td>
               </tr>`).join('')}
           </tbody>
@@ -3450,11 +3662,6 @@ function escapeHtml(str){
 updateNavAdminVisibility();
 switchTab('inicio');
 startFirebaseSync();
-setTimeout(()=>{
-  const last = getLastFinished();
-  const champId = last ? last.champion : LAST_HISTORIC_CHAMPION;
-  launchConfetti(champId);
-}, 600);
 if(pendingRepairSave){
   pendingRepairSave = false;
   saveState();
