@@ -2,6 +2,9 @@ import { flag, esc, nameOf } from '../ui/ui.js';
 import { mainColorOf, TEAMS } from '../domain/teams.js';
 import { crunch, byPoints, byAverage, byTitles, years, headToHead } from '../domain/stats.js';
 import { state } from '../core/store.js';
+import { isAdmin } from '../core/auth.js';
+import { say, sayUndo, cheer } from '../ui/ui.js';
+import * as Annual from '../domain/annual.js';
 
 let tab = 'puntos';
 let year = null;          // null = toda la historia
@@ -11,7 +14,8 @@ const TABS = [
   { id:'puntos',   label:'Puntos' },
   { id:'promedio', label:'Promedio' },
   { id:'titulos',  label:'Títulos' },
-  { id:'duelo',    label:'Cara a cara' }
+  { id:'duelo',    label:'Cara a cara' },
+  { id:'anual',    label:'Copa Anual' }
 ];
 
 export function renderStats(view) {
@@ -22,12 +26,129 @@ export function renderStats(view) {
 
   view.addEventListener('click', e => {
     const t = e.target.closest('[data-tab]');
-    if (t) { tab = t.dataset.tab; return paint(); }
+    if (t) {
+      tab = t.dataset.tab;
+      if (tab === 'anual' && year === null) year = years()[0] ?? null;
+      return paint();
+    }
     const y = e.target.closest('[data-year]');
     if (y) { year = y.dataset.year === 'todo' ? null : Number(y.dataset.year); return paint(); }
+    if (annualClicks(e, paint)) return;
   });
 
   paint();
+}
+
+/* ---------- Copa Anual ---------- */
+
+function anual() {
+  const y = year ?? years()[0];
+  if (!y) return `<div class="empty"><i class="ti ti-calendar-off"></i>
+    <strong>Todavía no hay años para cerrar</strong>Jugá el primer torneo.</div>`;
+
+  const cup = Annual.cupOf(y);
+  if (cup) {
+    return `<div class="plaque">
+      <div class="plaque-in">
+        <i class="ti ti-trophy cup"></i>
+        <div class="kicker">Copa Anual ${y}</div>
+        <div class="who">${esc(nameOf(cup.champion))}</div>
+        <span class="flag-xl">${flag(cup.champion)}</span>
+      </div>
+    </div>
+    ${isAdmin() ? `<div style="text-align:center;margin-top:12px">
+      <button class="btn danger sm" data-cup-del="${cup.id}">Borrar la Copa Anual ${y}</button>
+    </div>` : ''}`;
+  }
+
+  const draft = Annual.draftOf(y);
+  if (draft) return enCurso(draft, y);
+
+  const cross = Annual.matchup(y);
+  if (!cross) return `<div class="empty"><i class="ti ti-calendar-off"></i>
+    <strong>Falta jugar más en ${y}</strong>
+    Hacen falta al menos dos selecciones con partidos y un campeón para armar el cruce.</div>`;
+
+  const explica = cross.kind === 'repechaje'
+    ? `${flag(cross.espera)} <b>${esc(nameOf(cross.espera))}</b> lidera los puntos y los títulos de ${y}, así que espera en la final.
+       ${flag(cross.duelo[0])} ${esc(nameOf(cross.duelo[0]))} y ${flag(cross.duelo[1])} ${esc(nameOf(cross.duelo[1]))} definen quién lo enfrenta.`
+    : `${flag(cross.final[0])} <b>${esc(nameOf(cross.final[0]))}</b> sumó más puntos en ${y} y
+       ${flag(cross.final[1])} <b>${esc(nameOf(cross.final[1]))}</b> ganó más torneos. Se enfrentan por la Copa Anual.`;
+
+  return `<p class="block-note">${explica}</p>
+    ${isAdmin()
+      ? `<button class="btn gold" data-cup-start="${y}">Armar la Copa Anual ${y}</button>`
+      : `<div class="empty"><i class="ti ti-hourglass"></i><strong>Falta que el organizador la arme</strong></div>`}`;
+}
+
+function enCurso(d, y) {
+  const admin = isAdmin();
+  const game = (g, which, titulo) => `
+    <div class="fixture-head">${titulo}</div>
+    <div class="game ${g.played ? 'done' : ''}">
+      <span class="t ${Annual.winnerOf(g) === g.home ? 'win' : ''}">${flag(g.home)}<span>${esc(nameOf(g.home))}</span></span>
+      <span class="mark">
+        ${admin
+          ? `<input class="score" type="number" min="0" inputmode="numeric" value="${g.hg ?? ''}" placeholder="–" data-cup="${y}:${which}:hg">
+             <input class="score" type="number" min="0" inputmode="numeric" value="${g.ag ?? ''}" placeholder="–" data-cup="${y}:${which}:ag">`
+          : `<span class="score" style="display:grid;place-items:center">${g.hg ?? '–'}</span>
+             <span class="score" style="display:grid;place-items:center">${g.ag ?? '–'}</span>`}
+      </span>
+      <span class="t away ${Annual.winnerOf(g) === g.away ? 'win' : ''}">${flag(g.away)}<span>${esc(nameOf(g.away))}</span></span>
+    </div>
+    ${admin && g.played && g.hg === g.ag && !g.penWinner ? `
+      <div class="pens">Empataron. ¿Quién pasó por penales?
+        <div class="row">
+          <button class="btn sm" data-cup-pen="${y}:${which}:${g.home}">${flag(g.home)} ${esc(nameOf(g.home))}</button>
+          <button class="btn sm" data-cup-pen="${y}:${which}:${g.away}">${flag(g.away)} ${esc(nameOf(g.away))}</button>
+        </div>
+      </div>` : ''}`;
+
+  const champ = Annual.winnerOf(d.final);
+
+  return `
+    ${d.semi ? game(d.semi, 'semi', 'Repechaje: define quién juega la final') : ''}
+    ${d.stage === 'repechaje'
+      ? `<p class="block-note">${flag(d.waiting)} ${esc(nameOf(d.waiting))} espera en la final.</p>`
+      : game(d.final, 'final', `Final de la Copa Anual ${y}`)}
+    ${champ && admin ? `<div style="margin-top:12px">
+        <button class="btn gold" data-cup-crown="${y}">Coronar a ${esc(nameOf(champ))}</button>
+      </div>` : ''}
+    ${admin ? `<div style="margin-top:10px">
+        <button class="btn danger sm" data-cup-cancel="${y}">Cancelar la Copa Anual</button>
+      </div>` : ''}`;
+}
+
+function annualClicks(e, paint) {
+  const start = e.target.closest('[data-cup-start]');
+  if (start) { Annual.start(Number(start.dataset.cupStart)); say('Copa Anual armada'); paint(); return true; }
+
+  const pen = e.target.closest('[data-cup-pen]');
+  if (pen) {
+    const [y, which, who] = pen.dataset.cupPen.split(':');
+    const d = Annual.draftOf(Number(y));
+    d[which].penWinner = who;
+    Annual.refresh(Number(y));
+    cheer(); paint(); return true;
+  }
+
+  const crown = e.target.closest('[data-cup-crown]');
+  if (crown) {
+    const champ = Annual.crown(Number(crown.dataset.cupCrown));
+    if (champ) { say(`Campeón anual: ${nameOf(champ)}`); cheer(); }
+    paint(); return true;
+  }
+
+  const cancel = e.target.closest('[data-cup-cancel]');
+  if (cancel) { Annual.cancelDraft(Number(cancel.dataset.cupCancel)); say('Copa Anual cancelada'); paint(); return true; }
+
+  const del = e.target.closest('[data-cup-del]');
+  if (del) {
+    const r = Annual.removeCup(del.dataset.cupDel);
+    if (r) sayUndo('Copa Anual borrada', () => { Annual.restoreCup(r.copy, r.at); say('Copa restaurada'); paint(); });
+    paint(); return true;
+  }
+  return false;
 }
 
 function wire(view, paint) {
@@ -37,6 +158,21 @@ function wire(view, paint) {
   if (b) b.onchange = e => { duoB = e.target.value; paint(); };
   const swap = view.querySelector('#swap');
   if (swap) swap.onclick = () => { [duoA, duoB] = [duoB, duoA]; paint(); };
+
+  view.querySelectorAll('[data-cup]').forEach(inp => {
+    inp.onchange = () => {
+      const [y, which, side] = inp.dataset.cup.split(':');
+      const d = Annual.draftOf(Number(y));
+      if (!d) return;
+      const g = d[which];
+      g[side] = inp.value === '' ? null : Math.max(0, parseInt(inp.value, 10) || 0);
+      g.played = g.hg !== null && g.ag !== null;
+      if (g.played && g.hg !== g.ag) g.penWinner = null;
+      Annual.refresh(Number(y));
+      if (g.played) cheer();
+      paint();
+    };
+  });
 }
 
 function html() {
@@ -55,19 +191,21 @@ function html() {
       ${TABS.map(t => `<button class="opt ${tab === t.id ? 'on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
     </div>
 
-    ${tab === 'duelo' ? '' : yearPicker()}
+    ${tab === 'duelo' ? '' : yearPicker(tab === 'anual')}
     ${tab === 'puntos'   ? tablaPuntos()   : ''}
     ${tab === 'promedio' ? tablaPromedio() : ''}
     ${tab === 'titulos'  ? tablaTitulos()  : ''}
     ${tab === 'duelo'    ? duelo()         : ''}
+    ${tab === 'anual'    ? anual()         : ''}
   </section>`;
 }
 
-function yearPicker() {
+function yearPicker(soloAnios) {
   const ys = years();
-  if (ys.length < 2) return '';
+  if (!ys.length) return '';
+  if (soloAnios && ys.length < 2 && year !== null) return '';
   return `<div class="opts stack">
-    <button class="opt ${year === null ? 'on' : ''}" data-year="todo">Toda la historia</button>
+    ${soloAnios ? '' : `<button class="opt ${year === null ? 'on' : ''}" data-year="todo">Toda la historia</button>`}
     ${ys.map(y => `<button class="opt ${year === y ? 'on' : ''}" data-year="${y}">${y}</button>`).join('')}
   </div>`;
 }
