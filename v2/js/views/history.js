@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, shortDate, say, sayUndo } from '../ui/ui.js';
+import { flag, esc, nameOf, shortDate, say, sayUndo, clip } from '../ui/ui.js';
 import { standingsTable, bracketView } from '../ui/parts.js';
 import { state, update } from '../core/store.js';
 import { finalTable, formatName, progress } from '../domain/engine.js';
@@ -101,7 +101,7 @@ function remove(id, paint) {
   const copy = JSON.parse(JSON.stringify(state.tournaments[at]));
 
   update(() => { state.tournaments.splice(at, 1); });
-  sayUndo(`Borraste «${copy.name}»`, () => {
+  sayUndo(`Borraste «${clip(copy.name)}»`, () => {
     update(() => { state.tournaments.splice(at, 0, copy); });
     say('Torneo restaurado');
     paint();

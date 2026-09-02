@@ -1,6 +1,7 @@
 import { flag, esc, nameOf } from '../ui/ui.js';
 import { mainColorOf, TEAMS } from '../domain/teams.js';
-import { crunch, byPoints, byAverage, byTitles, years, headToHead } from '../domain/stats.js';
+import { crunch, byPoints, byAverage, byTitles, years, headToHead,
+         reached, coming } from '../domain/stats.js';
 import { state } from '../core/store.js';
 import { isAdmin } from '../core/auth.js';
 import { say, sayUndo, cheer } from '../ui/ui.js';
@@ -15,7 +16,8 @@ const TABS = [
   { id:'promedio', label:'Promedio' },
   { id:'titulos',  label:'Títulos' },
   { id:'duelo',    label:'Cara a cara' },
-  { id:'anual',    label:'Copa Anual' }
+  { id:'anual',    label:'Copa Anual' },
+  { id:'hitos',    label:'Hitos' }
 ];
 
 export function renderStats(view) {
@@ -37,6 +39,42 @@ export function renderStats(view) {
   });
 
   paint();
+}
+
+/* ---------- Hitos ---------- */
+
+function hitos() {
+  const teams = crunch().teams.filter(t => t.pj > 0);
+  if (!teams.length) return `<div class="empty"><i class="ti ti-flag"></i>
+    <strong>Todavía no hay hitos</strong>Se van marcando solos a medida que juegan.</div>`;
+
+  const logrados = reached(teams);
+  const cerca = coming(teams);
+
+  const ficha = (h, pendiente) => `
+    <article class="rec ${h.metric.good ? '' : 'bad'}">
+      <div class="rec-n"><b>${h.step}</b></div>
+      <div class="rec-b">
+        <div class="rec-w">${flag(h.id)} <span>${esc(nameOf(h.id))}</span></div>
+        <div class="rec-l">
+          ${h.metric.label}
+          ${pendiente ? ` · le faltan ${h.missing}` : ` · va por ${h.value}`}
+        </div>
+      </div>
+    </article>`;
+
+  return `
+    ${cerca.length ? `
+      <h3 style="margin:6px 0 4px">Están por caer</h3>
+      <p class="block-note">A quince o menos de alcanzar el próximo escalón.</p>
+      <div class="recs" style="margin-bottom:22px">${cerca.map(h => ficha(h, true)).join('')}</div>
+    ` : ''}
+    <h3 style="margin:6px 0 4px">Ya alcanzados</h3>
+    <p class="block-note">Los escalones van de 25 en 25 hasta 100, y después de a cientos.</p>
+    ${logrados.length
+      ? `<div class="recs">${logrados.map(h => ficha(h, false)).join('')}</div>`
+      : `<div class="empty"><i class="ti ti-flag"></i>
+          <strong>Ninguno llegó al primer escalón</strong>El primero es a los 25.</div>`}`;
 }
 
 /* ---------- Copa Anual ---------- */
@@ -195,12 +233,13 @@ function html() {
       ${TABS.map(t => `<button class="opt ${tab === t.id ? 'on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
     </div>
 
-    ${tab === 'duelo' ? '' : yearPicker(tab === 'anual')}
+    ${(tab === 'duelo' || tab === 'hitos') ? '' : yearPicker(tab === 'anual')}
     ${tab === 'puntos'   ? tablaPuntos()   : ''}
     ${tab === 'promedio' ? tablaPromedio() : ''}
     ${tab === 'titulos'  ? tablaTitulos()  : ''}
     ${tab === 'duelo'    ? duelo()         : ''}
     ${tab === 'anual'    ? anual()         : ''}
+    ${tab === 'hitos'    ? hitos()         : ''}
   </section>`;
 }
 
