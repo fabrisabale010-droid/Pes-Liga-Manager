@@ -34,10 +34,12 @@ function paint() {
   if (!allowed(id)) id = 'inicio';
   current = id;
 
-  /* Se reemplaza el contenedor por uno limpio: así los listeners que cada
-     vista engancha mueren con él y nunca se duplican entre navegaciones. */
+  /* Contenedor nuevo en cada render: los listeners que engancha cada vista
+     mueren con el anterior y no se heredan marcas de estado. */
   const old = el('view');
-  const view = old.cloneNode(false);
+  const view = document.createElement('main');
+  view.id = 'view';
+  view.tabIndex = -1;
   old.replaceWith(view);
 
   views.get(id)?.(view);
