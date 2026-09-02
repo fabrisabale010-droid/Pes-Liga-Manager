@@ -24,7 +24,40 @@ export function flag(id) {
   return `<span class="fi fi-${t.iso}" title="${esc(t.name)}"></span>`;
 }
 
-export const cup = () => '<i class="ti ti-trophy cup-i"></i>';
+/* El trofeo de toda la app: la silueta de la copa, dibujada a mano para
+   poder pintarla con degradé dorado y darle brillo propio. Sale de acá una
+   sola vez, así que cambiándolo se actualiza en toda la app. */
+export function cup(extra = '') {
+  return `<svg class="cup-svg ${extra}" viewBox="0 0 48 64" aria-hidden="true">
+    <defs>
+      <linearGradient id="cupGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#fff4d2"/>
+        <stop offset="42%"  stop-color="#e8be4c"/>
+        <stop offset="78%"  stop-color="#b8892a"/>
+        <stop offset="100%" stop-color="#8a6318"/>
+      </linearGradient>
+      <linearGradient id="cupShine" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"   stop-color="#fff" stop-opacity=".85"/>
+        <stop offset="45%"  stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <g fill="none" stroke="url(#cupGold)" stroke-width="4.6"
+       stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 3.6c8.2 0 14.6 6.3 14.6 14.2 0 3.4-.9 6.1-2.4 9.6
+               -3.6 8.3-5.2 14.6-5.2 21.1 0 4.6.7 8.6 2.3 12.9H14.7
+               c1.6-4.3 2.3-8.3 2.3-12.9 0-6.5-1.6-12.8-5.2-21.1
+               C10.3 23.9 9.4 21.2 9.4 17.8 9.4 9.9 15.8 3.6 24 3.6Z"/>
+      <path d="M17.4 21.6c1.9 0 3.4-1.6 3.4-3.7 0-1.2-.3-2.2-.7-3.4
+               -.5-1.4-.8-2.4-.8-3.3 0-1.7 1.1-3 2.7-3 2.6 0 5.2 3.9 7.3 9.1
+               1.3 3.2 2.7 4.8 5.3 5.2"/>
+      <path d="M20.4 24.2c2.4 3.8 3.6 7.1 3.6 11 0 5.3-2.1 11-6 17.6"/>
+      <path d="M15.6 52.8h16.8"/>
+    </g>
+    <path d="M24 3.6c-8.2 0-14.6 6.3-14.6 14.2 0 3.4.9 6.1 2.4 9.6"
+          fill="none" stroke="url(#cupShine)" stroke-width="3"
+          stroke-linecap="round"/>
+  </svg>`;
+}
 
 /* Cuando cargues escudos oficiales en teams.js, aparecen solos. */
 export function crest(id, size = 28) {

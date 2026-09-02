@@ -1,7 +1,7 @@
 import { flag, esc, nameOf, openModal, cup } from './ui.js';
 import { mainColorOf } from '../domain/teams.js';
 import { table, tieWinner, roundName, groupTable } from '../domain/engine.js';
-import { state } from '../core/store.js';
+import { tournaments } from '../core/store.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 
 /* ---------- Tabla de posiciones ---------- */
@@ -99,7 +99,7 @@ export function groupsView(t) {
 
 export function titlesCount() {
   const count = { ...TITLES_BEFORE_APP };
-  state.tournaments.forEach(t => {
+  tournaments().forEach(t => {
     if (t.finished && t.champion) count[t.champion] = (count[t.champion] || 0) + 1;
   });
   return count;
@@ -107,7 +107,7 @@ export function titlesCount() {
 
 export function openTeamCard(id) {
   let pj = 0, pts = 0, played = 0;
-  state.tournaments.forEach(t => {
+  tournaments().forEach(t => {
     if (!t.teamIds.includes(id)) return;
     played++;
     const row = table(t.teamIds, t.games).find(r => r.id === id);
