@@ -232,6 +232,26 @@ table.standings .num{font-family:'Space Mono',monospace;}
 table.standings .pts{font-family:'Space Mono',monospace; color:var(--light-soft); font-weight:700;}
 table.standings tr.lead td{background:rgba(77,141,255,.07);}
 
+/* La selección y los puntos quedan a la vista aunque se desplace al costado. */
+.table-scroll{background:var(--stand); border:1px solid var(--line); border-radius:var(--r-m);}
+table.standings th.sticky-l,
+table.standings td.sticky-l{position:sticky; left:0; z-index:2; background:var(--stand);}
+table.standings th.sticky-r,
+table.standings td.sticky-r{position:sticky; right:0; z-index:2; background:var(--stand);}
+table.standings tr.lead td.sticky-l,
+table.standings tr.lead td.sticky-r{background:#101b30;}
+table.standings th.sticky-l,table.standings th.sticky-r{z-index:3;}
+table.standings td.sticky-l::after,
+table.standings th.sticky-l::after{
+  content:''; position:absolute; top:0; right:0; bottom:0; width:6px;
+  background:linear-gradient(90deg,rgba(0,0,0,.35),transparent); pointer-events:none;
+}
+table.standings td.sticky-r::before,
+table.standings th.sticky-r::before{
+  content:''; position:absolute; top:0; left:0; bottom:0; width:6px;
+  background:linear-gradient(270deg,rgba(0,0,0,.35),transparent); pointer-events:none;
+}
+
 .side{display:flex; align-items:center; gap:9px; white-space:nowrap; cursor:pointer;}
 .side .rank{
   font-family:'Space Mono',monospace; font-size:11px; color:var(--ink-faint);
@@ -283,44 +303,61 @@ table.standings tr.lead td{background:rgba(77,141,255,.07);}
 
 /* ---------- Vitrina ---------- */
 
-.cabinet{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:10px;}
+.cabinet{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:10px; align-items:start;}
 .slot{
+  position:relative; z-index:0; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
   border:1px solid rgba(224,178,61,.28); border-radius:var(--r-m);
-  background:radial-gradient(280px 120px at 50% -20px,rgba(224,178,61,.10),transparent 70%),rgba(0,0,0,.26);
-  padding:15px 10px; text-align:center;
+  background:rgba(16,12,4,.4); padding:15px 10px; text-align:center;
 }
 .slot.top{
-  border-color:var(--trophy);
-  background:radial-gradient(280px 120px at 50% -20px,rgba(224,178,61,.22),transparent 70%),rgba(0,0,0,.26);
-  box-shadow:inset 0 0 0 1px rgba(224,178,61,.3), 0 0 26px rgba(224,178,61,.12);
+  border-color:var(--trophy); background:rgba(38,28,8,.55);
+  box-shadow:inset 0 0 0 1px rgba(224,178,61,.28);
 }
-.slot .fl{font-size:29px; display:block;}
-.slot .nm{font-size:12.5px; font-weight:700; margin:6px 0 6px;}
-.slot .n{
-  display:flex; align-items:center; justify-content:center; gap:6px;
-  font-family:'Space Mono',monospace; font-size:21px; font-weight:700;
-  background:linear-gradient(180deg,var(--trophy-hi),var(--trophy) 55%,var(--trophy-lo));
-  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--trophy);
-}
-.slot .u{font-size:9.5px; color:var(--ink-faint); margin-top:3px;}
+.slot .fl{font-size:29px; line-height:1;}
+.slot .nm{font-size:12.5px; font-weight:700;}
+.slot .n{display:flex; align-items:center; justify-content:center; gap:6px; color:var(--trophy);}
+.slot .n b{font-family:'Space Mono',monospace; font-size:21px; font-weight:700;}
+.slot .n i{font-size:17px;}
+.slot .u{font-size:9.5px; color:var(--ink-faint);}
 
 /* ---------- Récords ---------- */
 
-.recs{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:9px;}
+.recs{display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:10px;}
 .rec{
-  display:flex; align-items:center; gap:13px;
-  border:1px solid var(--line); border-left:3px solid var(--grass);
-  border-radius:var(--r-s); background:rgba(0,0,0,.24); padding:12px 14px;
+  display:flex; align-items:center; gap:14px;
+  border:1px solid var(--line); border-left:4px solid var(--grass);
+  border-radius:var(--r-m); background:linear-gradient(90deg,rgba(47,168,106,.09),transparent 55%),var(--stand);
+  padding:13px 15px; min-width:0;
 }
-.rec.bad{border-left-color:var(--red);}
-.rec-v{
-  font-family:'Space Mono',monospace; font-size:20px; font-weight:700;
-  color:var(--grass); flex:0 0 auto; min-width:44px;
+.rec.bad{
+  border-left-color:var(--red);
+  background:linear-gradient(90deg,rgba(214,69,91,.09),transparent 55%),var(--stand);
 }
-.rec.bad .rec-v{color:#f0909e;}
-.rec-t{min-width:0;}
-.rec-t strong{display:block; font-size:13.5px; font-weight:600;}
-.rec-t span{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+.rec-n{display:flex; align-items:baseline; gap:1px; flex:0 0 auto; color:var(--grass);}
+.rec.bad .rec-n{color:#f0909e;}
+.rec-n b{font-family:'Space Mono',monospace; font-size:26px; font-weight:700; line-height:1;}
+.rec-n i{font-family:'Space Mono',monospace; font-size:14px; font-style:normal;}
+.rec-b{min-width:0; flex:1;}
+.rec-w{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700;}
+.rec-w span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rec-l{font-size:11.5px; color:var(--ink-faint); margin-top:2px; line-height:1.3;}
+
+/* ---------- Cara a cara ---------- */
+
+.duel{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+  border:1px solid var(--line); border-radius:var(--r-m); background:var(--stand); padding:18px 14px;
+}
+.duel-side{display:flex; flex-direction:column; align-items:center; gap:3px;}
+.duel-side span{font-size:30px;}
+.duel-side b{font-family:'Space Mono',monospace; font-size:30px; color:var(--light-soft); line-height:1;}
+.duel-side small{font-size:11.5px; color:var(--ink-dim); text-align:center;}
+.duel-mid{display:flex; flex-direction:column; align-items:center; gap:2px; padding:0 6px;}
+.duel-mid b{font-family:'Space Mono',monospace; font-size:21px; color:var(--ink-dim);}
+.duel-mid small{font-size:10px; color:var(--ink-faint);}
+.duel-mid span{font-size:10px; color:var(--ink-faint); margin-top:4px;}
+.duel-src{font-size:10.5px; color:var(--ink-faint); padding:0 4px 10px; margin-top:-6px;}
 
 /* ---------- Historial ---------- */
 
