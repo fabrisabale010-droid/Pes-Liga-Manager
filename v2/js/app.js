@@ -1,4 +1,4 @@
-import { state, loadLocal, connect, subscribe, update, liveTournament, lastChampion } from './core/store.js';
+import { state, loadLocal, connect, subscribe, update, liveTournament, lastChampion, purgeTrash } from './core/store.js';
 import { isAdmin, signIn, signOut, onAdminChange, lockRemaining } from './core/auth.js';
 import { el, say, openModal, closeModal, closeSheet, setSound, esc, flag, nameOf } from './ui/ui.js';
 import { enableTeamCards, standingsTable, groupsView, bracketView, gameRow } from './ui/parts.js';
@@ -37,6 +37,7 @@ connect({
 }).then(ok => {
   if (ok) repaint();
   else say('Sin conexión: se guarda en este dispositivo');
+  purgeTrash();          // saca lo que ya cumplió los días en la papelera
 });
 
 /* ---------- Sesión de organizador ---------- */

@@ -33,5 +33,9 @@ export const TITLES_BEFORE_APP = { BRA:6, ITA:2, FRA:1 };
 /* Último campeón previo a la app, para que Inicio nunca esté vacío. */
 export const CHAMPION_BEFORE_APP = 'BRA';
 
+/* Los torneos borrados quedan recuperables en la papelera este tiempo.
+   Pasado el plazo se limpian solos la próxima vez que alguien abre la app. */
+export const TRASH_DAYS = 7;
+
 export const MAX_TEAMS = 16;
 export const MAX_PLAYERS = 10;
