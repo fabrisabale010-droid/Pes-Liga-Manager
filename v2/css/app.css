@@ -349,6 +349,19 @@ table.standings th.sticky-r::before{
 .rec-w span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .rec-l{font-size:11.5px; color:var(--ink-faint); margin-top:2px; line-height:1.3;}
 
+/* Botón de compartir de cada récord: discreto hasta que se lo busca. */
+.rec{position:relative;}
+.rec-share{
+  position:absolute; top:8px; right:8px;
+  width:30px; height:30px; display:grid; place-items:center;
+  background:transparent; border:1px solid var(--line); border-radius:50%;
+  color:var(--ink-faint); font-size:14px; cursor:pointer;
+  transition:color .15s, border-color .15s;
+}
+.rec-share:hover{color:var(--light-soft); border-color:var(--light);}
+.rec-share:disabled{opacity:.4;}
+.rec-b{padding-right:26px;}
+
 /* ---------- Cara a cara ---------- */
 
 .duel{
@@ -457,6 +470,10 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
   border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.1),0 1px 3px rgba(0,0,0,.4);
 }
 .fi-x::before{content:"\00a0";}
+
+/* Escudos: se muestran enteros, sin recortar el diseño. */
+.crest-img{object-fit:contain; vertical-align:middle; display:inline-block;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.45));}
 /* El trofeo, dibujado a mano. Toma el tamaño del texto que lo rodea. */
 .cup-svg{
   width:1.15em; height:1.5em; display:inline-block; vertical-align:-.32em;
