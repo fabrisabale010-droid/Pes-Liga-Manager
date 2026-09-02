@@ -52,12 +52,17 @@ que sabía.
 **Sesión que caduca.** El PIN sigue con hash, pero ahora la sesión de organizador
 vence a las 12 horas y hay bloqueo tras cinco intentos.
 
+**Récords.** De 5 a 21, repartidos en "Para presumir" y "Para cargarse un rato".
+Las rachas se calculan recorriendo todos los partidos en orden real, así que
+cruzan torneos distintos.
+
+**Estadísticas.** Tablas históricas de puntos, promedio y títulos, con filtro por
+año, más el cara a cara entre dos selecciones.
+
 ## Qué falta para igualar a la 1.0
 
 - Copa Anual (el cruce entre el líder de la tabla anual y el de títulos).
-- Tablas históricas: puntos acumulados, promedios, tabla anual y de títulos.
-- Historial cara a cara entre dos selecciones.
-- Hitos (50/100/200 goles, etc.).
+- Hitos de 50 / 100 / 200 goles y similares.
 
 Hasta que estén, conviene tener las dos versiones publicadas.
 
