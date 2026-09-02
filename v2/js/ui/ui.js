@@ -2,6 +2,10 @@ import { team, nameOf, colorsOf } from '../domain/teams.js';
 
 /* ---------- Texto ---------- */
 
+/* Recorta un texto largo para que entre en un aviso sin desarmarlo. */
+export const clip = (t, max = 26) =>
+  String(t).length > max ? String(t).slice(0, max - 1).trimEnd() + '…' : String(t);
+
 export const esc = s => String(s ?? '').replace(/[&<>"']/g,
   c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
