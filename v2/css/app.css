@@ -304,6 +304,24 @@ table.standings tr.lead td{background:rgba(77,141,255,.07);}
 }
 .slot .u{font-size:9.5px; color:var(--ink-faint); margin-top:3px;}
 
+/* ---------- Récords ---------- */
+
+.recs{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:9px;}
+.rec{
+  display:flex; align-items:center; gap:13px;
+  border:1px solid var(--line); border-left:3px solid var(--grass);
+  border-radius:var(--r-s); background:rgba(0,0,0,.24); padding:12px 14px;
+}
+.rec.bad{border-left-color:var(--red);}
+.rec-v{
+  font-family:'Space Mono',monospace; font-size:20px; font-weight:700;
+  color:var(--grass); flex:0 0 auto; min-width:44px;
+}
+.rec.bad .rec-v{color:#f0909e;}
+.rec-t{min-width:0;}
+.rec-t strong{display:block; font-size:13.5px; font-weight:600;}
+.rec-t span{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+
 /* ---------- Historial ---------- */
 
 .log{display:flex; flex-direction:column; gap:8px;}
