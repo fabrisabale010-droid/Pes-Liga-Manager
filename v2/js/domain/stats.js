@@ -149,3 +149,51 @@ export function headToHead(a, b) {
 
   return res;
 }
+
+/* ---------- Hitos ---------- */
+
+const STEPS = [25, 50, 100, 150, 200, 300, 400, 500, 750, 1000];
+
+export const METRICS = [
+  { key:'gf',  label:'goles a favor',   icon:'ti-ball-football', good:true },
+  { key:'pts', label:'puntos sumados',  icon:'ti-medal',         good:true },
+  { key:'pg',  label:'partidos ganados',icon:'ti-trophy',        good:true },
+  { key:'pj',  label:'partidos jugados',icon:'ti-history',       good:true },
+  { key:'gc',  label:'goles recibidos', icon:'ti-shield-off',    good:false },
+  { key:'pp',  label:'partidos perdidos',icon:'ti-mood-sad',     good:false }
+];
+
+/* Para un valor devuelve el último escalón alcanzado y cuánto falta para el próximo. */
+export function milestone(value) {
+  const done = [...STEPS].reverse().find(s => value >= s) ?? null;
+  const next = STEPS.find(s => s > value) ?? null;
+  return { done, next, missing: next === null ? null : next - value };
+}
+
+/* Todo lo alcanzado, de lo más grande a lo más chico. */
+export function reached(teams) {
+  const out = [];
+  teams.forEach(t => {
+    METRICS.forEach(m => {
+      const { done } = milestone(t[m.key] ?? 0);
+      if (done) out.push({ id: t.id, metric: m, step: done, value: t[m.key] });
+    });
+  });
+  return out.sort((a, b) => b.step - a.step || a.metric.key.localeCompare(b.metric.key));
+}
+
+/* Lo que está por caer: sirve para saber qué mirar el próximo torneo. */
+export function coming(teams, within = 15) {
+  const out = [];
+  teams.forEach(t => {
+    METRICS.forEach(m => {
+      const value = t[m.key] ?? 0;
+      if (!value) return;
+      const { next, missing } = milestone(value);
+      if (next !== null && missing <= within) {
+        out.push({ id: t.id, metric: m, step: next, missing, value });
+      }
+    });
+  });
+  return out.sort((a, b) => a.missing - b.missing || b.step - a.step);
+}
