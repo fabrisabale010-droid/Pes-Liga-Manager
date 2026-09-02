@@ -1,7 +1,7 @@
 /* Única fuente de verdad. Las vistas leen de acá y se enteran de los cambios
    por suscripción: ninguna vista habla con Firebase directamente. */
 
-import { firebaseConfig, DOC_PATH, LEGACY_DOC_PATH, LOCAL_KEY } from '../config.js';
+import { firebaseConfig, DOC_PATH, LEGACY_DOC_PATH, LOCAL_KEY, TRASH_DAYS } from '../config.js';
 import { uid, advance } from '../domain/engine.js';
 
 const listeners = new Set();
@@ -188,15 +188,57 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
 
 export const isOnline = () => online;
 
+/* ---------- Papelera ---------- */
+
+/* Borrar no elimina: marca. Así se puede volver atrás durante TRASH_DAYS días. */
+export const tournaments = () => state.tournaments.filter(t => !t.deletedAt);
+export const trashed = () =>
+  state.tournaments.filter(t => t.deletedAt)
+    .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+
+export const trashDaysLeft = t => {
+  const gone = (Date.now() - new Date(t.deletedAt).getTime()) / 86400000;
+  return Math.max(0, Math.ceil(TRASH_DAYS - gone));
+};
+
+export function sendToTrash(id) {
+  const t = state.tournaments.find(x => x.id === id);
+  if (!t) return null;
+  update(() => { t.deletedAt = new Date().toISOString(); });
+  return t;
+}
+
+export function restoreFromTrash(id) {
+  const t = state.tournaments.find(x => x.id === id);
+  if (!t) return null;
+  update(() => { delete t.deletedAt; });
+  return t;
+}
+
+export function emptyTrash() {
+  update(() => { state.tournaments = state.tournaments.filter(t => !t.deletedAt); });
+}
+
+/* Se ejecuta al abrir: saca lo que ya cumplió el plazo. */
+export function purgeTrash() {
+  const limit = Date.now() - TRASH_DAYS * 86400000;
+  const before = state.tournaments.length;
+  const keep = state.tournaments.filter(t =>
+    !t.deletedAt || new Date(t.deletedAt).getTime() > limit);
+  if (keep.length === before) return 0;
+  update(() => { state.tournaments = keep; });
+  return before - keep.length;
+}
+
 /* ---------- Consultas de uso común ---------- */
 
 export const liveTournament = () =>
-  state.tournaments.find(t => !t.finished) || null;
+  tournaments().find(t => !t.finished) || null;
 
 export const lastChampion = () =>
-  [...state.tournaments]
+  tournaments()
     .filter(t => t.finished && t.champion)
     .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt))[0] || null;
 
 export const tournamentById = id =>
-  state.tournaments.find(t => t.id === id) || null;
+  tournaments().find(t => t.id === id) || null;
