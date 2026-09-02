@@ -172,8 +172,6 @@ main{
   padding:26px 18px 22px; text-align:center;
 }
 .plaque-in{position:relative; z-index:2;}
-.plaque .cup{font-size:44px; color:var(--trophy); display:block; margin-bottom:2px;
-  filter:drop-shadow(0 3px 10px rgba(224,178,61,.45));}
 .plaque .who{font-family:'Rajdhani',sans-serif; font-size:30px; font-weight:700; margin-top:6px;
   background:linear-gradient(180deg,var(--trophy-hi),var(--trophy) 55%,var(--trophy-lo));
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--trophy);}
@@ -451,7 +449,24 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
   border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.1),0 1px 3px rgba(0,0,0,.4);
 }
 .fi-x::before{content:"\00a0";}
-.cup-i{color:var(--trophy);}
+/* El trofeo, dibujado a mano. Toma el tamaño del texto que lo rodea. */
+.cup-svg{
+  width:1.15em; height:1.5em; display:inline-block; vertical-align:-.32em;
+  filter:drop-shadow(0 1px 3px rgba(224,178,61,.5));
+}
+
+/* En la placa del campeón va grande y con un brillo que va y viene. */
+.plaque .cup-svg{
+  width:auto; height:56px; display:block; margin:0 auto 2px;
+  animation:cupGlow 3.4s ease-in-out infinite;
+}
+@keyframes cupGlow{
+  0%,100%{ filter:drop-shadow(0 3px 9px rgba(224,178,61,.4)); }
+  50%    { filter:drop-shadow(0 3px 20px rgba(255,228,158,.85)); }
+}
+
+.slot .n .cup-svg{height:1.15em; width:auto;}
+.block > h2 .cup-svg{height:1.05em; width:auto; vertical-align:-.18em;}
 
 /* ---------- Superposiciones ---------- */
 
