@@ -69,11 +69,15 @@ function anual() {
     <strong>Falta jugar más en ${y}</strong>
     Hacen falta al menos dos selecciones con partidos y un campeón para armar el cruce.</div>`;
 
-  const explica = cross.kind === 'repechaje'
-    ? `${flag(cross.espera)} <b>${esc(nameOf(cross.espera))}</b> lidera los puntos y los títulos de ${y}, así que espera en la final.
-       ${flag(cross.duelo[0])} ${esc(nameOf(cross.duelo[0]))} y ${flag(cross.duelo[1])} ${esc(nameOf(cross.duelo[1]))} definen quién lo enfrenta.`
-    : `${flag(cross.final[0])} <b>${esc(nameOf(cross.final[0]))}</b> sumó más puntos en ${y} y
-       ${flag(cross.final[1])} <b>${esc(nameOf(cross.final[1]))}</b> ganó más torneos. Se enfrentan por la Copa Anual.`;
+  const explica =
+    cross.kind === 'repechaje'
+      ? `${flag(cross.espera)} <b>${esc(nameOf(cross.espera))}</b> lidera los puntos y los títulos de ${y}, así que espera en la final.
+         ${flag(cross.duelo[0])} ${esc(nameOf(cross.duelo[0]))} y ${flag(cross.duelo[1])} ${esc(nameOf(cross.duelo[1]))} definen quién lo enfrenta.`
+      : cross.kind === 'barrida'
+        ? `${flag(cross.lider)} <b>${esc(nameOf(cross.lider))}</b> ganó todos los torneos de ${y} y además sumó más puntos.
+           Lo enfrenta ${flag(cross.rival)} <b>${esc(nameOf(cross.rival))}</b>, el segundo en puntos.`
+        : `${flag(cross.final[0])} <b>${esc(nameOf(cross.final[0]))}</b> sumó más puntos en ${y} y
+           ${flag(cross.final[1])} <b>${esc(nameOf(cross.final[1]))}</b> ganó más torneos. Se enfrentan por la Copa Anual.`;
 
   return `<p class="block-note">${explica}</p>
     ${isAdmin()
