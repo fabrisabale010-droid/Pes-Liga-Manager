@@ -1,7 +1,7 @@
 /* Números de toda la historia. Los usa tanto la Vitrina (récords) como
    Estadísticas (tablas históricas y cara a cara). */
 
-import { state } from '../core/store.js';
+import { tournaments } from '../core/store.js';
 import { finalTable } from './engine.js';
 import { nameOf } from './teams.js';
 
@@ -9,7 +9,7 @@ import { nameOf } from './teams.js';
    Hace falta ese orden para poder calcular rachas que crucen torneos. */
 export function allGames({ year = null } = {}) {
   const out = [];
-  [...state.tournaments]
+  [...tournaments()]
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     .forEach(t => {
       if (year && new Date(t.createdAt).getFullYear() !== year) return;
@@ -24,7 +24,7 @@ export function allGames({ year = null } = {}) {
 }
 
 export function years() {
-  return [...new Set(state.tournaments.map(t => new Date(t.createdAt).getFullYear()))]
+  return [...new Set(tournaments().map(t => new Date(t.createdAt).getFullYear()))]
     .sort((a, b) => b - a);
 }
 
@@ -45,7 +45,7 @@ export function crunch({ year = null } = {}) {
 
   let goles = 0, partidos = 0, mayorGoleada = null, masGoles = null;
 
-  state.tournaments.forEach(t => {
+  tournaments().forEach(t => {
     if (year && new Date(t.createdAt).getFullYear() !== year) return;
     t.teamIds.forEach(id => { get(id).torneos++; });
   });
@@ -95,7 +95,7 @@ export function crunch({ year = null } = {}) {
     });
   });
 
-  state.tournaments.forEach(t => {
+  tournaments().forEach(t => {
     if (!t.finished) return;
     if (year && new Date(t.createdAt).getFullYear() !== year) return;
     const orden = finalTable(t);
