@@ -180,7 +180,15 @@ main{
 .plaque .flag-xl{font-size:34px; margin-top:8px; display:block;}
 
 .fall{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
-.fall i{position:absolute; top:-12px; display:block; animation:fall linear forwards;}
+.fall i{position:absolute; top:-12px; display:block; opacity:.88; animation:fall linear forwards;}
+
+/* Penumbra en el centro: el confeti sigue cayendo, pero no le pelea
+   el contraste al nombre del campeón. */
+.fall::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(115% 62% at 50% 46%,
+    rgba(8,12,22,.86) 0%, rgba(8,12,22,.62) 42%, rgba(8,12,22,0) 76%);
+}
 @keyframes fall{
   from{transform:translateY(0) rotate(0); opacity:1;}
   to{transform:translateY(300px) rotate(400deg); opacity:0;}
