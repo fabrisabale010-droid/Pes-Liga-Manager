@@ -2,9 +2,9 @@ import { flag, esc, nameOf } from '../ui/ui.js';
 import { mainColorOf, TEAMS } from '../domain/teams.js';
 import { crunch, byPoints, byAverage, byTitles, years, headToHead,
          reached, coming } from '../domain/stats.js';
-import { state } from '../core/store.js';
+import { tournaments } from '../core/store.js';
 import { isAdmin } from '../core/auth.js';
-import { say, sayUndo, cheer } from '../ui/ui.js';
+import { say, sayUndo, cheer, cup } from '../ui/ui.js';
 import * as Annual from '../domain/annual.js';
 
 let tab = 'puntos';
@@ -88,7 +88,7 @@ function anual() {
   if (cup) {
     return `<div class="plaque">
       <div class="plaque-in">
-        <i class="ti ti-trophy cup"></i>
+        ${cup("cup")}
         <div class="kicker">Copa Anual ${y}</div>
         <div class="who">${esc(nameOf(cup.champion))}</div>
         <span class="flag-xl">${flag(cup.champion)}</span>
@@ -218,7 +218,7 @@ function wire(view, paint) {
 }
 
 function html() {
-  if (!state.tournaments.length) {
+  if (!tournaments().length) {
     return `<section class="block"><div class="empty">
       <i class="ti ti-chart-bar"></i><strong>Todavía no hay números</strong>
       Cuando se juegue el primer torneo, acá aparece todo.
