@@ -10,11 +10,11 @@ export function standingsTable(rows, { qualify = 0 } = {}) {
   if (!rows.length) return '';
   return `<div class="table-scroll"><table class="standings">
     <thead><tr>
-      <th>Selección</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+      <th class="sticky-l">Selección</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th class="sticky-r">Pts</th>
     </tr></thead>
     <tbody>${rows.map((r, i) => `
       <tr class="${i === 0 ? 'lead' : ''}">
-        <td style="border-left:3px solid ${mainColorOf(r.id)}">
+        <td class="sticky-l" style="border-left:3px solid ${mainColorOf(r.id)}">
           <span class="side ${qualify && i < qualify ? 'q' : ''}" data-team="${r.id}">
             <span class="rank">${i + 1}</span>${flag(r.id)}<span class="nm">${esc(nameOf(r.id))}</span>
           </span>
@@ -22,7 +22,7 @@ export function standingsTable(rows, { qualify = 0 } = {}) {
         <td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pe}</td>
         <td class="num">${r.pp}</td><td class="num">${r.gf}</td><td class="num">${r.gc}</td>
         <td class="num">${r.dg > 0 ? '+' : ''}${r.dg}</td>
-        <td class="pts">${r.pts}</td>
+        <td class="pts sticky-r">${r.pts}</td>
       </tr>`).join('')}
     </tbody></table></div>`;
 }
