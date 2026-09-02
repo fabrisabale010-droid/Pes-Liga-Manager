@@ -59,12 +59,16 @@ cruzan torneos distintos.
 **Estadísticas.** Tablas históricas de puntos, promedio y títulos, con filtro por
 año, más el cara a cara entre dos selecciones.
 
+**Copa Anual.** Cierra el año enfrentando al que más puntos sumó contra el que
+más torneos ganó. Si es el mismo equipo, espera en la final mientras los segundos
+de cada tabla definen quién lo enfrenta. Vive en Estadísticas y sus títulos se
+cuentan aparte en la Vitrina.
+
 ## Qué falta para igualar a la 1.0
 
-- Copa Anual (el cruce entre el líder de la tabla anual y el de títulos).
 - Hitos de 50 / 100 / 200 goles y similares.
 
-Hasta que estén, conviene tener las dos versiones publicadas.
+Con eso, la 2.0 queda completa y se puede jubilar la anterior.
 
 ## Cosas que vas a querer tocar
 
