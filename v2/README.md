@@ -64,11 +64,14 @@ más torneos ganó. Si es el mismo equipo, espera en la final mientras los segun
 de cada tabla definen quién lo enfrenta. Vive en Estadísticas y sus títulos se
 cuentan aparte en la Vitrina.
 
-## Qué falta para igualar a la 1.0
+**Hitos.** Escalones de 25, 50, 100 y de ahí para arriba en goles, puntos,
+victorias, partidos, goles recibidos y derrotas. Además muestra los que están a
+quince o menos de caer, así se sabe qué mirar el próximo torneo.
 
-- Hitos de 50 / 100 / 200 goles y similares.
+## Estado
 
-Con eso, la 2.0 queda completa y se puede jubilar la anterior.
+La 2.0 ya cubre todo lo que hacía la anterior. Cuando la tengas probada un par
+de fechas, se pueden mover los archivos a la raíz y jubilar la 1.0.
 
 ## Cosas que vas a querer tocar
 
