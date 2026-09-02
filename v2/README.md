@@ -68,6 +68,11 @@ cuentan aparte en la Vitrina.
 victorias, partidos, goles recibidos y derrotas. Además muestra los que están a
 quince o menos de caer, así se sabe qué mirar el próximo torneo.
 
+**Papelera.** Borrar un torneo no lo elimina: lo manda a una papelera donde se
+puede recuperar durante 7 días. Mientras tanto no aparece en ninguna tabla,
+vitrina ni récord, como si no existiera. Pasado el plazo se limpia sola. El plazo
+se cambia en `js/config.js` (`TRASH_DAYS`).
+
 ## Estado
 
 La 2.0 ya cubre todo lo que hacía la anterior. Cuando la tengas probada un par
