@@ -1,7 +1,7 @@
 /* Guarda la app en el teléfono para que abra aunque no haya señal.
    Los datos siguen viniendo de Firebase cuando hay conexión. */
 
-const CACHE = 'pes6-v2-5';
+const CACHE = 'pes6-v2-8';
 
 const SHELL = [
   './',
@@ -22,6 +22,7 @@ const SHELL = [
   './js/domain/annual.js',
   './js/ui/ui.js',
   './js/ui/parts.js',
+  './js/ui/cards.js',
   './js/ui/router.js',
   './js/views/home.js',
   './js/views/tournament.js',

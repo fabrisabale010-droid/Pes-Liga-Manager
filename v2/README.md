@@ -73,10 +73,43 @@ puede recuperar durante 7 días. Mientras tanto no aparece en ninguna tabla,
 vitrina ni récord, como si no existiera. Pasado el plazo se limpia sola. El plazo
 se cambia en `js/config.js` (`TRASH_DAYS`).
 
+**Compartir por WhatsApp.** La placa del campeón y cada récord tienen un botón
+que arma una imagen y abre el menú de compartir del celular. La imagen se dibuja
+a medida, no es una captura: se lee bien en el chat y pesa poco. Si el celular no
+permite compartir archivos, la descarga.
+
 ## Estado
 
 La 2.0 ya cubre todo lo que hacía la anterior. Cuando la tengas probada un par
 de fechas, se pueden mover los archivos a la raíz y jubilar la 1.0.
+
+## Escudos de las selecciones
+
+Hay dos caminos. En los dos, la selección que no tenga escudo muestra su
+bandera, así que se puede ir completando de a poco.
+
+**Uno por uno.** En `js/domain/teams.js`, en el campo `crest` de cada selección,
+pegá el enlace directo a la imagen (tiene que empezar con `upload.wikimedia.org`
+y terminar en `.png`). Ya están cargados Brasil, Argentina, Francia, Italia y
+Holanda.
+
+**Todos de una.** Para bajarlos al repositorio y no depender de enlaces ajenos:
+
+1. Corré `tools/bajar_escudos.py` en tu computadora (necesita Python y Pillow:
+   `pip install pillow`). Baja los 30 escudos desde Wikipedia y los deja con el
+   nombre correcto.
+2. Subí la carpeta `crests` que se genera dentro de `v2/`.
+3. En `js/config.js` poné `CRESTS_FROM_FOLDER = true`.
+
+Los escudos aparecen en la placa del campeón, la vitrina, la ficha de cada
+selección y la Copa Anual. En tablas y fixtures se siguen usando banderas, que
+a tamaño chico se leen mucho mejor.
+
+Si a alguna selección le falta su archivo, esa muestra la bandera y el resto se
+ve igual: no hace falta tenerlos todos.
+
+Los escudos son marcas registradas de cada federación. Para un grupo de amigos
+no hay problema, pero no los redistribuyas como si fueran tuyos.
 
 ## Cosas que vas a querer tocar
 
