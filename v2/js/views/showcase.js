@@ -1,6 +1,6 @@
-import { flag, esc, nameOf } from '../ui/ui.js';
+import { flag, esc, nameOf, cup } from '../ui/ui.js';
 import { titlesCount } from '../ui/parts.js';
-import { state } from '../core/store.js';
+import { tournaments } from '../core/store.js';
 import { crunch } from '../domain/stats.js';
 import { annualTitles } from '../domain/annual.js';
 import { TITLES_BEFORE_APP } from '../config.js';
@@ -18,7 +18,7 @@ const FILTERS = [
 export function renderShowcase(view) {
   view.innerHTML = `
     <section class="block">
-      <h2><i class="ti ti-trophy"></i>Vitrina</h2>
+      <h2>${cup()}Vitrina</h2>
       <p class="block-note">Las ligas, las copas y la Copa Anual se cuentan por separado, más los títulos que ya existían antes de la app.</p>
       <div class="opts stack">
         ${FILTERS.map(f => `<button class="opt ${filter === f.id ? 'on' : ''}" data-filter="${f.id}">${f.label}</button>`).join('')}
@@ -41,7 +41,7 @@ function counts() {
   if (filter === 'previo') return { ...TITLES_BEFORE_APP };
   if (filter === 'anual') return annualTitles();
   const out = filter === 'todo' ? { ...TITLES_BEFORE_APP } : {};
-  state.tournaments.forEach(t => {
+  tournaments().forEach(t => {
     if (!t.finished || !t.champion) return;
     const isCup = t.format === 'copa';
     if (filter === 'liga' && isCup) return;
@@ -62,7 +62,7 @@ function cabinet() {
     <div class="slot ${n === best ? 'top' : ''}">
       <span class="fl">${flag(id)}</span>
       <span class="nm">${esc(nameOf(id))}</span>
-      <span class="n"><b>${n}</b><i class="ti ti-trophy"></i></span>
+      <span class="n"><b>${n}</b>${cup()}</span>
       <span class="u">${n === 1 ? 'título' : 'títulos'}</span>
     </div>`).join('')}</div>`;
 }

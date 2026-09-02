@@ -1,6 +1,6 @@
 import { flag, esc, nameOf, say, sayUndo, cheer, thud, openSheet, closeSheet, startConfetti } from '../ui/ui.js';
 import { standingsTable, gameRow, penaltyPicker, bracketView, groupsView } from '../ui/parts.js';
-import { state, update, liveTournament } from '../core/store.js';
+import { update, liveTournament, sendToTrash, restoreFromTrash } from '../core/store.js';
 import {
   table, groupTable, currentDay, progress, formatName,
   qualifiers, buildBracket, advance, tieWinner, champion, needsDecider, finalTable
@@ -190,11 +190,9 @@ function finish(t) {
 }
 
 function cancel(t) {
-  const copy = JSON.parse(JSON.stringify(t));
-  const at = state.tournaments.indexOf(t);
-  update(() => { state.tournaments.splice(at, 1); });
+  sendToTrash(t.id);
   sayUndo('Torneo cancelado', () => {
-    update(() => { state.tournaments.splice(at, 0, copy); });
+    restoreFromTrash(t.id);
     say('Torneo restaurado');
     go('curso');
   });

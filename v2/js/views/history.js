@@ -1,11 +1,13 @@
 import { flag, esc, nameOf, shortDate, say, sayUndo, clip } from '../ui/ui.js';
 import { standingsTable, bracketView } from '../ui/parts.js';
-import { state, update } from '../core/store.js';
+import { tournaments, trashed, trashDaysLeft,
+         sendToTrash, restoreFromTrash, emptyTrash } from '../core/store.js';
 import { finalTable, formatName, progress } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 
 let search = '';
 let openId = null;
+let showTrash = false;
 
 /* El router entrega un contenedor nuevo en cada visita, así que el listener
    se engancha una sola vez acá y todo lo demás sólo repinta el contenido. */
@@ -31,14 +33,31 @@ export function renderHistory(view) {
       return paint();
     }
     const del = e.target.closest('[data-del]');
-    if (del) remove(del.dataset.del, paint);
+    if (del) return remove(del.dataset.del, paint);
+
+    if (e.target.closest('[data-trash-toggle]')) {
+      showTrash = !showTrash;
+      return paint();
+    }
+    const back = e.target.closest('[data-restore]');
+    if (back) {
+      const t = restoreFromTrash(back.dataset.restore);
+      say(`Volvió «${clip(t.name)}»`);
+      return paint();
+    }
+    if (e.target.closest('[data-empty-trash]')) {
+      if (!confirm('¿Vaciar la papelera? Lo que hay adentro se pierde para siempre.')) return;
+      emptyTrash();
+      say('Papelera vacía');
+      return paint();
+    }
   });
 
   paint();
 }
 
 function html() {
-  const all = [...state.tournaments].sort(
+  const all = [...tournaments()].sort(
     (a, b) => new Date(b.finishedAt || b.createdAt) - new Date(a.finishedAt || a.createdAt)
   );
 
@@ -62,6 +81,44 @@ function html() {
     ${list.length ? `<div class="log">${list.map(row).join('')}</div>` : `
       <div class="empty"><i class="ti ti-search-off"></i>
         <strong>Ningún torneo se llama así</strong>Probá con otra palabra.</div>`}
+  </section>
+  ${trashBlock()}`;
+}
+
+/* ---------- Papelera ---------- */
+
+function trashBlock() {
+  if (!isAdmin()) return '';
+  const list = trashed();
+  if (!list.length) return '';
+
+  return `<section class="block">
+    <button class="btn sm" data-trash-toggle>
+      <i class="ti ti-trash"></i>Papelera (${list.length})
+      <i class="ti ti-chevron-${showTrash ? 'up' : 'down'}"></i>
+    </button>
+    ${showTrash ? `
+      <p class="block-note" style="margin-top:12px">
+        Se recuperan de acá durante 7 días. Después se borran solos.
+      </p>
+      <div class="log">
+        ${list.map(t => `
+          <article class="log-item">
+            <div class="log-head" style="cursor:default">
+              <div class="grow">
+                <div class="nm">${esc(t.name)}</div>
+                <div class="sub">
+                  ${t.champion ? `Campeón ${esc(nameOf(t.champion))} · ` : ''}
+                  quedan ${trashDaysLeft(t)} ${trashDaysLeft(t) === 1 ? 'día' : 'días'}
+                </div>
+              </div>
+              <button class="btn sm" data-restore="${t.id}">Restaurar</button>
+            </div>
+          </article>`).join('')}
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn danger sm" data-empty-trash>Vaciar la papelera</button>
+      </div>` : ''}
   </section>`;
 }
 
@@ -96,13 +153,10 @@ function row(t) {
 }
 
 function remove(id, paint) {
-  const at = state.tournaments.findIndex(t => t.id === id);
-  if (at < 0) return;
-  const copy = JSON.parse(JSON.stringify(state.tournaments[at]));
-
-  update(() => { state.tournaments.splice(at, 1); });
-  sayUndo(`Borraste «${clip(copy.name)}»`, () => {
-    update(() => { state.tournaments.splice(at, 0, copy); });
+  const t = sendToTrash(id);
+  if (!t) return;
+  sayUndo(`Borraste «${clip(t.name)}»`, () => {
+    restoreFromTrash(id);
     say('Torneo restaurado');
     paint();
   });

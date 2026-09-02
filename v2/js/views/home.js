@@ -45,7 +45,7 @@ function plaque(last, championId) {
     <div class="plaque">
       <div class="fall"></div>
       <div class="plaque-in">
-        <i class="ti ti-trophy cup"></i>
+        ${cup("cup")}
         <div class="kicker">${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
         <div class="who">${esc(nameOf(championId))}</div>
         <span class="flag-xl">${flag(championId)}</span>
