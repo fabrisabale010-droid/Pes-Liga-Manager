@@ -1,8 +1,9 @@
 import {
   flag, esc, nameOf, cup, whenDate, longDate, countdown, pad,
-  startConfetti, stopConfetti
+  startConfetti, stopConfetti, crest, say
 } from '../ui/ui.js';
 import { standingsTable, gameRow, bracketView, groupsView } from '../ui/parts.js';
+import { championCard, share } from '../ui/cards.js';
 import { state, liveTournament, lastChampion } from '../core/store.js';
 import { table, currentDay, formatName, progress, finalTable } from '../domain/engine.js';
 import { CHAMPION_BEFORE_APP } from '../config.js';
@@ -26,6 +27,19 @@ export function renderHome(view) {
 
   startConfetti(view.querySelector('.fall'), championId);
 
+  const btn = view.querySelector('[data-share-champ]');
+  if (btn) btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const res = await share(championCard(last), `campeon-${nameOf(last.champion)}`,
+        `🏆 ${nameOf(last.champion)} campeón de ${last.name}`);
+      if (res === 'descargada') say('Imagen guardada');
+    } catch {
+      say('No se pudo generar la imagen');
+    }
+    btn.disabled = false;
+  };
+
   const when = live && whenDate(live.when);
   if (when) {
     const paint = () => {
@@ -48,8 +62,12 @@ function plaque(last, championId) {
         ${cup("cup")}
         <div class="kicker">${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
         <div class="who">${esc(nameOf(championId))}</div>
-        <span class="flag-xl">${flag(championId)}</span>
+        <span class="flag-xl">${crest(championId, 46)}</span>
         ${last ? `<div class="meta">${esc(last.name)}</div>` : ''}
+        ${last ? `<div style="margin-top:16px">
+          <button class="btn sm" data-share-champ>
+            <i class="ti ti-share-2"></i>Compartir
+          </button></div>` : ''}
       </div>
     </div>
   </section>`;

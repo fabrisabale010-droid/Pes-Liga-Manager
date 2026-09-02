@@ -1,7 +1,9 @@
-import { flag, esc, nameOf, cup } from '../ui/ui.js';
+import { flag, esc, nameOf, cup, crest } from '../ui/ui.js';
 import { titlesCount } from '../ui/parts.js';
 import { tournaments } from '../core/store.js';
 import { crunch } from '../domain/stats.js';
+import { recordCard, share } from '../ui/cards.js';
+import { say } from '../ui/ui.js';
 import { annualTitles } from '../domain/annual.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 
@@ -26,6 +28,23 @@ export function renderShowcase(view) {
       ${cabinet()}
     </section>
     ${records()}`;
+
+  view.addEventListener('click', async e => {
+    const hit = e.target.closest('[data-rec]');
+    if (!hit) return;
+    const datos = (window._recs || [])[Number(hit.dataset.rec)];
+    if (!datos) return;
+    hit.disabled = true;
+    try {
+      const nombre = datos.holder ? nameOf(datos.holder) : 'record';
+      const res = await share(recordCard(datos), `record-${nombre}`,
+        `${datos.value}${datos.unit} ${datos.label}${datos.holder ? ' — ' + nameOf(datos.holder) : ''}`);
+      if (res === 'descargada') say('Imagen guardada');
+    } catch {
+      say('No se pudo generar la imagen');
+    }
+    hit.disabled = false;
+  });
 
   view.querySelector('.opts').addEventListener('click', e => {
     const btn = e.target.closest('[data-filter]');
@@ -60,7 +79,7 @@ function cabinet() {
   const best = list[0][1];
   return `<div class="cabinet">${list.map(([id, n]) => `
     <div class="slot ${n === best ? 'top' : ''}">
-      <span class="fl">${flag(id)}</span>
+      <span class="fl">${crest(id, 40)}</span>
       <span class="nm">${esc(nameOf(id))}</span>
       <span class="n"><b>${n}</b>${cup()}</span>
       <span class="u">${n === 1 ? 'título' : 'títulos'}</span>
@@ -85,14 +104,23 @@ function records() {
   const dec = v => Number(v).toFixed(2);
   const who = x => `${flag(x.id)} <span>${esc(nameOf(x.id))}</span>`;
 
-  const card = (value, unit, holder, label, bad) => `
+  /* Cada ficha guarda sus datos crudos para poder dibujar la imagen. */
+  const guardadas = [];
+  const card = (value, unit, holder, label, bad, teamId) => {
+    const i = guardadas.push({ value, unit, label, bad: !!bad, holder: teamId || null }) - 1;
+    return `
     <article class="rec ${bad ? 'bad' : ''}">
       <div class="rec-n"><b>${value}</b>${unit ? `<i>${unit}</i>` : ''}</div>
       <div class="rec-b">
         <div class="rec-w">${holder}</div>
         <div class="rec-l">${label}</div>
       </div>
+      <button class="rec-share" data-rec="${i}" title="Compartir" aria-label="Compartir">
+        <i class="ti ti-share-2"></i>
+      </button>
     </article>`;
+  };
+  window._recs = guardadas;
 
   const titulos  = Object.entries(titlesCount()).sort((a, b) => b[1] - a[1])[0];
   const puntos   = best(x => x.pts);
@@ -105,15 +133,15 @@ function records() {
   const podios   = best(x => x.podios);
 
   const bien = [
-    titulos ? card(titulos[1], '', `${flag(titulos[0])} <span>${esc(nameOf(titulos[0]))}</span>`, 'títulos ganados') : '',
-    card(puntos.pts, '', who(puntos), 'puntos sumados en total'),
-    card(wins.pg, '', who(wins), 'partidos ganados'),
-    card(dec(ataque.gf / ataque.pj), '', who(ataque), 'goles por partido'),
-    card(dec(valla.gc / valla.pj), '', who(valla), 'goles recibidos por partido'),
-    card(Math.round(ef(efect) * 100), '%', who(efect), 'de los puntos que jugó'),
-    rachaG.rachaG > 1 ? card(rachaG.rachaG, '', who(rachaG), 'victorias al hilo') : '',
-    goleador.goleadasDadas ? card(goleador.goleadasDadas, '', who(goleador), 'goleadas puestas') : '',
-    podios.podios ? card(podios.podios, '', who(podios), 'veces en el podio') : ''
+    titulos ? card(titulos[1], '', `${flag(titulos[0])} <span>${esc(nameOf(titulos[0]))}</span>`, 'títulos ganados', 0, titulos[0]) : '',
+    card(puntos.pts, '', who(puntos), 'puntos sumados en total', 0, puntos.id),
+    card(wins.pg, '', who(wins), 'partidos ganados', 0, wins.id),
+    card(dec(ataque.gf / ataque.pj), '', who(ataque), 'goles por partido', 0, ataque.id),
+    card(dec(valla.gc / valla.pj), '', who(valla), 'goles recibidos por partido', 0, valla.id),
+    card(Math.round(ef(efect) * 100), '%', who(efect), 'de los puntos que jugó', 0, efect.id),
+    rachaG.rachaG > 1 ? card(rachaG.rachaG, '', who(rachaG), 'victorias al hilo', 0, rachaG.id) : '',
+    goleador.goleadasDadas ? card(goleador.goleadasDadas, '', who(goleador), 'goleadas puestas', 0, goleador.id) : '',
+    podios.podios ? card(podios.podios, '', who(podios), 'veces en el podio', 0, podios.id) : ''
   ].filter(Boolean).join('');
 
   const derrotas  = best(x => x.pp);
@@ -129,16 +157,16 @@ function records() {
                              .sort((a, b) => b.torneos - a.torneos)[0];
 
   const mal = [
-    card(derrotas.pp, '', who(derrotas), 'partidos perdidos', 1),
-    card(dec(colador.gc / colador.pj), '', who(colador), 'goles recibidos por partido', 1),
-    card(dec(flojito.gf / flojito.pj), '', who(flojito), 'goles por partido, el ataque más flojo', 1),
-    sinGanar.rachaSinGanar > 1 ? card(sinGanar.rachaSinGanar, '', who(sinGanar), 'partidos seguidos sin ganar', 1) : '',
-    rachaP.rachaP > 1 ? card(rachaP.rachaP, '', who(rachaP), 'derrotas al hilo', 1) : '',
-    humillado.goleadasRecibidas ? card(humillado.goleadasRecibidas, '', who(humillado), 'goleadas recibidas', 1) : '',
-    empatador.pe ? card(empatador.pe, '', who(empatador), 'empates, el rey del punto', 1) : '',
-    card(Math.round(ef(peorEf) * 100), '%', who(peorEf), 'de los puntos que jugó, la peor cosecha', 1),
-    ultimo.ultimos ? card(ultimo.ultimos, '', who(ultimo), 'veces último en la tabla', 1) : '',
-    secos ? card(secos.torneos, '', who(secos), 'torneos jugados sin ganar ninguno', 1) : ''
+    card(derrotas.pp, '', who(derrotas), 'partidos perdidos', 1, derrotas.id),
+    card(dec(colador.gc / colador.pj), '', who(colador), 'goles recibidos por partido', 1, colador.id),
+    card(dec(flojito.gf / flojito.pj), '', who(flojito), 'goles por partido, el ataque más flojo', 1, flojito.id),
+    sinGanar.rachaSinGanar > 1 ? card(sinGanar.rachaSinGanar, '', who(sinGanar), 'partidos seguidos sin ganar', 1, sinGanar.id) : '',
+    rachaP.rachaP > 1 ? card(rachaP.rachaP, '', who(rachaP), 'derrotas al hilo', 1, rachaP.id) : '',
+    humillado.goleadasRecibidas ? card(humillado.goleadasRecibidas, '', who(humillado), 'goleadas recibidas', 1, humillado.id) : '',
+    empatador.pe ? card(empatador.pe, '', who(empatador), 'empates, el rey del punto', 1, empatador.id) : '',
+    card(Math.round(ef(peorEf) * 100), '%', who(peorEf), 'de los puntos que jugó, la peor cosecha', 1, peorEf.id),
+    ultimo.ultimos ? card(ultimo.ultimos, '', who(ultimo), 'veces último en la tabla', 1, ultimo.id) : '',
+    secos ? card(secos.torneos, '', who(secos), 'torneos jugados sin ganar ninguno', 1, secos.id) : ''
   ].filter(Boolean).join('');
 
   const g = d.mayorGoleada, mg = d.masGoles;
