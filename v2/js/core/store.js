@@ -12,7 +12,7 @@ let writing = false;
 export let state = blank();
 
 function blank() {
-  return { v: 2, tournaments: [], annualCups: [], sound: true };
+  return { v: 2, tournaments: [], annualCups: [], annualDrafts: {}, sound: true };
 }
 
 export function subscribe(fn) {
@@ -30,6 +30,7 @@ function normalize(raw) {
   const s = { ...blank(), ...(raw || {}) };
   s.tournaments = Array.isArray(s.tournaments) ? s.tournaments : [];
   s.annualCups = Array.isArray(s.annualCups) ? s.annualCups : [];
+  s.annualDrafts = (s.annualDrafts && typeof s.annualDrafts === 'object') ? s.annualDrafts : {};
   s.sound = s.sound !== false;
 
   const seen = new Set();
@@ -98,6 +99,7 @@ export function importLegacy(old) {
     annualCups: (old.annualCups || []).map(c => ({
       id: String(c.id ?? uid()), year: c.year, champion: c.champion
     })),
+    annualDrafts: {},
     sound: old.soundOn !== false
   });
 }
