@@ -8,6 +8,7 @@ import { renderTournament } from './views/tournament.js';
 import { renderSchedule } from './views/schedule.js';
 import { renderHistory } from './views/history.js';
 import { renderShowcase } from './views/showcase.js';
+import { renderStats } from './views/stats.js';
 import { currentDay, progress, finalTable, formatName } from './domain/engine.js';
 
 /* ---------- Vistas ---------- */
@@ -17,6 +18,7 @@ register('curso',     v => { stopHome(); renderTournament(v); });
 register('programar', v => { stopHome(); renderSchedule(v); });
 register('historial', v => { stopHome(); renderHistory(v); });
 register('vitrina',   v => { stopHome(); renderShowcase(v); });
+register('estadisticas', v => { stopHome(); renderStats(v); });
 
 /* ---------- Datos ---------- */
 
