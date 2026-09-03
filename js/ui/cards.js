@@ -545,3 +545,110 @@ export async function eventCard(t, cuando) {
   pie(ctx);
   return c;
 }
+
+/* ---------- Placa de vitrina: una selección ---------- */
+
+export async function cabinetCard(id, cantidad, categoria = '') {
+  const [ins, copa] = await Promise.all([insignia(id), cargarCopa()]);
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(224,178,61,.24)');
+  marco(ctx, 'rgba(224,178,61,.55)');
+
+  texto(ctx, 'VITRINA', 165, { size: 28, color: ORO, weight: '700', track: 10 });
+  if (categoria) {
+    texto(ctx, categoria, 212, { size: 28, color: TENUE });
+  }
+
+  marca(ctx, id, W / 2, 420, 250, ins);
+
+  const nom = ajustar(ctx, nameOf(id).toUpperCase(), W - 200, 104, 'Rajdhani', '700');
+  textoOro(ctx, nameOf(id).toUpperCase(), 640, nom);
+
+  /* El número grande con la copa al lado. */
+  ctx.font = '700 190px Rajdhani, Arial, sans-serif';
+  const anchoNum = ctx.measureText(String(cantidad)).width;
+  const alturaCopa = 190;
+  const total = anchoNum + 30 + alturaCopa * 0.62;
+  const inicio = W / 2 - total / 2;
+
+  const g = ctx.createLinearGradient(0, 720, 0, 900);
+  g.addColorStop(0, ORO_CLARO);
+  g.addColorStop(.55, ORO);
+  g.addColorStop(1, ORO_OSC);
+  ctx.fillStyle = g;
+  ctx.textAlign = 'left';
+  ctx.fillText(String(cantidad), inicio, 890);
+  ctx.textAlign = 'center';
+
+  copaImg(ctx, copa, inicio + anchoNum + 30 + alturaCopa * 0.31, 715, alturaCopa);
+
+  texto(ctx, cantidad === 1 ? 'TÍTULO' : 'TÍTULOS', 960,
+        { size: 30, color: TENUE, weight: '700', track: 8 });
+
+  pie(ctx);
+  return c;
+}
+
+/* ---------- Placa de vitrina: todas ---------- */
+
+export async function cabinetAllCard(lista, categoria = '') {
+  const top = lista.slice(0, 8);
+  const [inss, copa] = await Promise.all([
+    insignias(top.map(x => x[0])),
+    cargarCopa()
+  ]);
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(224,178,61,.20)');
+  marco(ctx, 'rgba(224,178,61,.5)');
+
+  texto(ctx, 'VITRINA', 170, { size: 30, color: ORO, weight: '700', track: 10 });
+  texto(ctx, categoria || 'Todos los títulos', 224, { size: 30, color: TENUE });
+
+  const X = 120, ANCHO = W - 240, ALTO = 116;
+  let y = 300;
+  const lider = top.length ? top[0][1] : 0;
+
+  top.forEach(([id, n], i) => {
+    const primero = n === lider;
+
+    ctx.fillStyle = primero ? 'rgba(224,178,61,.16)' : 'rgba(255,255,255,.04)';
+    redondo(ctx, X, y, ANCHO, ALTO - 14, 20);
+    ctx.fill();
+
+    if (primero) {
+      ctx.strokeStyle = 'rgba(224,178,61,.55)';
+      ctx.lineWidth = 2;
+      redondo(ctx, X, y, ANCHO, ALTO - 14, 20);
+      ctx.stroke();
+    }
+
+    const cy = y + (ALTO - 14) / 2;
+
+    marca(ctx, id, X + 90, cy, 74, inss[i]);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = primero ? ORO : TEXTO;
+    const tam = ajustar(ctx, nameOf(id).toUpperCase(), 430, 50, 'Rajdhani', '700');
+    ctx.font = `700 ${tam}px Rajdhani, Arial, sans-serif`;
+    ctx.fillText(nameOf(id).toUpperCase(), X + 150, cy + 17);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = primero ? ORO : TEXTO;
+    ctx.font = '700 54px "Space Mono", monospace';
+    ctx.fillText(String(n), X + ANCHO - 92, cy + 19);
+    ctx.textAlign = 'center';
+
+    copaImg(ctx, copa, X + ANCHO - 45, cy - 28, 58);
+
+    y += ALTO;
+  });
+
+  pie(ctx);
+  return c;
+}
