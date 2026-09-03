@@ -116,6 +116,14 @@ export async function insignia(id) {
 
 export const insignias = ids => Promise.all(ids.map(insignia));
 
+/* Deja las imágenes listas de antemano. Al compartir, el navegador exige que
+   todo ocurra enseguida después del toque: si hay que bajar ocho escudos en
+   ese momento, cancela el envío. Precargando, la placa sale al instante. */
+export function precargar(ids = []) {
+  cargarCopa();
+  ids.forEach(insignia);
+}
+
 /* Dibuja el escudo o la bandera centrados, con la altura pedida.
    Sin ninguno de los dos, franjas con los colores de la selección. */
 function marca(ctx, id, cx, cy, alto, dato) {
@@ -512,34 +520,48 @@ export async function eventCard(t, cuando) {
 
   let y = 470;
   if (t.place) {
-    texto(ctx, t.place, y, { size: 40, color: TEXTO, weight: '600' });
-    y += 60;
+    texto(ctx, t.place, y, { size: 42, color: TEXTO, weight: '600' });
+    y += 66;
   }
   if (t.host) {
-    marca(ctx, t.host, W / 2, y + 32, 108, sede);
-    y += 100;
-    texto(ctx, `En casa de ${nameOf(t.host)}`, y, { size: 30, color: TENUE });
-    y += 40;
+    marca(ctx, t.host, W / 2, y + 66, 132, sede);
+    y += 150;
+    texto(ctx, `En casa de ${nameOf(t.host)}`, y, { size: 32, color: TENUE });
+    y += 30;
   }
 
-  texto(ctx, 'JUEGAN', y + 70, { size: 24, color: TENUE, weight: '700', track: 6 });
+  texto(ctx, 'JUEGAN', y + 74, { size: 26, color: TENUE, weight: '700', track: 7 });
+  y += 74;
 
-  /* Las banderas de los participantes, en filas de a cuatro. */
-  const porFila = Math.min(4, t.teamIds.length);
-  const ancho = 150, sep = 40;
-  let fila = 0, fy = y + 160;
+  /* Los escudos se agrandan cuando son pocos, para no dejar la placa vacía,
+     y se achican lo necesario para que siempre entren todos. */
+  const n = t.teamIds.length;
+  const porFila = n <= 4 ? Math.min(n, 4) : (n <= 6 ? 3 : 4);
+  const filas = Math.ceil(n / porFila);
 
-  for (let i = 0; i < t.teamIds.length; i += porFila) {
+  const desde = y + 40;
+  const hasta = H - 190;
+  const SEP = 0.26;                       // separación, en proporción al escudo
+
+  const deseado = n <= 3 ? 230 : n <= 4 ? 200 : n <= 6 ? 185 : n <= 9 ? 160 : 130;
+  const cabeAlto  = (hasta - desde) / (filas * (1 + SEP) - SEP);
+  const cabeAncho = (W - 160) / (porFila * (1 + SEP) - SEP);
+  const lado = Math.floor(Math.min(deseado, cabeAlto, cabeAncho));
+
+  const sep = Math.round(lado * SEP);
+  const altoFila = lado + sep;
+  const alto = filas * altoFila - sep;
+  let fy = desde + Math.max(0, (hasta - desde - alto) / 2) + lado / 2;
+
+  for (let i = 0; i < n; i += porFila) {
     const grupo = t.teamIds.slice(i, i + porFila);
-    const total = grupo.length * ancho + (grupo.length - 1) * sep;
-    let fx = W / 2 - total / 2 + ancho / 2;
+    const ancho = grupo.length * lado + (grupo.length - 1) * sep;
+    let fx = W / 2 - ancho / 2 + lado / 2;
     grupo.forEach((id, j) => {
-      marca(ctx, id, fx, fy, ancho * 0.72, imgs[i + j]);
-      fx += ancho + sep;
+      marca(ctx, id, fx, fy, lado, imgs[i + j]);
+      fx += lado + sep;
     });
-    fy += 140;
-    fila++;
-    if (fila >= 3) break;
+    fy += altoFila;
   }
 
   pie(ctx);
