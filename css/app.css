@@ -474,24 +474,24 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 /* Escudos: se muestran enteros, sin recortar el diseño. */
 .crest-img{object-fit:contain; vertical-align:middle; display:inline-block;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.45));}
-/* El trofeo, dibujado a mano. Toma el tamaño del texto que lo rodea. */
-.cup-svg{
-  width:1.15em; height:1.5em; display:inline-block; vertical-align:-.32em;
-  filter:drop-shadow(0 1px 3px rgba(224,178,61,.5));
+/* El trofeo. Toma el tamaño del texto que lo rodea. */
+.cup-img{
+  width:auto; height:1.35em; display:inline-block; vertical-align:-.3em;
+  filter:drop-shadow(0 2px 6px rgba(224,178,61,.45));
 }
 
-/* En la placa del campeón va grande y con un brillo que va y viene. */
-.plaque .cup-svg{
-  width:auto; height:56px; display:block; margin:0 auto 2px;
+/* En la placa del campeón va grande, con un brillo que va y viene. */
+.plaque .cup-img{
+  height:104px; display:block; margin:0 auto 6px;
   animation:cupGlow 3.4s ease-in-out infinite;
 }
 @keyframes cupGlow{
-  0%,100%{ filter:drop-shadow(0 3px 9px rgba(224,178,61,.4)); }
-  50%    { filter:drop-shadow(0 3px 20px rgba(255,228,158,.85)); }
+  0%,100%{ filter:drop-shadow(0 4px 12px rgba(224,178,61,.45)); }
+  50%    { filter:drop-shadow(0 4px 26px rgba(255,228,158,.85)); }
 }
 
-.slot .n .cup-svg{height:1.15em; width:auto;}
-.block > h2 .cup-svg{height:1.05em; width:auto; vertical-align:-.18em;}
+.slot .n .cup-img{height:1.5em;}
+.block > h2 .cup-img{height:1.4em; vertical-align:-.32em;}
 
 /* ---------- Superposiciones ---------- */
 
