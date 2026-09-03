@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, openModal, cup } from './ui.js';
+import { flag, esc, nameOf, openModal, cup, crest } from './ui.js';
 import { mainColorOf } from '../domain/teams.js';
 import { table, tieWinner, roundName, groupTable } from '../domain/engine.js';
 import { tournaments } from '../core/store.js';
@@ -116,7 +116,7 @@ export function openTeamCard(id) {
   const titles = titlesCount()[id] || 0;
 
   openModal(`
-    <div style="font-size:44px">${flag(id)}</div>
+    <div>${crest(id, 84)}</div>
     <h3>${esc(nameOf(id))}</h3>
     <div class="grid-2">
       <div class="stat"><b>${played}</b><span>torneos jugados</span></div>
