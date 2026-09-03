@@ -82,7 +82,7 @@ function cabinet() {
   const best = list[0][1];
   return `<div class="cabinet">${list.map(([id, n]) => `
     <div class="slot ${n === best ? 'top' : ''}">
-      <span class="fl">${crest(id, 62)}</span>
+      <span class="fl">${crest(id, 92)}</span>
       <span class="nm">${esc(nameOf(id))}</span>
       <span class="n"><b>${n}</b>${cup()}</span>
       <span class="u">${n === 1 ? 'título' : 'títulos'}</span>

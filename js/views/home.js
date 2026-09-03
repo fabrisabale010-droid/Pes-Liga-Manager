@@ -76,7 +76,7 @@ function plaque(last, championId) {
         ${cup("cup")}
         <div class="kicker">${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
         <div class="who">${esc(nameOf(championId))}</div>
-        <span class="flag-xl">${crest(championId, 88)}</span>
+        <span class="flag-xl">${crest(championId, 132)}</span>
         ${last ? `<div class="meta">${esc(last.name)}</div>` : ''}
         ${last ? `<div style="margin-top:16px">
           <button class="btn sm" data-share-champ>
