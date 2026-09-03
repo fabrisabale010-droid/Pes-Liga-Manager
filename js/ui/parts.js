@@ -116,7 +116,7 @@ export function openTeamCard(id) {
   const titles = titlesCount()[id] || 0;
 
   openModal(`
-    <div>${crest(id, 84)}</div>
+    <div>${crest(id, 112)}</div>
     <h3>${esc(nameOf(id))}</h3>
     <div class="grid-2">
       <div class="stat"><b>${played}</b><span>torneos jugados</span></div>
