@@ -73,8 +73,9 @@ puede recuperar durante 7 días. Mientras tanto no aparece en ninguna tabla,
 vitrina ni récord, como si no existiera. Pasado el plazo se limpia sola. El plazo
 se cambia en `js/config.js` (`TRASH_DAYS`).
 
-**Compartir por WhatsApp.** La placa del campeón y cada récord tienen un botón
-que arma una imagen y abre el menú de compartir del celular. La imagen se dibuja
+**Compartir por WhatsApp.** Hay cinco placas: campeón, récord, tabla final,
+cara a cara y próximo torneo. Cada una arma una imagen y abre el menú de
+compartir del celular. La imagen se dibuja
 a medida, no es una captura: se lee bien en el chat y pesa poco. Si el celular no
 permite compartir archivos, la descarga.
 
