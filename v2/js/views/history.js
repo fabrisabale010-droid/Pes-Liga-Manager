@@ -1,5 +1,6 @@
 import { flag, esc, nameOf, shortDate, say, sayUndo, clip } from '../ui/ui.js';
 import { standingsTable, bracketView } from '../ui/parts.js';
+import { tableCard, share } from '../ui/cards.js';
 import { tournaments, trashed, trashDaysLeft,
          sendToTrash, restoreFromTrash, emptyTrash } from '../core/store.js';
 import { finalTable, formatName, progress } from '../domain/engine.js';
@@ -32,6 +33,9 @@ export function renderHistory(view) {
       openId = openId === head.dataset.open ? null : head.dataset.open;
       return paint();
     }
+    const compartir = e.target.closest('[data-share-table]');
+    if (compartir) return compartirTabla(compartir);
+
     const del = e.target.closest('[data-del]');
     if (del) return remove(del.dataset.del, paint);
 
@@ -145,11 +149,28 @@ function row(t) {
       </div>` : ''}
       ${t.format === 'copa' && t.bracket ? bracketView(t) : ''}
       ${standingsTable(rows)}
-      ${isAdmin() ? `<div style="margin-top:12px">
-        <button class="btn danger sm" data-del="${t.id}">Borrar torneo</button>
-      </div>` : ''}
+      <div class="row" style="margin-top:12px">
+        ${t.finished ? `<button class="btn sm" data-share-table="${t.id}" style="flex:0 0 auto">
+          <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}
+        ${isAdmin() ? `<button class="btn danger sm" data-del="${t.id}" style="flex:0 0 auto">Borrar torneo</button>` : ''}
+      </div>
     </div>
   </article>`;
+}
+
+async function compartirTabla(btn) {
+  const t = tournaments().find(x => x.id === btn.dataset.shareTable);
+  if (!t) return;
+  btn.disabled = true;
+  try {
+    const res = await share(await tableCard(t, finalTable(t)),
+      `tabla-${t.name.replace(/[^a-z0-9]+/gi, '-')}`,
+      `📋 ${t.name}${t.champion ? ' — campeón ' + nameOf(t.champion) : ''}`);
+    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+  } catch (err) {
+    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  }
+  btn.disabled = false;
 }
 
 function remove(id, paint) {

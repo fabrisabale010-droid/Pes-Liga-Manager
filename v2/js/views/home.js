@@ -3,7 +3,7 @@ import {
   startConfetti, stopConfetti, crest, say
 } from '../ui/ui.js';
 import { standingsTable, gameRow, bracketView, groupsView } from '../ui/parts.js';
-import { championCard, share } from '../ui/cards.js';
+import { championCard, eventCard, share } from '../ui/cards.js';
 import { state, liveTournament, lastChampion } from '../core/store.js';
 import { table, currentDay, formatName, progress, finalTable } from '../domain/engine.js';
 import { CHAMPION_BEFORE_APP } from '../config.js';
@@ -38,6 +38,20 @@ export function renderHome(view) {
       say('No se pudo compartir: ' + (err.name || err.message || 'error'));
     }
     btn.disabled = false;
+  };
+
+  const ev = view.querySelector('[data-share-event]');
+  if (ev) ev.onclick = async () => {
+    ev.disabled = true;
+    try {
+      const res = await share(await eventCard(live, whenDate(live.when)),
+        'proximo-torneo',
+        `⚽ Próximo torneo${live.place ? ' en ' + live.place : ''}`);
+      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+    } catch (err) {
+      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+    }
+    ev.disabled = false;
   };
 
   const when = live && whenDate(live.when);
@@ -106,6 +120,9 @@ function nextUp(t) {
         ${t.host ? `<div class="matchday-where">En casa de ${flag(t.host)} ${esc(nameOf(t.host))}</div>` : ''}
         <div class="matchday-who">${t.teamIds.map(id => flag(id)).join('')}</div>
         <div data-clock>${when ? clockHtml(when) : ''}</div>
+        <div style="margin-top:16px">
+          <button class="btn sm" data-share-event><i class="ti ti-share-2"></i>Compartir</button>
+        </div>
       </div>
     </div>
   </section>`;
