@@ -109,11 +109,12 @@ function records() {
 
   /* Cada ficha guarda sus datos crudos para poder dibujar la imagen. */
   const guardadas = [];
-  const card = (value, unit, holder, label, bad, teamId, match) => {
+  const card = (value, unit, holder, label, bad, teamId, match, contexto) => {
     const i = guardadas.push({
       value, unit, label, bad: !!bad,
       holder: teamId || null,
-      match: match || null
+      match: match || null,
+      contexto: contexto ? { name: contexto.name, date: contexto.finishedAt || contexto.createdAt } : null
     }) - 1;
     return `
     <article class="rec ${bad ? 'bad' : ''}">
@@ -196,8 +197,8 @@ function records() {
     ${(g || mg) ? `<section class="block">
       <h2><i class="ti ti-flame"></i>Partidos que quedaron</h2>
       <div class="recs">
-        ${g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande', 0, null, g.m) : ''}
-        ${mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles', 0, null, mg.m) : ''}
+        ${g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande', 0, null, g.m, g.t) : ''}
+        ${mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles', 0, null, mg.m, mg.t) : ''}
       </div>
     </section>` : ''}`;
 }
