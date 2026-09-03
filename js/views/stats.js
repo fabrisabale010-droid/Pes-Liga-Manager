@@ -110,7 +110,7 @@ function anual() {
         ${cup("cup")}
         <div class="kicker">Copa Anual ${y}</div>
         <div class="who">${esc(nameOf(cup.champion))}</div>
-        <span class="flag-xl">${crest(cup.champion, 46)}</span>
+        <span class="flag-xl">${crest(cup.champion, 88)}</span>
       </div>
     </div>
     ${isAdmin() ? `<div style="text-align:center;margin-top:12px">
