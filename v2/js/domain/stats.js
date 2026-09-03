@@ -50,14 +50,14 @@ export function crunch({ year = null } = {}) {
     t.teamIds.forEach(id => { get(id).torneos++; });
   });
 
-  allGames({ year }).forEach(({ m }) => {
+  allGames({ year }).forEach(({ m, t }) => {
     partidos++;
     goles += m.hg + m.ag;
 
     const gap = Math.abs(m.hg - m.ag);
     const total = m.hg + m.ag;
-    if (!mayorGoleada || gap > mayorGoleada.gap) mayorGoleada = { m, gap };
-    if (!masGoles || total > masGoles.total) masGoles = { m, total };
+    if (!mayorGoleada || gap > mayorGoleada.gap) mayorGoleada = { m, gap, t };
+    if (!masGoles || total > masGoles.total) masGoles = { m, total, t };
 
     const h = get(m.home), a = get(m.away);
     h.pj++; a.pj++;
