@@ -1,4 +1,5 @@
 import { team, nameOf, colorsOf } from '../domain/teams.js';
+import { USE_CRESTS, CRESTS_FROM_FOLDER, CRESTS_PATH, CRESTS_AVAILABLE } from '../config.js';
 
 /* ---------- Texto ---------- */
 
@@ -59,14 +60,23 @@ export function cup(extra = '') {
   </svg>`;
 }
 
-/* Cuando cargues escudos oficiales en teams.js, aparecen solos. */
-export function crest(id, size = 28) {
+/* Escudo de la selección. Si están apagados o falta el archivo,
+   se muestra la bandera y no se rompe nada. */
+export function crest(id, size = 34) {
   const t = team(id);
   if (!t) return '';
-  if (t.crest) {
-    return `<img src="${esc(t.crest)}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover">`;
-  }
-  return flag(id);
+
+  /* Sin escudo cargado se usa la bandera directamente: así no se piden
+     archivos que no existen ni parpadea una imagen rota. */
+  const enCarpeta = CRESTS_FROM_FOLDER &&
+    (!CRESTS_AVAILABLE?.length || CRESTS_AVAILABLE.includes(id));
+  const file = !USE_CRESTS ? null
+    : (t.crest || (enCarpeta ? `${CRESTS_PATH}${id}.png` : null));
+  if (!file) return flag(id);
+
+  const fallback = flag(id).replace(/"/g, '&quot;');
+  return `<img src="${file}" alt="" class="crest-img" style="width:${size}px;height:${size}px"
+    onerror="this.outerHTML='${fallback}'">`;
 }
 
 /* ---------- Avisos ---------- */
