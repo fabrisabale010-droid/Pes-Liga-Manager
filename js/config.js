@@ -50,5 +50,12 @@ export const USE_CRESTS = true;
 export const CRESTS_FROM_FOLDER = true;
 export const CRESTS_PATH = './crests/';
 
+/* Qué escudos hay realmente en la carpeta. Las que no estén acá muestran su
+   bandera sin pedir un archivo que no existe.
+   Cuando agregues uno nuevo, sumá su código a esta lista. */
+export const CRESTS_AVAILABLE = [
+  'ARG', 'BRA', 'ENG', 'ESP', 'FRA', 'GER', 'ITA', 'NED', 'POR', 'URU'
+];
+
 export const MAX_TEAMS = 16;
 export const MAX_PLAYERS = 10;
