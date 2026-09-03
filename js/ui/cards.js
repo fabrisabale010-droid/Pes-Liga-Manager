@@ -2,6 +2,8 @@
    de la pantalla: quedan legibles en el chat y pesan poco. */
 
 import { nameOf, colorsOf, team } from '../domain/teams.js';
+import { USE_CRESTS, CRESTS_FROM_FOLDER, CRESTS_PATH, CRESTS_AVAILABLE } from '../config.js';
+import { TROPHY_SRC } from './ui.js';
 
 const W = 1080;
 const H = 1350;                 // proporción vertical, la que mejor entra en el chat
@@ -77,60 +79,65 @@ function textoOro(ctx, txt, y, size) {
   texto(ctx, txt, y, { size, color: g, weight: '700', font: 'Rajdhani' });
 }
 
-/* La copa, dibujada con las mismas curvas que usa la app. */
-function copa(ctx, cx, cy, alto) {
-  const e = alto / 64;
-  ctx.save();
-  ctx.translate(cx - 24 * e, cy);
-  ctx.scale(e, e);
-
-  const g = ctx.createLinearGradient(0, 0, 0, 64);
-  g.addColorStop(0, ORO_CLARO);
-  g.addColorStop(.42, ORO);
-  g.addColorStop(1, ORO_OSC);
-
-  ctx.strokeStyle = g;
-  ctx.lineWidth = 4.6;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  [
-    'M24 3.6c8.2 0 14.6 6.3 14.6 14.2 0 3.4-.9 6.1-2.4 9.6-3.6 8.3-5.2 14.6-5.2 21.1 0 4.6.7 8.6 2.3 12.9H14.7c1.6-4.3 2.3-8.3 2.3-12.9 0-6.5-1.6-12.8-5.2-21.1C10.3 23.9 9.4 21.2 9.4 17.8 9.4 9.9 15.8 3.6 24 3.6Z',
-    'M17.4 21.6c1.9 0 3.4-1.6 3.4-3.7 0-1.2-.3-2.2-.7-3.4-.5-1.4-.8-2.4-.8-3.3 0-1.7 1.1-3 2.7-3 2.6 0 5.2 3.9 7.3 9.1 1.3 3.2 2.7 4.8 5.3 5.2',
-    'M20.4 24.2c2.4 3.8 3.6 7.1 3.6 11 0 5.3-2.1 11-6 17.6',
-    'M15.6 52.8h16.8'
-  ].forEach(d => ctx.stroke(new Path2D(d)));
-
-  ctx.restore();
-}
-
-/* Bandera de verdad, traída como imagen. Si no carga (sin señal, por ejemplo)
-   se dibujan franjas con los colores de la selección, que es mejor que nada. */
+/* Cargador de imágenes con memoria: cada archivo se pide una sola vez. */
 const cache = new Map();
 
-function cargarBandera(iso) {
-  if (cache.has(iso)) return cache.get(iso);
+function cargar(url, mismoOrigen = false) {
+  if (cache.has(url)) return cache.get(url);
   const p = new Promise(res => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';        // hace falta para poder exportar la imagen
+    if (!mismoOrigen) img.crossOrigin = 'anonymous';   // para poder exportar
     img.onload = () => res(img);
     img.onerror = () => res(null);
-    img.src = `https://flagcdn.com/w320/${iso}.png`;
+    img.src = url;
   });
-  cache.set(iso, p);
+  cache.set(url, p);
   return p;
 }
 
-function bandera(ctx, id, cx, cy, ancho, img) {
-  const alto = ancho * .68;
+export const cargarCopa = () => cargar(TROPHY_SRC, true);
+
+const tieneEscudo = id => USE_CRESTS && CRESTS_FROM_FOLDER &&
+  (!CRESTS_AVAILABLE?.length || CRESTS_AVAILABLE.includes(id));
+
+/* Escudo si lo hay; si no, la bandera. Devuelve qué se consiguió para
+   saber cómo dibujarlo, porque uno es cuadrado y la otra apaisada. */
+export async function insignia(id) {
+  const t = team(id);
+  if (!t) return { tipo: 'nada', img: null };
+
+  if (tieneEscudo(id)) {
+    const img = await cargar(`${CRESTS_PATH}${id}.png`, true);
+    if (img) return { tipo: 'escudo', img };
+  }
+  const img = await cargar(`https://flagcdn.com/w320/${t.iso}.png`);
+  return img ? { tipo: 'bandera', img } : { tipo: 'nada', img: null };
+}
+
+export const insignias = ids => Promise.all(ids.map(insignia));
+
+/* Dibuja el escudo o la bandera centrados, con la altura pedida.
+   Sin ninguno de los dos, franjas con los colores de la selección. */
+function marca(ctx, id, cx, cy, alto, dato) {
+  if (dato?.tipo === 'escudo') {
+    const lado = alto;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.45)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
+    ctx.drawImage(dato.img, cx - lado / 2, cy - lado / 2, lado, lado);
+    ctx.restore();
+    return;
+  }
+
+  const ancho = alto * 1.47;
   const x = cx - ancho / 2, y = cy - alto / 2;
 
   ctx.save();
   redondo(ctx, x, y, ancho, alto, 10);
   ctx.clip();
-
-  if (img) {
-    ctx.drawImage(img, x, y, ancho, alto);
+  if (dato?.tipo === 'bandera') {
+    ctx.drawImage(dato.img, x, y, ancho, alto);
   } else {
     const cols = colorsOf(id);
     const franja = ancho / cols.length;
@@ -145,6 +152,18 @@ function bandera(ctx, id, cx, cy, ancho, img) {
   ctx.lineWidth = 2;
   redondo(ctx, x, y, ancho, alto, 10);
   ctx.stroke();
+}
+
+/* La copa. Si por algo no carga la imagen, no se dibuja nada y listo. */
+function copaImg(ctx, img, cx, cy, alto) {
+  if (!img) return;
+  const escala = alto / img.height;
+  const ancho = img.width * escala;
+  ctx.save();
+  ctx.shadowColor = 'rgba(224,178,61,.5)';
+  ctx.shadowBlur = 26;
+  ctx.drawImage(img, cx - ancho / 2, cy, ancho, alto);
+  ctx.restore();
 }
 
 const fechaLarga = iso => new Date(iso)
@@ -168,7 +187,7 @@ function ajustar(ctx, txt, max, size, font, weight) {
 /* ---------- Placa de campeón ---------- */
 
 export async function championCard(t) {
-  const img = await cargarBandera(team(t.champion)?.iso);
+  const [ins, copa] = await Promise.all([insignia(t.champion), cargarCopa()]);
   const c = lienzo();
   const ctx = c.getContext('2d');
   const id = t.champion;
@@ -176,14 +195,14 @@ export async function championCard(t) {
   fondo(ctx, 'rgba(224,178,61,.24)');
   marco(ctx, 'rgba(224,178,61,.55)');
 
-  copa(ctx, W / 2, 190, 250);
+  copaImg(ctx, copa, W / 2, 120, 300);
 
   texto(ctx, 'CAMPEÓN', 590, { size: 30, color: ORO, weight: '700', track: 10 });
 
   const size = ajustar(ctx, nameOf(id).toUpperCase(), W - 220, 132, 'Rajdhani', '700');
   textoOro(ctx, nameOf(id).toUpperCase(), 712, size);
 
-  bandera(ctx, id, W / 2, 830, 230, img);
+  marca(ctx, id, W / 2, 840, 230, ins);
 
   ctx.fillStyle = 'rgba(255,255,255,.05)';
   redondo(ctx, 100, 960, W - 200, 190, 24);
@@ -215,7 +234,7 @@ function marcador(ctx, m, top, imgs) {
   ctx.fill();
 
   const fila = (id, goles, gana, cy, img) => {
-    bandera(ctx, id, BAND_CX, cy, BAND_W, img);
+    marca(ctx, id, BAND_CX, cy, 96, img);
 
     ctx.fillStyle = gana ? TEXTO : TENUE;
     const size = ajustar(ctx, nameOf(id).toUpperCase(), NOMBRE_MAX, 58, 'Rajdhani', '700');
@@ -244,10 +263,8 @@ function marcador(ctx, m, top, imgs) {
 /* ---------- Placa de récord ---------- */
 
 export async function recordCard({ value, unit = '', holder, label, bad = false, match = null, contexto = null }) {
-  const img = holder ? await cargarBandera(team(holder)?.iso) : null;
-  const imgs = match
-    ? await Promise.all([cargarBandera(team(match.home)?.iso), cargarBandera(team(match.away)?.iso)])
-    : [null, null];
+  const img = holder ? await insignia(holder) : null;
+  const imgs = match ? await insignias([match.home, match.away]) : [null, null];
   const c = lienzo();
   const ctx = c.getContext('2d');
   const color = bad ? ROJO : VERDE;
@@ -281,7 +298,7 @@ export async function recordCard({ value, unit = '', holder, label, bad = false,
       }
     }
   } else if (holder) {
-    bandera(ctx, holder, W / 2, base + 130, 200, img);
+    marca(ctx, holder, W / 2, base + 130, 190, img);
     const nom = ajustar(ctx, nameOf(holder).toUpperCase(), W - 220, 88, 'Rajdhani', '700');
     texto(ctx, nameOf(holder).toUpperCase(), base + 300,
           { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
@@ -349,7 +366,7 @@ export async function share(canvas, nombre, texto = '') {
 
 export async function tableCard(t, rows) {
   const top = rows.slice(0, 8);
-  const imgs = await Promise.all(top.map(r => cargarBandera(team(r.id)?.iso)));
+  const imgs = await insignias(top.map(r => r.id));
 
   const c = lienzo();
   const ctx = c.getContext('2d');
@@ -387,7 +404,7 @@ export async function tableCard(t, rows) {
     ctx.font = '700 38px "Space Mono", monospace';
     ctx.fillText(String(i + 1), X + 55, cy + 13);
 
-    bandera(ctx, r.id, X + 165, cy, 96, imgs[i]);
+    marca(ctx, r.id, X + 165, cy, 66, imgs[i]);
 
     ctx.textAlign = 'left';
     ctx.fillStyle = campeon ? ORO : TEXTO;
@@ -413,9 +430,7 @@ export async function tableCard(t, rows) {
 /* ---------- Placa de cara a cara ---------- */
 
 export async function duelCard(a, b, h) {
-  const [ia, ib] = await Promise.all([
-    cargarBandera(team(a)?.iso), cargarBandera(team(b)?.iso)
-  ]);
+  const [ia, ib] = await insignias([a, b]);
 
   const c = lienzo();
   const ctx = c.getContext('2d');
@@ -427,7 +442,7 @@ export async function duelCard(a, b, h) {
   texto(ctx, `${h.pj} ${h.pj === 1 ? 'partido' : 'partidos'}`, 232, { size: 32, color: TENUE });
 
   const lado = (id, wins, img, cx) => {
-    bandera(ctx, id, cx, 400, 200, img);
+    marca(ctx, id, cx, 400, 190, img);
     ctx.fillStyle = TEXTO;
     ctx.font = '700 108px Rajdhani, Arial, sans-serif';
     ctx.textAlign = 'center';
@@ -473,8 +488,8 @@ export async function duelCard(a, b, h) {
 /* ---------- Placa de próximo torneo ---------- */
 
 export async function eventCard(t, cuando) {
-  const imgs = await Promise.all(t.teamIds.map(id => cargarBandera(team(id)?.iso)));
-  const sede = t.host ? await cargarBandera(team(t.host)?.iso) : null;
+  const imgs = await insignias(t.teamIds);
+  const sede = t.host ? await insignia(t.host) : null;
 
   const c = lienzo();
   const ctx = c.getContext('2d');
@@ -501,7 +516,7 @@ export async function eventCard(t, cuando) {
     y += 60;
   }
   if (t.host) {
-    bandera(ctx, t.host, W / 2, y + 26, 110, sede);
+    marca(ctx, t.host, W / 2, y + 32, 108, sede);
     y += 100;
     texto(ctx, `En casa de ${nameOf(t.host)}`, y, { size: 30, color: TENUE });
     y += 40;
@@ -519,7 +534,7 @@ export async function eventCard(t, cuando) {
     const total = grupo.length * ancho + (grupo.length - 1) * sep;
     let fx = W / 2 - total / 2 + ancho / 2;
     grupo.forEach((id, j) => {
-      bandera(ctx, id, fx, fy, ancho, imgs[i + j]);
+      marca(ctx, id, fx, fy, ancho * 0.72, imgs[i + j]);
       fx += ancho + sep;
     });
     fy += 140;
