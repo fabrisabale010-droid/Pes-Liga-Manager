@@ -2,12 +2,20 @@ import { flag, esc, nameOf, cup, crest } from '../ui/ui.js';
 import { titlesCount } from '../ui/parts.js';
 import { tournaments } from '../core/store.js';
 import { crunch } from '../domain/stats.js';
-import { recordCard, share } from '../ui/cards.js';
+import { recordCard, cabinetCard, cabinetAllCard, share } from '../ui/cards.js';
 import { say } from '../ui/ui.js';
 import { annualTitles } from '../domain/annual.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 
 let filter = 'todo';
+
+const ETIQUETA = {
+  todo: 'Todos los títulos',
+  liga: 'Títulos de liga',
+  copa: 'Títulos de copa',
+  previo: 'Títulos previos a la app',
+  anual: 'Copas Anuales'
+};
 
 const FILTERS = [
   { id:'todo',   label:'Todo' },
@@ -30,6 +38,12 @@ export function renderShowcase(view) {
     ${records()}`;
 
   view.addEventListener('click', async e => {
+    const slot = e.target.closest('[data-share-slot]');
+    if (slot) return compartirSlot(slot);
+
+    const todos = e.target.closest('[data-share-cabinet]');
+    if (todos) return compartirVitrina(todos);
+
     const hit = e.target.closest('[data-rec]');
     if (!hit) return;
     const datos = (window._recs || [])[Number(hit.dataset.rec)];
@@ -82,11 +96,45 @@ function cabinet() {
   const best = list[0][1];
   return `<div class="cabinet">${list.map(([id, n]) => `
     <div class="slot ${n === best ? 'top' : ''}">
+      <button class="rec-share slot-share" data-share-slot="${id}:${n}" title="Compartir" aria-label="Compartir">
+        <i class="ti ti-share-2"></i>
+      </button>
       <span class="fl">${crest(id, 92)}</span>
       <span class="nm">${esc(nameOf(id))}</span>
       <span class="n"><b>${n}</b>${cup()}</span>
       <span class="u">${n === 1 ? 'título' : 'títulos'}</span>
-    </div>`).join('')}</div>`;
+    </div>`).join('')}</div>
+    <div style="margin-top:12px">
+      <button class="btn sm" data-share-cabinet><i class="ti ti-share-2"></i>Compartir la vitrina</button>
+    </div>`;
+}
+
+async function compartirSlot(btn) {
+  const [id, n] = btn.dataset.shareSlot.split(':');
+  btn.disabled = true;
+  try {
+    const res = await share(await cabinetCard(id, Number(n), ETIQUETA[filter]),
+      `vitrina-${nameOf(id)}`,
+      `${nameOf(id)} · ${n} ${Number(n) === 1 ? 'título' : 'títulos'}`);
+    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+  } catch (err) {
+    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  }
+  btn.disabled = false;
+}
+
+async function compartirVitrina(btn) {
+  const lista = Object.entries(counts()).sort((a, b) => b[1] - a[1]);
+  if (!lista.length) return;
+  btn.disabled = true;
+  try {
+    const res = await share(await cabinetAllCard(lista, ETIQUETA[filter]),
+      'vitrina', `🏆 La vitrina: ${lista.map(([id, n]) => `${nameOf(id)} ${n}`).join(' · ')}`);
+    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+  } catch (err) {
+    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  }
+  btn.disabled = false;
 }
 
 /* ---------- Récords ---------- */
