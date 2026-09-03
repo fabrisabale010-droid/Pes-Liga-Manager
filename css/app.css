@@ -169,7 +169,7 @@ main{
     radial-gradient(520px 200px at 50% -40px, rgba(224,178,61,.20), transparent 70%),
     linear-gradient(180deg,#0e1424,#080c16);
   box-shadow:inset 0 1px 0 rgba(255,243,207,.16), 0 18px 44px rgba(0,0,0,.5);
-  padding:26px 18px 22px; text-align:center;
+  padding:30px 18px 26px; text-align:center;
 }
 .plaque-in{position:relative; z-index:2;}
 .plaque .who{font-family:'Rajdhani',sans-serif; font-size:30px; font-weight:700; margin-top:6px;
@@ -177,7 +177,7 @@ main{
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--trophy);}
 .plaque .kicker{font-size:12px; color:var(--trophy); opacity:.85;}
 .plaque .meta{font-size:12.5px; color:var(--ink-dim); margin-top:4px;}
-.plaque .flag-xl{font-size:34px; margin:14px 0 4px; display:block;}
+.plaque .flag-xl{font-size:34px; margin:20px 0 6px; display:block;}
 
 .fall{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
 .fall i{position:absolute; top:-12px; display:block; opacity:.88; animation:fall linear forwards;}
@@ -309,23 +309,23 @@ table.standings th.sticky-r::before{
 
 /* ---------- Vitrina ---------- */
 
-.cabinet{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:10px; align-items:start;}
+.cabinet{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; align-items:start;}
 .slot{
   position:relative; z-index:0; overflow:hidden;
-  display:flex; flex-direction:column; align-items:center; gap:5px;
+  display:flex; flex-direction:column; align-items:center; gap:7px;
   border:1px solid rgba(224,178,61,.28); border-radius:var(--r-m);
-  background:rgba(16,12,4,.4); padding:15px 10px; text-align:center;
+  background:rgba(16,12,4,.4); padding:20px 12px 16px; text-align:center;
 }
 .slot.top{
   border-color:var(--trophy); background:rgba(38,28,8,.55);
   box-shadow:inset 0 0 0 1px rgba(224,178,61,.28);
 }
-.slot .fl{font-size:29px; line-height:1; display:block; min-height:62px;}
-.slot .nm{font-size:12.5px; font-weight:700;}
-.slot .n{display:flex; align-items:center; justify-content:center; gap:6px; color:var(--trophy);}
-.slot .n b{font-family:'Space Mono',monospace; font-size:21px; font-weight:700;}
+.slot .fl{font-size:29px; line-height:1; display:block; min-height:92px;}
+.slot .nm{font-size:14.5px; font-weight:700;}
+.slot .n{display:flex; align-items:center; justify-content:center; gap:9px; color:var(--trophy); margin-top:2px;}
+.slot .n b{font-family:'Space Mono',monospace; font-size:30px; font-weight:700; line-height:1;}
 .slot .n i{font-size:17px;}
-.slot .u{font-size:9.5px; color:var(--ink-faint);}
+.slot .u{font-size:10.5px; color:var(--ink-faint);}
 
 /* ---------- Récords ---------- */
 
@@ -482,7 +482,7 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 
 /* En la placa del campeón va grande, con un brillo que va y viene. */
 .plaque .cup-img{
-  height:104px; display:block; margin:0 auto 6px;
+  height:150px; display:block; margin:0 auto 8px;
   animation:cupGlow 3.4s ease-in-out infinite;
 }
 @keyframes cupGlow{
@@ -490,7 +490,7 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
   50%    { filter:drop-shadow(0 4px 26px rgba(255,228,158,.85)); }
 }
 
-.slot .n .cup-img{height:1.5em;}
+.slot .n .cup-img{height:2.1em;}
 .block > h2 .cup-img{height:1.4em; vertical-align:-.32em;}
 
 /* ---------- Superposiciones ---------- */
