@@ -147,6 +147,9 @@ function bandera(ctx, id, cx, cy, ancho, img) {
   ctx.stroke();
 }
 
+const fechaLarga = iso => new Date(iso)
+  .toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+
 function pie(ctx) {
   texto(ctx, 'PES6 LIGA MANAGER', H - 92, { size: 26, color: TENUE, weight: '700', track: 5 });
 }
@@ -189,9 +192,7 @@ export async function championCard(t) {
   const nombre = ajustar(ctx, t.name, W - 280, 42, 'Inter', '600');
   texto(ctx, t.name, 1030, { size: nombre, color: TEXTO, weight: '600' });
 
-  const fecha = new Date(t.finishedAt || t.createdAt)
-    .toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
-  texto(ctx, fecha, 1085, { size: 30, color: TENUE });
+  texto(ctx, fechaLarga(t.finishedAt || t.createdAt), 1085, { size: 30, color: TENUE });
 
   pie(ctx);
   return c;
@@ -242,7 +243,7 @@ function marcador(ctx, m, top, imgs) {
 
 /* ---------- Placa de récord ---------- */
 
-export async function recordCard({ value, unit = '', holder, label, bad = false, match = null }) {
+export async function recordCard({ value, unit = '', holder, label, bad = false, match = null, contexto = null }) {
   const img = holder ? await cargarBandera(team(holder)?.iso) : null;
   const imgs = match
     ? await Promise.all([cargarBandera(team(match.home)?.iso), cargarBandera(team(match.away)?.iso)])
@@ -272,6 +273,13 @@ export async function recordCard({ value, unit = '', holder, label, bad = false,
 
   if (match) {
     marcador(ctx, match, base + 40, imgs);
+    if (contexto) {
+      const nom = ajustar(ctx, contexto.name, W - 260, 34, 'Inter', '600');
+      texto(ctx, contexto.name, base + 400, { size: nom, color: TEXTO, weight: '600' });
+      if (contexto.date) {
+        texto(ctx, fechaLarga(contexto.date), base + 448, { size: 28, color: TENUE });
+      }
+    }
   } else if (holder) {
     bandera(ctx, holder, W / 2, base + 130, 200, img);
     const nom = ajustar(ctx, nameOf(holder).toUpperCase(), W - 220, 88, 'Rajdhani', '700');
@@ -335,4 +343,190 @@ export async function share(canvas, nombre, texto = '') {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   return 'descargada';
+}
+
+/* ---------- Placa de tabla final ---------- */
+
+export async function tableCard(t, rows) {
+  const top = rows.slice(0, 8);
+  const imgs = await Promise.all(top.map(r => cargarBandera(team(r.id)?.iso)));
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(77,141,255,.20)');
+  marco(ctx, 'rgba(77,141,255,.45)');
+
+  texto(ctx, 'TABLA FINAL', 175, { size: 28, color: LUZ, weight: '700', track: 9 });
+
+  const nom = ajustar(ctx, t.name, W - 240, 62, 'Rajdhani', '700');
+  texto(ctx, t.name, 250, { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
+  texto(ctx, fechaLarga(t.finishedAt || t.createdAt), 300, { size: 28, color: TENUE });
+
+  const X = 120, ANCHO = W - 240, ALTO = 104;
+  let y = 370;
+
+  top.forEach((r, i) => {
+    const campeon = i === 0;
+
+    ctx.fillStyle = campeon ? 'rgba(224,178,61,.14)' : 'rgba(255,255,255,.04)';
+    redondo(ctx, X, y, ANCHO, ALTO - 12, 18);
+    ctx.fill();
+
+    if (campeon) {
+      ctx.strokeStyle = 'rgba(224,178,61,.5)';
+      ctx.lineWidth = 2;
+      redondo(ctx, X, y, ANCHO, ALTO - 12, 18);
+      ctx.stroke();
+    }
+
+    const cy = y + (ALTO - 12) / 2;
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = campeon ? ORO : TENUE;
+    ctx.font = '700 38px "Space Mono", monospace';
+    ctx.fillText(String(i + 1), X + 55, cy + 13);
+
+    bandera(ctx, r.id, X + 165, cy, 96, imgs[i]);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = campeon ? ORO : TEXTO;
+    const tam = ajustar(ctx, nameOf(r.id).toUpperCase(), 420, 46, 'Rajdhani', '700');
+    ctx.font = `700 ${tam}px Rajdhani, Arial, sans-serif`;
+    ctx.fillText(nameOf(r.id).toUpperCase(), X + 230, cy + 15);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = campeon ? ORO : TEXTO;
+    ctx.font = '700 44px "Space Mono", monospace';
+    ctx.fillText(String(r.pts), X + ANCHO - 34, cy + 15);
+
+    ctx.textAlign = 'center';
+    y += ALTO;
+  });
+
+  texto(ctx, 'PUNTOS', y + 34, { size: 22, color: TENUE, weight: '600', track: 4 });
+
+  pie(ctx);
+  return c;
+}
+
+/* ---------- Placa de cara a cara ---------- */
+
+export async function duelCard(a, b, h) {
+  const [ia, ib] = await Promise.all([
+    cargarBandera(team(a)?.iso), cargarBandera(team(b)?.iso)
+  ]);
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(77,141,255,.20)');
+  marco(ctx, 'rgba(77,141,255,.45)');
+
+  texto(ctx, 'CARA A CARA', 175, { size: 28, color: LUZ, weight: '700', track: 9 });
+  texto(ctx, `${h.pj} ${h.pj === 1 ? 'partido' : 'partidos'}`, 232, { size: 32, color: TENUE });
+
+  const lado = (id, wins, img, cx) => {
+    bandera(ctx, id, cx, 400, 200, img);
+    ctx.fillStyle = TEXTO;
+    ctx.font = '700 108px Rajdhani, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(wins), cx, 590);
+    const tam = ajustar(ctx, nameOf(id).toUpperCase(), 380, 44, 'Rajdhani', '700');
+    ctx.font = `700 ${tam}px Rajdhani, Arial, sans-serif`;
+    ctx.fillText(nameOf(id).toUpperCase(), cx, 652);
+  };
+
+  lado(a, h.ganóA, ia, 300);
+  lado(b, h.ganóB, ib, W - 300);
+
+  ctx.fillStyle = TENUE;
+  ctx.font = '700 64px Rajdhani, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('vs', W / 2, 590);
+
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  redondo(ctx, 140, 740, W - 280, 300, 26);
+  ctx.fill();
+
+  const dato = (etiqueta, valor, yy) => {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = TENUE;
+    ctx.font = '500 34px Inter, Arial, sans-serif';
+    ctx.fillText(etiqueta, 200, yy);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = TEXTO;
+    ctx.font = '700 40px "Space Mono", monospace';
+    ctx.fillText(valor, W - 200, yy);
+    ctx.textAlign = 'center';
+  };
+
+  dato('Empates', String(h.empates), 830);
+  dato('Goles', `${h.golesA} - ${h.golesB}`, 920);
+  dato('Ganó más', h.ganóA === h.ganóB ? 'Están iguales'
+      : nameOf(h.ganóA > h.ganóB ? a : b), 1010);
+
+  pie(ctx);
+  return c;
+}
+
+/* ---------- Placa de próximo torneo ---------- */
+
+export async function eventCard(t, cuando) {
+  const imgs = await Promise.all(t.teamIds.map(id => cargarBandera(team(id)?.iso)));
+  const sede = t.host ? await cargarBandera(team(t.host)?.iso) : null;
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(77,141,255,.22)');
+  marco(ctx, 'rgba(77,141,255,.45)');
+
+  texto(ctx, 'PRÓXIMO TORNEO', 190, { size: 28, color: LUZ, weight: '700', track: 9 });
+
+  const dia = cuando
+    ? cuando.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+    : t.name;
+  const conMayus = dia.charAt(0).toUpperCase() + dia.slice(1);
+  const tam = ajustar(ctx, conMayus, W - 200, 82, 'Rajdhani', '700');
+  texto(ctx, conMayus, 310, { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+
+  if (t.when?.time) {
+    texto(ctx, `${t.when.time} h`, 380, { size: 44, color: LUZ, weight: '600' });
+  }
+
+  let y = 470;
+  if (t.place) {
+    texto(ctx, t.place, y, { size: 40, color: TEXTO, weight: '600' });
+    y += 60;
+  }
+  if (t.host) {
+    bandera(ctx, t.host, W / 2, y + 26, 110, sede);
+    y += 100;
+    texto(ctx, `En casa de ${nameOf(t.host)}`, y, { size: 30, color: TENUE });
+    y += 40;
+  }
+
+  texto(ctx, 'JUEGAN', y + 70, { size: 24, color: TENUE, weight: '700', track: 6 });
+
+  /* Las banderas de los participantes, en filas de a cuatro. */
+  const porFila = Math.min(4, t.teamIds.length);
+  const ancho = 150, sep = 40;
+  let fila = 0, fy = y + 160;
+
+  for (let i = 0; i < t.teamIds.length; i += porFila) {
+    const grupo = t.teamIds.slice(i, i + porFila);
+    const total = grupo.length * ancho + (grupo.length - 1) * sep;
+    let fx = W / 2 - total / 2 + ancho / 2;
+    grupo.forEach((id, j) => {
+      bandera(ctx, id, fx, fy, ancho, imgs[i + j]);
+      fx += ancho + sep;
+    });
+    fy += 140;
+    fila++;
+    if (fila >= 3) break;
+  }
+
+  pie(ctx);
+  return c;
 }
