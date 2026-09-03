@@ -36,12 +36,15 @@ export function renderShowcase(view) {
     if (!datos) return;
     hit.disabled = true;
     try {
-      const nombre = datos.holder ? nameOf(datos.holder) : 'record';
-      const res = await share(recordCard(datos), `record-${nombre}`,
-        `${datos.value}${datos.unit} ${datos.label}${datos.holder ? ' — ' + nameOf(datos.holder) : ''}`);
-      if (res === 'descargada') say('Imagen guardada');
-    } catch {
-      say('No se pudo generar la imagen');
+      const nombre = datos.holder ? nameOf(datos.holder)
+        : datos.match ? `${nameOf(datos.match.home)}-${nameOf(datos.match.away)}` : 'record';
+      const detalle = datos.holder ? ' — ' + nameOf(datos.holder)
+        : datos.match ? ` — ${nameOf(datos.match.home)} ${datos.match.hg}-${datos.match.ag} ${nameOf(datos.match.away)}` : '';
+      const res = await share(await recordCard(datos), `record-${nombre}`,
+        `${datos.value}${datos.unit} ${datos.label}${detalle}`);
+      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+    } catch (err) {
+      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
     }
     hit.disabled = false;
   });
@@ -106,8 +109,12 @@ function records() {
 
   /* Cada ficha guarda sus datos crudos para poder dibujar la imagen. */
   const guardadas = [];
-  const card = (value, unit, holder, label, bad, teamId) => {
-    const i = guardadas.push({ value, unit, label, bad: !!bad, holder: teamId || null }) - 1;
+  const card = (value, unit, holder, label, bad, teamId, match) => {
+    const i = guardadas.push({
+      value, unit, label, bad: !!bad,
+      holder: teamId || null,
+      match: match || null
+    }) - 1;
     return `
     <article class="rec ${bad ? 'bad' : ''}">
       <div class="rec-n"><b>${value}</b>${unit ? `<i>${unit}</i>` : ''}</div>
@@ -189,8 +196,8 @@ function records() {
     ${(g || mg) ? `<section class="block">
       <h2><i class="ti ti-flame"></i>Partidos que quedaron</h2>
       <div class="recs">
-        ${g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande') : ''}
-        ${mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles') : ''}
+        ${g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande', 0, null, g.m) : ''}
+        ${mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles', 0, null, mg.m) : ''}
       </div>
     </section>` : ''}`;
 }

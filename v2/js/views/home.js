@@ -31,11 +31,11 @@ export function renderHome(view) {
   if (btn) btn.onclick = async () => {
     btn.disabled = true;
     try {
-      const res = await share(championCard(last), `campeon-${nameOf(last.champion)}`,
+      const res = await share(await championCard(last), `campeon-${nameOf(last.champion)}`,
         `🏆 ${nameOf(last.champion)} campeón de ${last.name}`);
-      if (res === 'descargada') say('Imagen guardada');
-    } catch {
-      say('No se pudo generar la imagen');
+      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+    } catch (err) {
+      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
     }
     btn.disabled = false;
   };
