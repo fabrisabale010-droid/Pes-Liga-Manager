@@ -197,36 +197,47 @@ export async function championCard(t) {
   return c;
 }
 
-/* Marcador de un partido: las dos banderas, los nombres y el resultado. */
-function marcador(ctx, m, y, imgs) {
-  const fila = (id, goles, gana, yy, img) => {
-    ctx.save();
-    bandera(ctx, id, 210, yy, 150, img);
+/* Marcador de un partido: las dos banderas, los nombres y el resultado.
+   Medidas pensadas para que todo entre holgado dentro del recuadro. */
+const MARCO_X   = 140;              // borde izquierdo del recuadro
+const MARCO_W   = W - MARCO_X * 2;
+const MARCO_ALT = 300;
+const BAND_W    = 130;              // ancho de bandera
+const BAND_CX   = MARCO_X + 40 + BAND_W / 2;
+const NOMBRE_X  = BAND_CX + BAND_W / 2 + 30;
+const GOLES_X   = W - MARCO_X - 45;
+const NOMBRE_MAX = GOLES_X - NOMBRE_X - 70;
 
-    ctx.textAlign = 'left';
+function marcador(ctx, m, top, imgs) {
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  redondo(ctx, MARCO_X, top, MARCO_W, MARCO_ALT, 26);
+  ctx.fill();
+
+  const fila = (id, goles, gana, cy, img) => {
+    bandera(ctx, id, BAND_CX, cy, BAND_W, img);
+
     ctx.fillStyle = gana ? TEXTO : TENUE;
-    const size = ajustar(ctx, nameOf(id).toUpperCase(), 520, 62, 'Rajdhani', '700');
+    const size = ajustar(ctx, nameOf(id).toUpperCase(), NOMBRE_MAX, 58, 'Rajdhani', '700');
+    ctx.textAlign = 'left';
     ctx.font = `700 ${size}px Rajdhani, Arial, sans-serif`;
-    ctx.fillText(nameOf(id).toUpperCase(), 310, yy + size * .34);
+    ctx.fillText(nameOf(id).toUpperCase(), NOMBRE_X, cy + size * .34);
 
     ctx.textAlign = 'right';
-    ctx.fillStyle = gana ? TEXTO : TENUE;
-    ctx.font = `700 74px Rajdhani, Arial, sans-serif`;
-    ctx.fillText(String(goles), W - 190, yy + 26);
-    ctx.restore();
+    ctx.font = '700 70px Rajdhani, Arial, sans-serif';
+    ctx.fillText(String(goles), GOLES_X, cy + 24);
+    ctx.textAlign = 'center';
   };
 
-  fila(m.home, m.hg, m.hg >= m.ag, y, imgs[0]);
+  fila(m.home, m.hg, m.hg >= m.ag, top + 80, imgs[0]);
 
   ctx.strokeStyle = 'rgba(255,255,255,.10)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(190, y + 82);
-  ctx.lineTo(W - 190, y + 82);
+  ctx.moveTo(MARCO_X + 60, top + 150);
+  ctx.lineTo(W - MARCO_X - 60, top + 150);
   ctx.stroke();
 
-  fila(m.away, m.ag, m.ag >= m.hg, y + 164, imgs[1]);
-  ctx.textAlign = 'center';
+  fila(m.away, m.ag, m.ag >= m.hg, top + 220, imgs[1]);
 }
 
 /* ---------- Placa de récord ---------- */
@@ -260,10 +271,7 @@ export async function recordCard({ value, unit = '', holder, label, bad = false,
   const base = 590 + partes.length * 58;
 
   if (match) {
-    ctx.fillStyle = 'rgba(255,255,255,.05)';
-    redondo(ctx, 140, base + 40, W - 280, 290, 26);
-    ctx.fill();
-    marcador(ctx, match, base + 130, imgs);
+    marcador(ctx, match, base + 40, imgs);
   } else if (holder) {
     bandera(ctx, holder, W / 2, base + 130, 200, img);
     const nom = ajustar(ctx, nameOf(holder).toUpperCase(), W - 220, 88, 'Rajdhani', '700');
