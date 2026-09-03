@@ -4,7 +4,7 @@ import { crunch, byPoints, byAverage, byTitles, years, headToHead,
          reached, coming } from '../domain/stats.js';
 import { tournaments } from '../core/store.js';
 import { isAdmin } from '../core/auth.js';
-import { say, sayUndo, cheer, cup } from '../ui/ui.js';
+import { say, sayUndo, cheer, cup, crest } from '../ui/ui.js';
 import * as Annual from '../domain/annual.js';
 
 let tab = 'puntos';
@@ -91,7 +91,7 @@ function anual() {
         ${cup("cup")}
         <div class="kicker">Copa Anual ${y}</div>
         <div class="who">${esc(nameOf(cup.champion))}</div>
-        <span class="flag-xl">${flag(cup.champion)}</span>
+        <span class="flag-xl">${crest(cup.champion, 46)}</span>
       </div>
     </div>
     ${isAdmin() ? `<div style="text-align:center;margin-top:12px">
@@ -348,17 +348,19 @@ function duelo() {
     </div>
     <div class="fixture-head">Todos los cruces</div>
     ${h.games.map(({ m, t }) => {
-      const gA = m.home === duoA ? m.hg : m.ag;
-      const gB = m.home === duoA ? m.ag : m.hg;
+      /* Se respeta quién jugó de local: el orden es el del partido,
+         no el de los desplegables. */
+      const ganaLocal = m.hg > m.ag || m.penWinner === m.home;
+      const ganaVisita = m.ag > m.hg || m.penWinner === m.away;
       return `<div class="game done">
-        <span class="t ${gA > gB ? 'win' : ''}">${flag(duoA)}<span>${esc(nameOf(duoA))}</span></span>
+        <span class="t ${ganaLocal ? 'win' : ''}">${flag(m.home)}<span>${esc(nameOf(m.home))}</span></span>
         <span class="mark">
-          <span class="score" style="display:grid;place-items:center">${gA}</span>
-          <span class="score" style="display:grid;place-items:center">${gB}</span>
+          <span class="score" style="display:grid;place-items:center">${m.hg}</span>
+          <span class="score" style="display:grid;place-items:center">${m.ag}</span>
         </span>
-        <span class="t away ${gB > gA ? 'win' : ''}">${flag(duoB)}<span>${esc(nameOf(duoB))}</span></span>
+        <span class="t away ${ganaVisita ? 'win' : ''}">${flag(m.away)}<span>${esc(nameOf(m.away))}</span></span>
       </div>
-      <div class="duel-src">${esc(t.name)}</div>`;
+      <div class="duel-src">${esc(t.name)}${m.penWinner ? ` · ${esc(nameOf(m.penWinner))} por penales` : ''}</div>`;
     }).join('')}`;
 }
 
