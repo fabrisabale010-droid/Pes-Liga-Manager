@@ -5,6 +5,7 @@ import { crunch, byPoints, byAverage, byTitles, years, headToHead,
 import { tournaments } from '../core/store.js';
 import { isAdmin } from '../core/auth.js';
 import { say, sayUndo, cheer, cup, crest } from '../ui/ui.js';
+import { duelCard, share } from '../ui/cards.js';
 import * as Annual from '../domain/annual.js';
 
 let tab = 'puntos';
@@ -36,9 +37,27 @@ export function renderStats(view) {
     const y = e.target.closest('[data-year]');
     if (y) { year = y.dataset.year === 'todo' ? null : Number(y.dataset.year); return paint(); }
     if (annualClicks(e, paint)) return;
+
+    const sd = e.target.closest('[data-share-duel]');
+    if (sd) compartirDuelo(sd);
   });
 
   paint();
+}
+
+async function compartirDuelo(btn) {
+  const h = headToHead(duoA, duoB);
+  if (!h.pj) return;
+  btn.disabled = true;
+  try {
+    const res = await share(await duelCard(duoA, duoB, h),
+      `${nameOf(duoA)}-vs-${nameOf(duoB)}`,
+      `${nameOf(duoA)} ${h.ganóA} - ${h.ganóB} ${nameOf(duoB)} en ${h.pj} partidos`);
+    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
+  } catch (err) {
+    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  }
+  btn.disabled = false;
 }
 
 /* ---------- Hitos ---------- */
@@ -345,6 +364,9 @@ function duelo() {
       <article class="rec"><div class="rec-n"><b>${h.golesB}</b></div>
         <div class="rec-b"><div class="rec-w">${flag(duoB)} <span>${esc(nameOf(duoB))}</span></div>
         <div class="rec-l">goles en estos cruces</div></div></article>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn sm" data-share-duel><i class="ti ti-share-2"></i>Compartir</button>
     </div>
     <div class="fixture-head">Todos los cruces</div>
     ${h.games.map(({ m, t }) => {
