@@ -37,5 +37,18 @@ export const CHAMPION_BEFORE_APP = 'BRA';
    Pasado el plazo se limpian solos la próxima vez que alguien abre la app. */
 export const TRASH_DAYS = 7;
 
+/* Escudos de las selecciones.
+
+   USE_CRESTS enciende el sistema. Cada selección muestra su escudo si tiene
+   uno cargado en js/domain/teams.js (campo crest); si no, muestra su bandera.
+   Se pueden ir agregando de a uno sin tocar nada más.
+
+   CRESTS_FROM_FOLDER es para el otro camino: si bajaste los 30 archivos con
+   tools/bajar_escudos.py y subiste la carpeta, poné true y los toma de ahí
+   sin necesidad de cargar ningún enlace. */
+export const USE_CRESTS = true;
+export const CRESTS_FROM_FOLDER = false;
+export const CRESTS_PATH = './crests/';
+
 export const MAX_TEAMS = 16;
 export const MAX_PLAYERS = 10;
