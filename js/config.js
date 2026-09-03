@@ -47,7 +47,7 @@ export const TRASH_DAYS = 7;
    tools/bajar_escudos.py y subiste la carpeta, poné true y los toma de ahí
    sin necesidad de cargar ningún enlace. */
 export const USE_CRESTS = true;
-export const CRESTS_FROM_FOLDER = false;
+export const CRESTS_FROM_FOLDER = true;
 export const CRESTS_PATH = './crests/';
 
 export const MAX_TEAMS = 16;
