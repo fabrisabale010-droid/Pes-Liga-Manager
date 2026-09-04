@@ -22,7 +22,7 @@ export const DORADOS = [
     nombre: 'Balón de Oro',
     detalle: 'el mejor del año, todo junto',
     icono: 'ti-award',
-    valor: t => uno(t.puntaje),
+    valor: t => `${Math.round(t.puntaje)}/100`,
     orden: t => t.puntaje,
     pie: t => `${t.pts} puntos · ${t.titulos} ${t.titulos === 1 ? 'título' : 'títulos'} · ${t.dg > 0 ? '+' : ''}${t.dg} de diferencia`
   },
@@ -154,17 +154,30 @@ export const PAPELONES = [
   }
 ];
 
-/* Puntaje del Balón de Oro: los puntos por partido pesan lo principal,
-   los títulos empujan fuerte y la diferencia de gol desempata. */
-const puntaje = t =>
-  prom(t.pts, t.pj) * 10 + t.titulos * 6 + prom(t.dg, t.pj) * 2;
+/* Puntaje del Balón de Oro, del 0 al 100. Se reparte así:
+
+     70 puntos  rendimiento: los puntos por partido sobre el máximo posible (3)
+     20 puntos  títulos, comparado con el que más ganó en el año
+     10 puntos  diferencia de gol por partido, comparada con la mejor del año
+
+   Lo pensé para que el rendimiento pese lo principal, pero que ganar torneos
+   y golear también sumen. Si querés cambiar el reparto, están acá los números. */
+function calcularPuntajes(teams) {
+  const maxTitulos = Math.max(1, ...teams.map(t => t.titulos));
+  const maxDif = Math.max(0.01, ...teams.map(t => Math.max(0, prom(t.dg, t.pj))));
+
+  return teams.map(t => {
+    const rendimiento = Math.min(1, prom(t.pts, t.pj) / 3) * 70;
+    const titulos = (t.titulos / maxTitulos) * 20;
+    const diferencia = (Math.max(0, prom(t.dg, t.pj)) / maxDif) * 10;
+    return { ...t, puntaje: Math.min(100, rendimiento + titulos + diferencia) };
+  });
+}
 
 export function premiosDelAnio(year) {
-  const teams = crunch({ year }).teams
-    .filter(t => t.pj >= MIN_PJ)
-    .map(t => ({ ...t, puntaje: puntaje(t) }));
-
-  if (!teams.length) return null;
+  const base = crunch({ year }).teams.filter(t => t.pj >= MIN_PJ);
+  if (!base.length) return null;
+  const teams = calcularPuntajes(base);
 
   const resolver = lista => lista.map(p => {
     const aptos = p.exige ? teams.filter(p.exige) : teams;
@@ -180,6 +193,8 @@ export function premiosDelAnio(year) {
 
   return {
     year,
+    /* Mientras el año no termine, los premios pueden cambiar. */
+    enCurso: year === new Date().getFullYear(),
     dorados: resolver(DORADOS),
     papelones: resolver(PAPELONES)
   };
