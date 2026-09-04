@@ -674,3 +674,102 @@ export async function cabinetAllCard(lista, categoria = '') {
   pie(ctx);
   return c;
 }
+
+/* ---------- Placa de premio anual ---------- */
+
+export async function awardCard(premio, year, malo = false) {
+  const [ins, copa] = await Promise.all([
+    insignia(premio.equipo),
+    premio.id === 'balon' ? cargarCopa() : Promise.resolve(null)
+  ]);
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+  const color = malo ? ROJO : ORO;
+
+  fondo(ctx, malo ? 'rgba(214,69,91,.20)' : 'rgba(224,178,61,.24)');
+  marco(ctx, malo ? 'rgba(214,69,91,.5)' : 'rgba(224,178,61,.55)');
+
+  texto(ctx, String(year), 160, { size: 28, color: TENUE, weight: '700', track: 8 });
+
+  const nom = ajustar(ctx, premio.nombre.toUpperCase(), W - 200, 76, 'Rajdhani', '700');
+  if (malo) {
+    texto(ctx, premio.nombre.toUpperCase(), 250,
+          { size: nom, color, weight: '700', font: 'Rajdhani' });
+  } else {
+    textoOro(ctx, premio.nombre.toUpperCase(), 250, nom);
+  }
+  texto(ctx, premio.detalle, 305, { size: 32, color: TENUE });
+
+  if (copa) copaImg(ctx, copa, W / 2, 360, 180);
+
+  const yIns = copa ? 700 : 560;
+  marca(ctx, premio.equipo, W / 2, yIns, 210, ins);
+
+  const tam = ajustar(ctx, nameOf(premio.equipo).toUpperCase(), W - 200, 92, 'Rajdhani', '700');
+  texto(ctx, nameOf(premio.equipo).toUpperCase(), yIns + 190,
+        { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+
+  ctx.fillStyle = color;
+  ctx.font = '700 96px Rajdhani, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(premio.valorTexto, W / 2, yIns + 300);
+
+  texto(ctx, premio.pieTexto, yIns + 350, { size: 30, color: TENUE });
+
+  pie(ctx);
+  return c;
+}
+
+/* ---------- Placa de premios votados ---------- */
+
+export async function pollCard(t, resumen) {
+  const ids = resumen.flatMap(c => c.ganadores).filter(Boolean);
+  const inss = await insignias(ids);
+  const buscar = id => inss[ids.indexOf(id)];
+
+  const c = lienzo();
+  const ctx = c.getContext('2d');
+
+  fondo(ctx, 'rgba(224,178,61,.20)');
+  marco(ctx, 'rgba(224,178,61,.5)');
+
+  texto(ctx, 'PREMIOS DE LA COPA', 165, { size: 28, color: ORO, weight: '700', track: 8 });
+  const nom = ajustar(ctx, t.name, W - 220, 54, 'Rajdhani', '700');
+  texto(ctx, t.name, 232, { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
+
+  const X = 110, ANCHO = W - 220;
+  const alto = Math.min(210, Math.floor((H - 420) / Math.max(1, resumen.length)));
+  let y = 300;
+
+  resumen.forEach(cat => {
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    redondo(ctx, X, y, ANCHO, alto - 18, 22);
+    ctx.fill();
+
+    const cy = y + (alto - 18) / 2;
+    const ganador = cat.ganadores[0];
+
+    if (ganador) marca(ctx, ganador, X + 96, cy, Math.min(96, alto - 70), buscar(ganador));
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = ORO;
+    const tn = ajustar(ctx, cat.nombre, ANCHO - 260, 40, 'Rajdhani', '700');
+    ctx.font = `700 ${tn}px Rajdhani, Arial, sans-serif`;
+    ctx.fillText(cat.nombre, X + 175, cy - 8);
+
+    ctx.fillStyle = ganador ? TEXTO : TENUE;
+    const quien = cat.ganadores.length
+      ? cat.ganadores.map(nameOf).join(' y ')
+      : 'sin votos';
+    const tq = ajustar(ctx, quien, ANCHO - 260, 42, 'Inter', '600');
+    ctx.font = `600 ${tq}px Inter, Arial, sans-serif`;
+    ctx.fillText(quien, X + 175, cy + 42);
+    ctx.textAlign = 'center';
+
+    y += alto;
+  });
+
+  pie(ctx);
+  return c;
+}

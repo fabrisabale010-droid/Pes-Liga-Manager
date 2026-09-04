@@ -10,6 +10,7 @@ export const SECTIONS = [
   { id:'vitrina',      label:'Vitrina',       icon:'ti-trophy',        bar:true },
   { id:'historial',    label:'Historial',     icon:'ti-history',       bar:true },
   { id:'estadisticas', label:'Estadísticas',  icon:'ti-chart-bar' },
+  { id:'premios',      label:'Premios',       icon:'ti-award' },
   { id:'programar',    label:'Programar',     icon:'ti-calendar-plus', adminOnly:true }
 ];
 
