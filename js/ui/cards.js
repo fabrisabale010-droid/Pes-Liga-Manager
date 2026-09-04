@@ -695,7 +695,7 @@ export async function cabinetAllCard(lista, categoria = '') {
 
 /* ---------- Placa de premio anual ---------- */
 
-export async function awardCard(premio, year, malo = false) {
+export async function awardCard(premio, year, malo = false, enCurso = false) {
   const [ins, copa] = await Promise.all([
     insignia(premio.equipo),
     premio.id === 'balon' ? cargarCopa() : Promise.resolve(null)
@@ -708,7 +708,8 @@ export async function awardCard(premio, year, malo = false) {
   fondo(ctx, malo ? 'rgba(214,69,91,.20)' : 'rgba(224,178,61,.24)');
   marco(ctx, malo ? 'rgba(214,69,91,.5)' : 'rgba(224,178,61,.55)');
 
-  texto(ctx, String(year), 160, { size: 28, color: TENUE, weight: '700', track: 8 });
+  texto(ctx, String(year) + (enCurso ? '  ·  POR AHORA' : ''), 160,
+        { size: 28, color: TENUE, weight: '700', track: 8 });
 
   const nom = ajustar(ctx, premio.nombre.toUpperCase(), W - 200, 76, 'Rajdhani', '700');
   if (malo) {
@@ -734,6 +735,11 @@ export async function awardCard(premio, year, malo = false) {
   ctx.fillText(premio.valorTexto, W / 2, yIns + 300);
 
   texto(ctx, premio.pieTexto, yIns + 350, { size: 30, color: TENUE });
+
+  if (premio.id === 'balon') {
+    texto(ctx, 'rendimiento + títulos + diferencia de gol', yIns + 398,
+          { size: 25, color: TENUE });
+  }
 
   pie(ctx);
   return c;
