@@ -79,6 +79,15 @@ compartir del celular. La imagen se dibuja
 a medida, no es una captura: se lee bien en el chat y pesa poco. Si el celular no
 permite compartir archivos, la descarga.
 
+**Premios.** Sección propia con dos partes. Los anuales salen solos de las
+estadísticas: Balón de Oro, Bota de Oro, El Ganador, El Colador, El Perdedor y
+varios más, divididos en dorados y papelones. Los de la copa los votan ustedes
+al terminar cada torneo: hay tantos votos por categoría como participantes, y
+cuando se completan se cierra y muestra al ganador. Todo se puede compartir.
+
+Para inventar un premio nuevo o cambiar las categorías de votación, se editan
+las listas de `js/domain/awards.js`.
+
 ## Estado
 
 La 2.0 ya cubre todo lo que hacía la anterior. Cuando la tengas probada un par
