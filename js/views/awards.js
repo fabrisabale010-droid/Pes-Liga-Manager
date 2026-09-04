@@ -77,7 +77,13 @@ function html() {
   return `
     <section class="block">
       <h2><i class="ti ti-award"></i>Premios ${year}</h2>
-      <p class="block-note">Se calculan solos con lo que pasó en la cancha. Hacen falta 3 partidos para entrar.</p>
+      <p class="block-note">
+        Se calculan solos con lo que pasó en la cancha. Hacen falta 3 partidos para entrar.
+        ${enCurso(year) ? 'Como el año sigue, todavía pueden cambiar de dueño.' : ''}
+      </p>
+      ${enCurso(year) ? `<div class="provisorio">
+        <i class="ti ti-hourglass"></i> Provisorio · el año todavía no terminó
+      </div>` : ''}
       ${ys.length > 1 ? `<div class="opts stack">
         ${ys.map(y => `<button class="opt ${year === y ? 'on' : ''}" data-year="${y}">${y}</button>`).join('')}
       </div>` : ''}
@@ -85,6 +91,8 @@ function html() {
     </section>
     ${votacion()}`;
 }
+
+const enCurso = y => y === new Date().getFullYear();
 
 function anuales() {
   const p = premiosDelAnio(year);
@@ -113,10 +121,14 @@ function anuales() {
       <div class="balon">
         <button class="rec-share premio-share" data-share-premio="balon:0"
                 title="Compartir"><i class="ti ti-share-2"></i></button>
-        <div class="balon-kicker"><i class="ti ti-award"></i> Balón de Oro ${year}</div>
+        <div class="balon-kicker"><i class="ti ti-award"></i> Balón de Oro ${year}${enCurso(year) ? ' · por ahora' : ''}</div>
         <div class="balon-crest">${crest(balon.equipo, 120)}</div>
         <div class="balon-nom">${esc(nameOf(balon.equipo))}</div>
+        <div class="balon-puntaje">${esc(balon.valorTexto)}</div>
         <div class="balon-pie">${esc(balon.pieTexto)}</div>
+        <div class="balon-como">
+          Rendimiento (70) + títulos (20) + diferencia de gol (10)
+        </div>
       </div>` : ''}
 
     <h3 style="margin:20px 0 10px">Los dorados</h3>
@@ -257,7 +269,7 @@ async function compartirPremio(btn) {
 
   btn.disabled = true;
   try {
-    const res = await share(await awardCard(premio, year, malo === '1'),
+    const res = await share(await awardCard(premio, year, malo === '1', p.enCurso),
       `premio-${premio.nombre}`,
       `${premio.nombre} ${year}: ${nameOf(premio.equipo)}`);
     if (res === 'descargada') say('No se pudo compartir: quedó en Descargas');
