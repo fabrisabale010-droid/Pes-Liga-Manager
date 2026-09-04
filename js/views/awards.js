@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, crest, say, cheer } from '../ui/ui.js';
+import { flag, esc, nameOf, crest, say, cheer, ballon } from '../ui/ui.js';
 import { state, update, tournaments } from '../core/store.js';
 import { years } from '../domain/stats.js';
 import {
@@ -121,7 +121,8 @@ function anuales() {
       <div class="balon">
         <button class="rec-share premio-share" data-share-premio="balon:0"
                 title="Compartir"><i class="ti ti-share-2"></i></button>
-        <div class="balon-kicker"><i class="ti ti-award"></i> Balón de Oro ${year}${enCurso(year) ? ' · por ahora' : ''}</div>
+        <div class="balon-trofeo">${ballon()}</div>
+        <div class="balon-kicker">Balón de Oro ${year}${enCurso(year) ? ' · por ahora' : ''}</div>
         <div class="balon-crest">${crest(balon.equipo, 120)}</div>
         <div class="balon-nom">${esc(nameOf(balon.equipo))}</div>
         <div class="balon-puntaje">${esc(balon.valorTexto)}</div>
