@@ -392,7 +392,19 @@ table.standings th.sticky-r::before{
   background:linear-gradient(180deg,var(--trophy-hi),var(--trophy) 55%,var(--trophy-lo));
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--trophy);
 }
-.balon-pie{font-size:13px; color:var(--ink-dim); margin-top:6px;}
+.balon-puntaje{
+  font-family:'Space Mono',monospace; font-size:34px; font-weight:700;
+  color:var(--trophy); margin-top:6px; line-height:1;
+}
+.balon-pie{font-size:13px; color:var(--ink-dim); margin-top:8px;}
+.balon-como{font-size:11px; color:var(--ink-faint); margin-top:6px;}
+
+.provisorio{
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-size:12.5px; font-weight:600; color:var(--light-soft);
+  background:rgba(77,141,255,.10); border:1px solid rgba(77,141,255,.28);
+  border-radius:999px; padding:8px 14px; margin-bottom:14px;
+}
 
 .premios{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px;}
 .premio{
