@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, shortDate, say, sayUndo, clip } from '../ui/ui.js';
+import { flag, esc, nameOf, say, sayUndo, clip, whenDate } from '../ui/ui.js';
 import { standingsTable, bracketView } from '../ui/parts.js';
 import { tableCard, share } from '../ui/cards.js';
 import { tournaments, trashed, trashDaysLeft,
@@ -61,9 +61,7 @@ export function renderHistory(view) {
 }
 
 function html() {
-  const all = [...tournaments()].sort(
-    (a, b) => new Date(b.finishedAt || b.createdAt) - new Date(a.finishedAt || a.createdAt)
-  );
+  const all = [...tournaments()].sort((a, b) => cuandoSeJugo(b) - cuandoSeJugo(a));
 
   if (!all.length) {
     return `<section class="block"><div class="empty">
@@ -126,6 +124,13 @@ function trashBlock() {
   </section>`;
 }
 
+/* La fecha que importa es la que se jugó, no la que se cargó en la app. */
+function cuandoSeJugo(t) {
+  const programada = whenDate(t.when);
+  if (programada) return programada;
+  return new Date(t.finishedAt || t.createdAt);
+}
+
 function row(t) {
   const open = openId === t.id;
   const p = progress(t);
@@ -138,7 +143,7 @@ function row(t) {
         <div class="nm">${esc(t.name)}
           <span class="tag ${t.finished ? 'done' : 'live'}">${t.finished ? 'terminado' : 'en juego'}</span>
         </div>
-        <div class="sub">${shortDate(t.finishedAt || t.createdAt)} · ${esc(formatName(t.format))} · ${p.played}/${p.total} partidos</div>
+        <div class="sub">${cuandoSeJugo(t).toLocaleDateString('es-AR')} · ${esc(formatName(t.format))} · ${p.played}/${p.total} partidos</div>
       </div>
       ${t.champion ? `<span style="font-size:20px">${flag(t.champion)}</span>` : ''}
       <i class="ti ti-chevron-down chev"></i>
