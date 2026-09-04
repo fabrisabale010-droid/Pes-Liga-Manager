@@ -505,20 +505,38 @@ export async function eventCard(t, cuando) {
   fondo(ctx, 'rgba(77,141,255,.22)');
   marco(ctx, 'rgba(77,141,255,.45)');
 
-  texto(ctx, 'PRÓXIMO TORNEO', 190, { size: 28, color: LUZ, weight: '700', track: 9 });
+  texto(ctx, 'PRÓXIMO TORNEO', 175, { size: 28, color: LUZ, weight: '700', track: 9 });
 
   const dia = cuando
     ? cuando.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
-    : t.name;
-  const conMayus = dia.charAt(0).toUpperCase() + dia.slice(1);
-  const tam = ajustar(ctx, conMayus, W - 200, 82, 'Rajdhani', '700');
-  texto(ctx, conMayus, 310, { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+    : '';
+  const conMayus = dia ? dia.charAt(0).toUpperCase() + dia.slice(1) : '';
 
-  if (t.when?.time) {
-    texto(ctx, `${t.when.time} h`, 380, { size: 44, color: LUZ, weight: '600' });
+  /* El nombre del torneo manda; la fecha va abajo. Si no le pusieron nombre
+     propio, el nombre automático ya es la fecha, así que no se repite. */
+  const auto = !dia || t.name.toLowerCase().includes(dia.toLowerCase());
+  let y = 265;
+
+  if (!auto) {
+    const tn = ajustar(ctx, t.name, W - 190, 74, 'Rajdhani', '700');
+    texto(ctx, t.name, y, { size: tn, color: TEXTO, weight: '700', font: 'Rajdhani' });
+    y += 66;
+    if (conMayus) {
+      texto(ctx, conMayus, y, { size: 44, color: TENUE, weight: '600' });
+      y += 58;
+    }
+  } else {
+    const tam = ajustar(ctx, conMayus || t.name, W - 190, 82, 'Rajdhani', '700');
+    texto(ctx, conMayus || t.name, y + 40, { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+    y += 108;
   }
 
-  let y = 470;
+  if (t.when?.time) {
+    texto(ctx, `${t.when.time} h`, y, { size: 44, color: LUZ, weight: '600' });
+    y += 62;
+  }
+
+  y += 30;
   if (t.place) {
     texto(ctx, t.place, y, { size: 42, color: TEXTO, weight: '600' });
     y += 66;
