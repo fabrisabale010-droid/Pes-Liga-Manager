@@ -9,7 +9,7 @@ import { MAX_TEAMS, MAX_PLAYERS } from '../config.js';
 import { go } from '../ui/router.js';
 
 const draft = {
-  date: '', time: '21:00', place: '', host: '',
+  name: '', date: '', time: '21:00', place: '', host: '',
   teams: [], format: 'ida', groups: 2, advance: 1
 };
 
@@ -31,6 +31,11 @@ export function renderSchedule(view) {
       <p class="block-note">Definí cuándo, dónde y quiénes juegan. Al confirmar se sortea el fixture y arranca la cuenta regresiva.</p>
 
       <div class="panel">
+        <div class="stack">
+          <label class="field" for="nombre">Nombre del torneo</label>
+          <input id="nombre" type="text" placeholder="Se arma solo con la fecha si lo dejás vacío"
+                 value="${esc(draft.name)}" maxlength="60">
+        </div>
         <div class="row stack">
           <div><label class="field" for="d">Día</label><input id="d" type="date" value="${draft.date}"></div>
           <div><label class="field" for="h">Hora</label><input id="h" type="time" value="${draft.time}"></div>
@@ -137,6 +142,7 @@ function paintCopa(view) {
 }
 
 function wire(view) {
+  view.querySelector('#nombre').oninput = e => { draft.name = e.target.value; };
   view.querySelector('#d').onchange = e => { draft.date = e.target.value; };
   view.querySelector('#h').onchange = e => { draft.time = e.target.value; };
   view.querySelector('#p').oninput  = e => { draft.place = e.target.value; };
@@ -194,7 +200,7 @@ function confirm(view) {
 
   const when = { date: draft.date, time: draft.time };
   const day = whenDate(when);
-  const name = `Torneo del ${day ? longDate(day) : draft.date}`;
+  const name = draft.name.trim() || `Torneo del ${day ? longDate(day) : draft.date}`;
 
   const t = createTournament({
     name,
@@ -210,6 +216,7 @@ function confirm(view) {
   update(() => { state.tournaments.push(t); });
   draft.teams = [];
   draft.place = '';
+  draft.name = '';
   say('Fixture sorteado');
   go('inicio');
 }
