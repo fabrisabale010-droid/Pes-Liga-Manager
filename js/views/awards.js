@@ -11,6 +11,29 @@ import { isAdmin } from '../core/auth.js';
 let year = null;
 let torneoElegido = null;
 
+/* Cada celular puede votar una vez por categoría. Como no hay cuentas, esto
+   se guarda en el propio teléfono: evita votar de más sin querer, aunque no
+   impide que alguien muy insistente se las ingenie. */
+const VOTOS_KEY = 'pes6_v2_mis_votos';
+
+function misVotos() {
+  try { return JSON.parse(localStorage.getItem(VOTOS_KEY) || '{}'); }
+  catch { return {}; }
+}
+const miVoto = (tid, cat) => misVotos()[tid]?.[cat] || null;
+
+function anotarVoto(tid, cat, equipo) {
+  const m = misVotos();
+  m[tid] = m[tid] || {};
+  m[tid][cat] = equipo;
+  try { localStorage.setItem(VOTOS_KEY, JSON.stringify(m)); } catch {}
+}
+function borrarMisVotos(tid) {
+  const m = misVotos();
+  delete m[tid];
+  try { localStorage.setItem(VOTOS_KEY, JSON.stringify(m)); } catch {}
+}
+
 export function renderAwards(view) {
   const paint = () => {
     view.innerHTML = html();
@@ -148,7 +171,8 @@ function votacion() {
 
 function categoria(t, c) {
   const ganadores = c.ganadores;
-  const cerrada = c.faltan === 0;
+  const mio = miVoto(t.id, c.id);
+  const cerrada = c.faltan === 0 && !mio;   // si ya votaste, podés cambiarlo
 
   return `<div class="votacion">
     <div class="votacion-top">
@@ -166,12 +190,16 @@ function categoria(t, c) {
         ${ganadores.map(id => `<span>${flag(id)} ${esc(nameOf(id))}</span>`).join(' y ')}
       </div>` : ''}
 
+    ${mio ? `<div class="mi-voto">
+      Votaste a <b>${esc(nameOf(mio))}</b> · tocá otra para cambiar tu voto
+    </div>` : ''}
+
     <div class="votos">
       ${t.teamIds.map(id => {
         const n = c.votos[id] || 0;
-        const gana = cerrada && ganadores.includes(id);
-        return `<button class="voto ${gana ? 'gana' : ''}" ${cerrada ? 'disabled' : ''}
-                  data-voto="${t.id}:${c.id}:${id}">
+        const gana = c.faltan === 0 && ganadores.includes(id);
+        return `<button class="voto ${gana ? 'gana' : ''} ${mio === id ? 'mio' : ''}"
+                  ${cerrada ? 'disabled' : ''} data-voto="${t.id}:${c.id}:${id}">
           ${flag(id)}
           <span class="voto-nom">${esc(nameOf(id))}</span>
           <span class="voto-n">${n}</span>
@@ -187,14 +215,25 @@ function votar(btn, paint) {
   const [tid, cat, equipo] = btn.dataset.voto.split(':');
   const t = tournaments().find(x => x.id === tid);
   if (!t) return;
-  if (votosDisponibles(t, cat) === 0) return say('Esa categoría ya está cerrada');
+
+  const previo = miVoto(tid, cat);
+  if (previo === equipo) return say(`Ya votaste a ${nameOf(equipo)}`);
+  if (!previo && votosDisponibles(t, cat) === 0) return say('Esa categoría ya está cerrada');
 
   update(() => {
     t.awards = t.awards || {};
-    t.awards[cat] = t.awards[cat] || {};
-    t.awards[cat][equipo] = (t.awards[cat][equipo] || 0) + 1;
+    const votos = t.awards[cat] = t.awards[cat] || {};
+
+    if (previo) {                       // cambiar el voto, no sumar otro
+      votos[previo] = Math.max(0, (votos[previo] || 0) - 1);
+      if (!votos[previo]) delete votos[previo];
+    }
+    votos[equipo] = (votos[equipo] || 0) + 1;
   });
+
+  anotarVoto(tid, cat, equipo);
   cheer();
+  say(previo ? `Cambiaste tu voto a ${nameOf(equipo)}` : `Votaste a ${nameOf(equipo)}`);
   paint();
 }
 
@@ -203,6 +242,7 @@ function reiniciar(tid, paint) {
   const t = tournaments().find(x => x.id === tid);
   if (!t) return;
   update(() => { delete t.awards; });
+  borrarMisVotos(tid);
   say('Votación reiniciada');
   paint();
 }
