@@ -3,7 +3,7 @@
 
 import { nameOf, colorsOf, team } from '../domain/teams.js';
 import { USE_CRESTS, CRESTS_FROM_FOLDER, CRESTS_PATH, CRESTS_AVAILABLE } from '../config.js';
-import { TROPHY_SRC } from './ui.js';
+import { TROPHY_SRC, BALLON_SRC } from './ui.js';
 
 const W = 1080;
 const H = 1350;                 // proporción vertical, la que mejor entra en el chat
@@ -96,6 +96,7 @@ function cargar(url, mismoOrigen = false) {
 }
 
 export const cargarCopa = () => cargar(TROPHY_SRC, true);
+export const cargarBalon = () => cargar(BALLON_SRC, true);
 
 const tieneEscudo = id => USE_CRESTS && CRESTS_FROM_FOLDER &&
   (!CRESTS_AVAILABLE?.length || CRESTS_AVAILABLE.includes(id));
@@ -698,7 +699,7 @@ export async function cabinetAllCard(lista, categoria = '') {
 export async function awardCard(premio, year, malo = false, enCurso = false) {
   const [ins, copa] = await Promise.all([
     insignia(premio.equipo),
-    premio.id === 'balon' ? cargarCopa() : Promise.resolve(null)
+    premio.id === 'balon' ? cargarBalon() : Promise.resolve(null)
   ]);
 
   const c = lienzo();

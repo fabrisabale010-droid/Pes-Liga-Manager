@@ -27,10 +27,15 @@ export function flag(id) {
 
 /* El trofeo de toda la app. Para cambiarlo, reemplazá FWC.png y listo:
    sale de acá una sola vez y se actualiza en todos lados. */
-export const TROPHY_SRC = './FWC.png';
+export const TROPHY_SRC = './FWC.png';       // la copa de los campeones
+export const BALLON_SRC = './BDO.png';       // el balón de oro anual
 
 export function cup(extra = '') {
   return `<img src="${TROPHY_SRC}" alt="" class="cup-img ${extra}">`;
+}
+
+export function ballon(extra = '') {
+  return `<img src="${BALLON_SRC}" alt="" class="cup-img ballon-img ${extra}">`;
 }
 
 /* Escudo de la selección. Si están apagados o falta el archivo,
