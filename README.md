@@ -82,8 +82,9 @@ permite compartir archivos, la descarga.
 **Premios.** Sección propia con dos partes. Los anuales salen solos de las
 estadísticas: Balón de Oro, Bota de Oro, El Ganador, El Colador, El Perdedor y
 varios más, divididos en dorados y papelones. Los de la copa los votan ustedes
-al terminar cada torneo: hay tantos votos por categoría como participantes, y
-cuando se completan se cierra y muestra al ganador. Todo se puede compartir.
+al terminar cada torneo: cada celular vota una vez por
+categoría (y puede cambiar su voto), con un tope de tantos votos como
+participantes. Cuando se completa, la categoría se cierra y muestra al ganador. Todo se puede compartir.
 
 Para inventar un premio nuevo o cambiar las categorías de votación, se editan
 las listas de `js/domain/awards.js`.
