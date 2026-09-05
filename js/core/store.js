@@ -40,7 +40,6 @@ function normalize(raw) {
     t.games = Array.isArray(t.games) ? t.games : [];
     t.teamIds = Array.isArray(t.teamIds) ? t.teamIds : [];
     t.finished = !!t.finished;
-    if (t.awards && typeof t.awards !== 'object') delete t.awards;
     if (t.bracket) advance(t.bracket);
   });
   return s;
