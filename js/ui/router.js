@@ -11,6 +11,7 @@ export const SECTIONS = [
   { id:'historial',    label:'Historial',     icon:'ti-history',       bar:true },
   { id:'estadisticas', label:'Estadísticas',  icon:'ti-chart-bar' },
   { id:'premios',      label:'Premios',       icon:'ti-award' },
+  { id:'selecciones',  label:'Selecciones',   icon:'ti-shield' },
   { id:'programar',    label:'Programar',     icon:'ti-calendar-plus', adminOnly:true }
 ];
 
@@ -35,6 +36,11 @@ export function go(id) {
 function paint() {
   let id = (location.hash || '').replace('#/', '') || 'inicio';
   if (!allowed(id)) id = 'inicio';
+
+  /* Al quedarse en la misma sección (por ejemplo al cargar un gol y repintar
+     la tabla) se conserva la posición: si no, la página salta al principio. */
+  const sigueIgual = current === id;
+  const alturaAntes = window.scrollY;
   current = id;
 
   /* Contenedor nuevo en cada render: los listeners que engancha cada vista
@@ -47,7 +53,14 @@ function paint() {
 
   views.get(id)?.(view);
   view.focus({ preventScroll: true });
-  window.scrollTo({ top: 0 });
+
+  if (sigueIgual) {
+    /* Se espera al dibujado para que la página ya tenga su altura final. */
+    requestAnimationFrame(() => window.scrollTo(0, alturaAntes));
+  } else {
+    window.scrollTo(0, 0);
+  }
+
   drawNav();
 }
 

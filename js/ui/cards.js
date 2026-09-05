@@ -746,55 +746,155 @@ export async function awardCard(premio, year, malo = false, enCurso = false) {
   return c;
 }
 
-/* ---------- Placa de premios votados ---------- */
+/* ---------- Placa de palmarés ---------- */
 
-export async function pollCard(t, resumen) {
-  const ids = resumen.flatMap(c => c.ganadores).filter(Boolean);
-  const inss = await insignias(ids);
-  const buscar = id => inss[ids.indexOf(id)];
+export async function profileCard(p) {
+  const [ins, copa] = await Promise.all([insignia(p.id), cargarCopa()]);
 
   const c = lienzo();
   const ctx = c.getContext('2d');
 
-  fondo(ctx, 'rgba(224,178,61,.20)');
+  fondo(ctx, 'rgba(224,178,61,.22)');
   marco(ctx, 'rgba(224,178,61,.5)');
 
-  texto(ctx, 'PREMIOS DE LA COPA', 165, { size: 28, color: ORO, weight: '700', track: 8 });
-  const nom = ajustar(ctx, t.name, W - 220, 54, 'Rajdhani', '700');
-  texto(ctx, t.name, 232, { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
+  texto(ctx, 'PALMARÉS', 160, { size: 28, color: ORO, weight: '700', track: 10 });
 
-  const X = 110, ANCHO = W - 220;
-  const alto = Math.min(210, Math.floor((H - 420) / Math.max(1, resumen.length)));
-  let y = 300;
+  marca(ctx, p.id, W / 2, 340, 200, ins);
 
-  resumen.forEach(cat => {
-    ctx.fillStyle = 'rgba(255,255,255,.05)';
-    redondo(ctx, X, y, ANCHO, alto - 18, 22);
+  const nom = ajustar(ctx, p.nombre.toUpperCase(), W - 200, 96, 'Rajdhani', '700');
+  textoOro(ctx, p.nombre.toUpperCase(), 530, nom);
+
+  /* Los títulos, con la copa al lado del número. */
+  ctx.font = '700 130px Rajdhani, Arial, sans-serif';
+  const anchoNum = ctx.measureText(String(p.titulos.total)).width;
+  const inicio = W / 2 - (anchoNum + 24 + 80) / 2;
+
+  const g = ctx.createLinearGradient(0, 580, 0, 700);
+  g.addColorStop(0, ORO_CLARO);
+  g.addColorStop(.55, ORO);
+  g.addColorStop(1, ORO_OSC);
+  ctx.fillStyle = g;
+  ctx.textAlign = 'left';
+  ctx.fillText(String(p.titulos.total), inicio, 690);
+  ctx.textAlign = 'center';
+  copaImg(ctx, copa, inicio + anchoNum + 64, 570, 130);
+
+  texto(ctx, p.titulos.total === 1 ? 'TÍTULO' : 'TÍTULOS', 736,
+        { size: 26, color: TENUE, weight: '700', track: 7 });
+
+  /* Desglose de los títulos. */
+  const t = p.titulos;
+  const partes = [
+    t.liga ? `${t.liga} ${t.liga === 1 ? 'liga' : 'ligas'}` : '',
+    t.copa ? `${t.copa} ${t.copa === 1 ? 'copa' : 'copas'}` : '',
+    t.anual ? `${t.anual} ${t.anual === 1 ? 'anual' : 'anuales'}` : '',
+    t.previos ? `${t.previos} previos` : ''
+  ].filter(Boolean).join('  ·  ');
+  if (partes) texto(ctx, partes, 786, { size: 28, color: TENUE });
+
+  /* Los números principales, en dos filas. */
+  const datos = [
+    [p.stats.pj, 'partidos'],
+    [p.stats.pg, 'ganados'],
+    [p.stats.gf, 'goles'],
+    [Math.round(p.efectividad * 100) + '%', 'efectividad'],
+    [p.premios.dorados.length, 'premios'],
+    [p.stats.podios, 'podios']
+  ];
+
+  const COLS = 3, ANCHO = (W - 240) / COLS, ALTO = 132;
+  let x0 = 120, y0 = 850;
+
+  datos.forEach(([valor, etiqueta], i) => {
+    const col = i % COLS, fil = Math.floor(i / COLS);
+    const bx = x0 + col * ANCHO, by = y0 + fil * ALTO;
+
+    ctx.fillStyle = 'rgba(255,255,255,.04)';
+    redondo(ctx, bx + 8, by, ANCHO - 16, ALTO - 16, 18);
     ctx.fill();
 
-    const cy = y + (alto - 18) / 2;
-    const ganador = cat.ganadores[0];
-
-    if (ganador) marca(ctx, ganador, X + 96, cy, Math.min(96, alto - 70), buscar(ganador));
-
-    ctx.textAlign = 'left';
-    ctx.fillStyle = ORO;
-    const tn = ajustar(ctx, cat.nombre, ANCHO - 260, 40, 'Rajdhani', '700');
-    ctx.font = `700 ${tn}px Rajdhani, Arial, sans-serif`;
-    ctx.fillText(cat.nombre, X + 175, cy - 8);
-
-    ctx.fillStyle = ganador ? TEXTO : TENUE;
-    const quien = cat.ganadores.length
-      ? cat.ganadores.map(nameOf).join(' y ')
-      : 'sin votos';
-    const tq = ajustar(ctx, quien, ANCHO - 260, 42, 'Inter', '600');
-    ctx.font = `600 ${tq}px Inter, Arial, sans-serif`;
-    ctx.fillText(quien, X + 175, cy + 42);
+    ctx.fillStyle = TEXTO;
+    ctx.font = '700 46px "Space Mono", monospace';
     ctx.textAlign = 'center';
+    ctx.fillText(String(valor), bx + ANCHO / 2, by + 60);
 
-    y += alto;
+    ctx.fillStyle = TENUE;
+    ctx.font = '500 24px Inter, Arial, sans-serif';
+    ctx.fillText(etiqueta, bx + ANCHO / 2, by + 96);
   });
 
   pie(ctx);
   return c;
+}
+
+/* ---------- Placa comparativa ---------- */
+
+export async function compareCard(c, filas) {
+  const [ia, ib] = await insignias([c.a.id, c.b.id]);
+
+  const cv = lienzo();
+  const ctx = cv.getContext('2d');
+
+  fondo(ctx, 'rgba(77,141,255,.20)');
+  marco(ctx, 'rgba(77,141,255,.45)');
+
+  texto(ctx, 'MANO A MANO', 155, { size: 28, color: LUZ, weight: '700', track: 10 });
+
+  marca(ctx, c.a.id, 250, 320, 150, ia);
+  marca(ctx, c.b.id, W - 250, 320, 150, ib);
+
+  ctx.fillStyle = TENUE;
+  ctx.font = '700 54px Rajdhani, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('vs', W / 2, 340);
+
+  const nombre = (p, cx) => {
+    ctx.fillStyle = TEXTO;
+    const t = ajustar(ctx, p.nombre.toUpperCase(), 380, 44, 'Rajdhani', '700');
+    ctx.font = `700 ${t}px Rajdhani, Arial, sans-serif`;
+    ctx.fillText(p.nombre.toUpperCase(), cx, 440);
+  };
+  nombre(c.a, 250);
+  nombre(c.b, W - 250);
+
+  if (c.duelo.pj) {
+    texto(ctx, `${c.duelo.ganóA} - ${c.duelo.empates} - ${c.duelo.ganóB}`, 510,
+          { size: 46, color: LUZ, weight: '700', font: 'Rajdhani' });
+    texto(ctx, `en ${c.duelo.pj} ${c.duelo.pj === 1 ? 'cruce' : 'cruces'}`, 552,
+          { size: 26, color: TENUE });
+  } else {
+    texto(ctx, 'nunca se enfrentaron', 520, { size: 30, color: TENUE });
+  }
+
+  /* Las filas comparadas: el que gana cada una queda resaltado. */
+  const usar = filas.slice(0, 11);
+  const ALTO = Math.min(62, Math.floor((H - 780) / usar.length));
+  let y = 620;
+
+  usar.forEach((f, i) => {
+    if (i % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,.035)';
+      redondo(ctx, 100, y - ALTO / 2 - 4, W - 200, ALTO, 12);
+      ctx.fill();
+    }
+
+    ctx.font = '700 32px "Space Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = f.gana === 1 ? LUZ : TENUE;
+    ctx.fillText(String(f.a), 130, y + 8);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = f.gana === 2 ? LUZ : TENUE;
+    ctx.fillText(String(f.b), W - 130, y + 8);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = TEXTO;
+    ctx.font = '500 26px Inter, Arial, sans-serif';
+    ctx.fillText(f.label, W / 2, y + 8);
+
+    y += ALTO;
+  });
+
+  pie(ctx);
+  return cv;
 }
