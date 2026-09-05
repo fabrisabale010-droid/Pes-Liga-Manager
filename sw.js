@@ -1,7 +1,7 @@
 /* Guarda la app en el teléfono para que abra aunque no haya señal.
    Los datos siguen viniendo de Firebase cuando hay conexión. */
 
-const CACHE = 'pes6-v2-17';
+const CACHE = 'pes6-v2-19';
 
 const SHELL = [
   './',
@@ -27,6 +27,7 @@ const SHELL = [
   './js/domain/stats.js',
   './js/domain/annual.js',
   './js/domain/awards.js',
+  './js/domain/profile.js',
   './js/ui/ui.js',
   './js/ui/parts.js',
   './js/ui/cards.js',
@@ -37,7 +38,8 @@ const SHELL = [
   './js/views/history.js',
   './js/views/showcase.js',
   './js/views/stats.js',
-  './js/views/awards.js'
+  './js/views/awards.js',
+  './js/views/teams.js'
 ];
 
 self.addEventListener('install', e => {
