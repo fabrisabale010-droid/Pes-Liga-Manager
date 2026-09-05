@@ -400,7 +400,34 @@ table.standings th.sticky-r::before{
   color:var(--trophy); margin-top:6px; line-height:1;
 }
 .balon-pie{font-size:13px; color:var(--ink-dim); margin-top:8px;}
-.balon-como{font-size:11px; color:var(--ink-faint); margin-top:6px;}
+/* Explicación del puntaje: cómo se arma, con los números de la selección. */
+.cuenta-toggle{
+  display:inline-flex; align-items:center; gap:6px; margin-top:12px;
+  background:transparent; border:1px solid rgba(224,178,61,.35); border-radius:999px;
+  color:var(--trophy); font:inherit; font-size:12.5px; font-weight:600;
+  padding:7px 15px; cursor:pointer;
+}
+.cuenta-toggle:hover{border-color:var(--trophy); background:rgba(224,178,61,.08);}
+.cuenta{
+  margin-top:12px; text-align:left;
+  border:1px solid var(--line); border-radius:var(--r-m); background:rgba(0,0,0,.3);
+  padding:6px 14px 12px;
+}
+.cuenta-fila{
+  display:flex; align-items:center; gap:12px;
+  padding:11px 0; border-bottom:1px solid var(--line-soft);
+}
+.cuenta-fila.total{border-bottom:0; padding-bottom:4px;}
+.cuenta-nom{flex:1; min-width:0;}
+.cuenta-nom b{display:block; font-size:13.5px; font-weight:600;}
+.cuenta-nom span{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
+.cuenta-pts{
+  flex:0 0 auto; font-family:'Space Mono',monospace; font-weight:700;
+  font-size:19px; color:var(--trophy);
+}
+.cuenta-pts i{font-style:normal; font-size:12px; color:var(--ink-faint);}
+.cuenta-fila.total .cuenta-pts{font-size:23px;}
+.cuenta-nota{font-size:11px; color:var(--ink-faint); margin-top:10px; line-height:1.4;}
 
 .provisorio{
   display:flex; align-items:center; justify-content:center; gap:7px;
