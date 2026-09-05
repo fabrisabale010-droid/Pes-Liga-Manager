@@ -21,6 +21,7 @@ export const DORADOS = [
     icono: 'ti-award',
     valor: t => `${Math.round(t.puntaje)}/100`,
     orden: t => t.puntaje,
+    desglose: t => t.partes,
     pie: t => `${t.pts} puntos · ${t.titulos} ${t.titulos === 1 ? 'título' : 'títulos'} · ${t.dg > 0 ? '+' : ''}${t.dg} de diferencia`
   },
   {
@@ -167,7 +168,27 @@ function calcularPuntajes(teams) {
     const rendimiento = Math.min(1, prom(t.pts, t.pj) / 3) * 70;
     const titulos = (t.titulos / maxTitulos) * 20;
     const diferencia = (Math.max(0, prom(t.dg, t.pj)) / maxDif) * 10;
-    return { ...t, puntaje: Math.min(100, rendimiento + titulos + diferencia) };
+
+    /* Se guarda el desglose para poder mostrarle a cada uno de dónde sale
+       su puntaje, en vez de tirarle un número sin explicación. */
+    const partes = {
+      rendimiento: {
+        puntos: rendimiento, tope: 70,
+        detalle: `${uno(prom(t.pts, t.pj))} puntos por partido, sobre 3 posibles`
+      },
+      titulos: {
+        puntos: titulos, tope: 20,
+        detalle: maxTitulos > 1 || t.titulos
+          ? `${t.titulos} de ${maxTitulos} ${maxTitulos === 1 ? 'título' : 'títulos'}, comparado con el que más ganó`
+          : 'nadie ganó torneos todavía'
+      },
+      diferencia: {
+        puntos: diferencia, tope: 10,
+        detalle: `${t.dg > 0 ? '+' : ''}${t.dg} de diferencia en ${t.pj} partidos`
+      }
+    };
+
+    return { ...t, partes, puntaje: Math.min(100, rendimiento + titulos + diferencia) };
   });
 }
 
@@ -184,7 +205,8 @@ export function premiosDelAnio(year) {
       ...p,
       equipo: ganador.id,
       valorTexto: String(p.valor(ganador)),
-      pieTexto: p.pie(ganador)
+      pieTexto: p.pie(ganador),
+      desglose: p.desglose ? p.desglose(ganador) : null
     };
   }).filter(Boolean);
 
