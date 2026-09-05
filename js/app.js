@@ -10,6 +10,7 @@ import { renderHistory } from './views/history.js';
 import { renderShowcase } from './views/showcase.js';
 import { renderStats } from './views/stats.js';
 import { renderAwards } from './views/awards.js';
+import { renderTeams } from './views/teams.js';
 import { currentDay, progress, finalTable, formatName } from './domain/engine.js';
 
 /* ---------- Vistas ---------- */
@@ -21,6 +22,7 @@ register('historial', v => { stopHome(); renderHistory(v); });
 register('vitrina',   v => { stopHome(); renderShowcase(v); });
 register('estadisticas', v => { stopHome(); renderStats(v); });
 register('premios',      v => { stopHome(); renderAwards(v); });
+register('selecciones',  v => { stopHome(); renderTeams(v); });
 
 /* ---------- Datos ---------- */
 
