@@ -5,6 +5,7 @@ import { premiosDelAnio } from '../domain/awards.js';
 import { awardCard, share, precargar } from '../ui/cards.js';
 
 let year = null;
+let verCuenta = false;
 
 const enCurso = y => y === new Date().getFullYear();
 
@@ -14,6 +15,11 @@ export function renderAwards(view) {
   view.addEventListener('click', e => {
     const y = e.target.closest('[data-year]');
     if (y) { year = Number(y.dataset.year); return paint(); }
+
+    if (e.target.closest('[data-ver-cuenta]')) {
+      verCuenta = !verCuenta;
+      return paint();
+    }
 
     const sp = e.target.closest('[data-share-premio]');
     if (sp) compartir(sp);
@@ -82,7 +88,7 @@ function anuales() {
         <div class="balon-nom">${esc(nameOf(balon.equipo))}</div>
         <div class="balon-puntaje">${esc(balon.valorTexto)}</div>
         <div class="balon-pie">${esc(balon.pieTexto)}</div>
-        <div class="balon-como">Rendimiento (70) + títulos (20) + diferencia de gol (10)</div>
+        ${cuenta(balon)}
       </div>` : ''}
 
     <h3 style="margin:20px 0 10px">Los dorados</h3>
@@ -90,6 +96,41 @@ function anuales() {
 
     <h3 style="margin:24px 0 10px">Los papelones</h3>
     <div class="premios">${p.papelones.map(x => ficha(x, true)).join('')}</div>`;
+}
+
+/* De dónde sale el puntaje, con los números de esta selección. */
+function cuenta(balon) {
+  const d = balon.desglose;
+  if (!d) return '';
+
+  const linea = (nombre, parte) => `
+    <div class="cuenta-fila">
+      <div class="cuenta-nom">
+        <b>${nombre}</b>
+        <span>${esc(parte.detalle)}</span>
+      </div>
+      <div class="cuenta-pts">${Math.round(parte.puntos)}<i>/${parte.tope}</i></div>
+    </div>`;
+
+  return `
+    <button class="cuenta-toggle" data-ver-cuenta>
+      ${verCuenta ? 'Ocultar' : '¿Cómo se calcula?'}
+      <i class="ti ti-chevron-${verCuenta ? 'up' : 'down'}"></i>
+    </button>
+
+    ${verCuenta ? `<div class="cuenta">
+      ${linea('Rendimiento', d.rendimiento)}
+      ${linea('Títulos', d.titulos)}
+      ${linea('Diferencia de gol', d.diferencia)}
+      <div class="cuenta-fila total">
+        <div class="cuenta-nom"><b>Puntaje</b></div>
+        <div class="cuenta-pts">${esc(balon.valorTexto)}</div>
+      </div>
+      <p class="cuenta-nota">
+        Los títulos y la diferencia se comparan con el mejor del año: quien
+        lidera se lleva el máximo y el resto, la parte que le corresponde.
+      </p>
+    </div>` : ''}`;
 }
 
 async function compartir(btn) {
