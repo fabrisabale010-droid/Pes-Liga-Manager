@@ -1,10 +1,7 @@
-/* Premios. Dos tipos muy distintos:
+/* Premios anuales.
 
-   - Los ANUALES salen solos de las estadísticas del año. Nadie los vota.
-   - Los DE LA COPA los votan ustedes al terminar cada torneo.
-
-   Para inventar un premio nuevo, agregá una línea en las listas de abajo.
-   Para cambiar las categorías de votación, editá POLL_CATEGORIES. */
+   Salen solos de las estadísticas del año: nadie los vota.
+   Para inventar un premio nuevo, agregá una línea en las listas de abajo. */
 
 import { crunch } from './stats.js';
 import { nameOf } from './teams.js';
@@ -199,43 +196,3 @@ export function premiosDelAnio(year) {
     papelones: resolver(PAPELONES)
   };
 }
-
-/* ---------- Premios de la copa (votados) ---------- */
-
-export const POLL_CATEGORIES = [
-  { id: 'puflito',  nombre: 'Puflito de la copa',    detalle: 'el que se infló y no rindió' },
-  { id: 'buscon',   nombre: 'Buscón de la copa',     detalle: 'el que la buscó toda la noche' },
-  { id: 'colafacil',nombre: 'Cola fácil de la copa', detalle: 'al que le entraban todas' },
-  { id: 'golosina', nombre: 'Golosina de la copa',   detalle: 'el más dulce, el que todos querían' }
-];
-
-export const votosDe = (t, catId) => (t.awards?.[catId]) || {};
-
-export const totalVotos = (t, catId) =>
-  Object.values(votosDe(t, catId)).reduce((a, b) => a + b, 0);
-
-export const votosDisponibles = (t, catId) =>
-  Math.max(0, t.teamIds.length - totalVotos(t, catId));
-
-/* Quién ganó una categoría. Si hay empate, devuelve a todos. */
-export function ganadoresDe(t, catId) {
-  const votos = votosDe(t, catId);
-  const max = Math.max(0, ...Object.values(votos));
-  if (!max) return [];
-  return Object.keys(votos).filter(id => votos[id] === max);
-}
-
-export const votacionCompleta = t =>
-  POLL_CATEGORIES.every(c => votosDisponibles(t, c.id) === 0);
-
-export function resumenVotacion(t) {
-  return POLL_CATEGORIES.map(c => ({
-    ...c,
-    ganadores: ganadoresDe(t, c.id),
-    votos: votosDe(t, c.id),
-    total: totalVotos(t, c.id),
-    faltan: votosDisponibles(t, c.id)
-  }));
-}
-
-export const nombreDe = nameOf;
