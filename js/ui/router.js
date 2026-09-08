@@ -4,15 +4,23 @@
 import { el, openSheet, closeSheet } from './ui.js';
 import { isAdmin } from '../core/auth.js';
 
-export const SECTIONS = [
-  { id:'inicio',       label:'Inicio',        icon:'ti-home',          bar:true },
-  { id:'curso',        label:'En juego',      icon:'ti-ball-football', bar:true },
-  { id:'vitrina',      label:'Vitrina',       icon:'ti-trophy',        bar:true },
-  { id:'historial',    label:'Historial',     icon:'ti-history',       bar:true },
-  { id:'estadisticas', label:'Estadísticas',  icon:'ti-chart-bar' },
-  { id:'premios',      label:'Premios',       icon:'ti-award' },
-  { id:'selecciones',  label:'Selecciones',   icon:'ti-shield' },
-  { id:'programar',    label:'Programar',     icon:'ti-calendar-plus', adminOnly:true }
+/* El orden cuenta una historia: lo que pasa ahora, lo que ya pasó, y el
+   palmarés. En el celular entran cuatro abajo; el resto va en "Más".
+   `bar` marca las que van en la barra del celular. */
+const SECTIONS = [
+  // Lo que está pasando
+  { id:'inicio',       label:'Inicio',       icon:'ti-home',          bar:true },
+  { id:'curso',        label:'En juego',     icon:'ti-ball-football', bar:true },
+  { id:'programar',    label:'Programar',    icon:'ti-calendar-plus', adminOnly:true },
+
+  // Lo que ya pasó
+  { id:'historial',    label:'Historial',    icon:'ti-history',       bar:true },
+
+  // El palmarés
+  { id:'vitrina',      label:'Vitrina',      icon:'ti-trophy',        bar:true },
+  { id:'premios',      label:'Premios',      icon:'ti-award' },
+  { id:'selecciones',  label:'Selecciones',  icon:'ti-shield' },
+  { id:'estadisticas', label:'Estadísticas', icon:'ti-chart-bar' }
 ];
 
 const views = new Map();

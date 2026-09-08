@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, openModal, cup, crest } from './ui.js';
+import { flag, esc, nameOf, openModal, crest } from './ui.js';
 import { mainColorOf } from '../domain/teams.js';
 import { table, tieWinner, roundName, groupTable } from '../domain/engine.js';
 import { tournaments } from '../core/store.js';
@@ -105,7 +105,7 @@ export function titlesCount() {
   return count;
 }
 
-export function openTeamCard(id) {
+function openTeamCard(id) {
   let pj = 0, pts = 0, played = 0;
   tournaments().forEach(t => {
     if (!t.teamIds.includes(id)) return;

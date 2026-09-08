@@ -3,7 +3,7 @@
 
 import { nameOf, colorsOf, team } from '../domain/teams.js';
 import { USE_CRESTS, CRESTS_FROM_FOLDER, CRESTS_PATH, CRESTS_AVAILABLE } from '../config.js';
-import { TROPHY_SRC, BALLON_SRC } from './ui.js';
+import { TROPHY_SRC, BALLON_SRC, say } from './ui.js';
 
 const W = 1080;
 const H = 1350;                 // proporción vertical, la que mejor entra en el chat
@@ -95,15 +95,15 @@ function cargar(url, mismoOrigen = false) {
   return p;
 }
 
-export const cargarCopa = () => cargar(TROPHY_SRC, true);
-export const cargarBalon = () => cargar(BALLON_SRC, true);
+const cargarCopa = () => cargar(TROPHY_SRC, true);
+const cargarBalon = () => cargar(BALLON_SRC, true);
 
 const tieneEscudo = id => USE_CRESTS && CRESTS_FROM_FOLDER &&
   (!CRESTS_AVAILABLE?.length || CRESTS_AVAILABLE.includes(id));
 
 /* Escudo si lo hay; si no, la bandera. Devuelve qué se consiguió para
    saber cómo dibujarlo, porque uno es cuadrado y la otra apaisada. */
-export async function insignia(id) {
+async function insignia(id) {
   const t = team(id);
   if (!t) return { tipo: 'nada', img: null };
 
@@ -115,7 +115,7 @@ export async function insignia(id) {
   return img ? { tipo: 'bandera', img } : { tipo: 'nada', img: null };
 }
 
-export const insignias = ids => Promise.all(ids.map(insignia));
+const insignias = ids => Promise.all(ids.map(insignia));
 
 /* Deja las imágenes listas de antemano. Al compartir, el navegador exige que
    todo ocurra enseguida después del toque: si hay que bajar ocho escudos en
@@ -338,7 +338,7 @@ const aBlob = canvas =>
 
 /* Abre el menú de compartir del celular con la imagen lista.
    Si el dispositivo no lo permite, la descarga. */
-export async function share(canvas, nombre, texto = '') {
+async function share(canvas, nombre, texto = '') {
   const blob = await aBlob(canvas);
   if (!blob) throw new Error('No se pudo generar la imagen');
 
@@ -431,64 +431,6 @@ export async function tableCard(t, rows) {
   });
 
   texto(ctx, 'PUNTOS', y + 34, { size: 22, color: TENUE, weight: '600', track: 4 });
-
-  pie(ctx);
-  return c;
-}
-
-/* ---------- Placa de cara a cara ---------- */
-
-export async function duelCard(a, b, h) {
-  const [ia, ib] = await insignias([a, b]);
-
-  const c = lienzo();
-  const ctx = c.getContext('2d');
-
-  fondo(ctx, 'rgba(77,141,255,.20)');
-  marco(ctx, 'rgba(77,141,255,.45)');
-
-  texto(ctx, 'CARA A CARA', 175, { size: 28, color: LUZ, weight: '700', track: 9 });
-  texto(ctx, `${h.pj} ${h.pj === 1 ? 'partido' : 'partidos'}`, 232, { size: 32, color: TENUE });
-
-  const lado = (id, wins, img, cx) => {
-    marca(ctx, id, cx, 400, 190, img);
-    ctx.fillStyle = TEXTO;
-    ctx.font = '700 108px Rajdhani, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(String(wins), cx, 590);
-    const tam = ajustar(ctx, nameOf(id).toUpperCase(), 380, 44, 'Rajdhani', '700');
-    ctx.font = `700 ${tam}px Rajdhani, Arial, sans-serif`;
-    ctx.fillText(nameOf(id).toUpperCase(), cx, 652);
-  };
-
-  lado(a, h.ganóA, ia, 300);
-  lado(b, h.ganóB, ib, W - 300);
-
-  ctx.fillStyle = TENUE;
-  ctx.font = '700 64px Rajdhani, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('vs', W / 2, 590);
-
-  ctx.fillStyle = 'rgba(255,255,255,.05)';
-  redondo(ctx, 140, 740, W - 280, 300, 26);
-  ctx.fill();
-
-  const dato = (etiqueta, valor, yy) => {
-    ctx.textAlign = 'left';
-    ctx.fillStyle = TENUE;
-    ctx.font = '500 34px Inter, Arial, sans-serif';
-    ctx.fillText(etiqueta, 200, yy);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = TEXTO;
-    ctx.font = '700 40px "Space Mono", monospace';
-    ctx.fillText(valor, W - 200, yy);
-    ctx.textAlign = 'center';
-  };
-
-  dato('Empates', String(h.empates), 830);
-  dato('Goles', `${h.golesA} - ${h.golesB}`, 920);
-  dato('Ganó más', h.ganóA === h.ganóB ? 'Están iguales'
-      : nameOf(h.ganóA > h.ganóB ? a : b), 1010);
 
   pie(ctx);
   return c;
@@ -897,4 +839,18 @@ export async function compareCard(c, filas) {
 
   pie(ctx);
   return cv;
+}
+
+/* Envoltorio para los botones de compartir: bloquea el botón mientras dibuja,
+   avisa si el celular no pudo compartir y no deja que un error rompa la vista.
+   Así cada pantalla solo dice qué placa quiere, sin repetir esto en cada una. */
+export async function compartirImagen(btn, dibujar, nombre, texto = '') {
+  if (btn) btn.disabled = true;
+  try {
+    const res = await share(await dibujar(), nombre, texto);
+    if (res === 'descargada') say('No se pudo compartir: quedó en Descargas');
+  } catch (err) {
+    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  }
+  if (btn) btn.disabled = false;
 }

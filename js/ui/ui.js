@@ -188,9 +188,6 @@ export function whenDate(when) {
 export const longDate = d =>
   d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
 
-export const shortDate = iso =>
-  new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
 export function countdown(target) {
   const gap = target.getTime() - Date.now();
   if (gap <= 0) return null;
