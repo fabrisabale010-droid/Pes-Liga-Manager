@@ -429,6 +429,20 @@ table.standings th.sticky-r::before{
 .cuenta-fila.total .cuenta-pts{font-size:23px;}
 .cuenta-nota{font-size:11px; color:var(--ink-faint); margin-top:10px; line-height:1.4;}
 
+.aviso{
+  display:flex; align-items:flex-start; gap:10px;
+  font-size:13px; line-height:1.45; color:var(--ink-dim);
+  background:rgba(77,141,255,.08); border:1px solid rgba(77,141,255,.25);
+  border-radius:var(--r-m); padding:12px 14px; margin-bottom:14px;
+}
+.aviso i{font-size:18px; color:var(--light); flex:0 0 auto; margin-top:1px;}
+.aviso b{color:var(--ink);}
+
+.matchday-nombre{
+  font-size:13px; color:var(--light-soft); font-weight:600;
+  letter-spacing:.02em; margin-bottom:2px;
+}
+
 .provisorio{
   display:flex; align-items:center; justify-content:center; gap:7px;
   font-size:12.5px; font-weight:600; color:var(--light-soft);
