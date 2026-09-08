@@ -2,13 +2,13 @@
    anuales y números. Sirve tanto para su ficha como para comparar dos. */
 
 import { state, tournaments } from '../core/store.js';
-import { crunch, years, headToHead } from './stats.js';
+import { crunch, years, headToHead, allGames } from './stats.js';
 import { premiosDelAnio } from './awards.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 import { TEAMS, nameOf } from './teams.js';
 
 /* Títulos separados por tipo, como en la Vitrina. */
-export function titulosDe(id) {
+function titulosDe(id) {
   let liga = 0, copa = 0;
   tournaments().forEach(t => {
     if (!t.finished || t.champion !== id) return;
@@ -22,7 +22,7 @@ export function titulosDe(id) {
 }
 
 /* Todos los premios anuales que ganó, año por año. */
-export function premiosDe(id) {
+function premiosDe(id) {
   const dorados = [], papelones = [];
   years().forEach(y => {
     const p = premiosDelAnio(y);
@@ -34,7 +34,7 @@ export function premiosDe(id) {
 }
 
 /* Podios: cuántas veces terminó primero, segundo o tercero. */
-export function podiosDe(id) {
+function podiosDe(id) {
   const stats = crunch().teams.find(t => t.id === id);
   return {
     podios: stats?.podios || 0,
@@ -80,6 +80,11 @@ export function seleccionesConHistoria() {
       nameOf(a.id).localeCompare(nameOf(b.id))
     );
 }
+
+/* Los partidos entre dos selecciones, en orden. */
+export const allGamesBetween = (a, b) =>
+  allGames().filter(({ m }) =>
+    (m.home === a && m.away === b) || (m.home === b && m.away === a));
 
 /* Comparación cara a cara, con los números de cada uno al lado. */
 export function comparar(a, b) {

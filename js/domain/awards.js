@@ -4,7 +4,6 @@
    Para inventar un premio nuevo, agregá una línea en las listas de abajo. */
 
 import { crunch } from './stats.js';
-import { nameOf } from './teams.js';
 
 const MIN_PJ = 3;                  // partidos mínimos para entrar en un premio
 
@@ -13,7 +12,7 @@ const uno = x => Number(x).toFixed(2);
 
 /* ---------- Premios anuales ---------- */
 
-export const DORADOS = [
+const DORADOS = [
   {
     id: 'balon',
     nombre: 'Balón de Oro',
@@ -82,7 +81,7 @@ export const DORADOS = [
   }
 ];
 
-export const PAPELONES = [
+const PAPELONES = [
   {
     id: 'colador',
     nombre: 'El Colador',

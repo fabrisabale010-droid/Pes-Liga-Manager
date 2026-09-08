@@ -154,7 +154,7 @@ export function headToHead(a, b) {
 
 const STEPS = [25, 50, 100, 150, 200, 300, 400, 500, 750, 1000];
 
-export const METRICS = [
+const METRICS = [
   { key:'gf',  label:'goles a favor',   icon:'ti-ball-football', good:true },
   { key:'pts', label:'puntos sumados',  icon:'ti-medal',         good:true },
   { key:'pg',  label:'partidos ganados',icon:'ti-trophy',        good:true },
@@ -164,7 +164,7 @@ export const METRICS = [
 ];
 
 /* Para un valor devuelve el último escalón alcanzado y cuánto falta para el próximo. */
-export function milestone(value) {
+function milestone(value) {
   const done = [...STEPS].reverse().find(s => value >= s) ?? null;
   const next = STEPS.find(s => s > value) ?? null;
   return { done, next, missing: next === null ? null : next - value };

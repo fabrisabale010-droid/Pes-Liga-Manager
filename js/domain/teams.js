@@ -15,7 +15,7 @@ export const CORE = [
   { id:'URU', name:'Uruguay',       iso:'uy',     colors:['#75aadb','#ffffff','#fcd116'], crest:null },
 ];
 
-export const EXTRA = [
+const EXTRA = [
   { id:'MEX', name:'México',        iso:'mx', colors:['#006341','#ffffff','#ce1126'], crest:null },
   { id:'COL', name:'Colombia',      iso:'co', colors:['#fcd116','#003893','#ce1126'], crest:null },
   { id:'CHI', name:'Chile',         iso:'cl', colors:['#d52b1e','#ffffff','#0033a0'], crest:null },

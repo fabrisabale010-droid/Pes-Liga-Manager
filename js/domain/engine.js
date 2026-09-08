@@ -40,7 +40,7 @@ function circle(ids) {
   return rounds;
 }
 
-export function leagueFixture(ids, double) {
+function leagueFixture(ids, double) {
   const rounds = circle(shuffle(ids));
   const games = [];
   let id = 1;
@@ -55,7 +55,7 @@ export function leagueFixture(ids, double) {
   return games;
 }
 
-export function makeGroups(ids, count) {
+function makeGroups(ids, count) {
   const mixed = shuffle(ids);
   const groups = Array.from({ length: count }, (_, i) => ({
     label: String.fromCharCode(65 + i),
@@ -65,7 +65,7 @@ export function makeGroups(ids, count) {
   return groups;
 }
 
-export function groupFixture(groups) {
+function groupFixture(groups) {
   const games = [];
   let id = 1;
   groups.forEach(g => {
@@ -308,6 +308,32 @@ export function createTournament({ name, teamIds, format, groups, advance: adv, 
   }
   return base;
 }
+
+/* ---------- Cuándo se juega ---------- */
+
+/* La hora de arranque, o null si no tiene fecha puesta. */
+export function kickoff(t) {
+  if (!t.when?.date) return null;
+  const d = new Date(`${t.when.date}T${t.when.time || '00:00'}`);
+  return isNaN(d) ? null : d;
+}
+
+/* Ya se cargó algún resultado. */
+const started = t =>
+  t.games.some(g => g.played) ||
+  (t.bracket?.games || []).some(g => g.played);
+
+/* Está en juego: o ya empezaron a cargar resultados, o llegó la fecha.
+   Un torneo programado para dentro de una semana no está en juego. */
+export const isLive = t => {
+  if (t.finished) return false;
+  if (started(t)) return true;
+  const hora = kickoff(t);
+  return !hora || Date.now() >= hora.getTime();
+};
+
+/* Programado: falta para que empiece y todavía no se jugó nada. */
+export const isScheduled = t => !t.finished && !isLive(t);
 
 export const formatName = f =>
   f === 'ida' ? 'Todos contra todos' :
