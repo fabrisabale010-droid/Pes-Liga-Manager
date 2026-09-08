@@ -2,7 +2,7 @@
    por suscripción: ninguna vista habla con Firebase directamente. */
 
 import { firebaseConfig, DOC_PATH, LEGACY_DOC_PATH, LOCAL_KEY, TRASH_DAYS } from '../config.js';
-import { uid, advance } from '../domain/engine.js';
+import { uid, advance, isLive, isScheduled, kickoff } from '../domain/engine.js';
 
 const listeners = new Set();
 let db = null;
@@ -49,7 +49,7 @@ function normalize(raw) {
 
 const FORMAT_V1 = { ida: 'ida', idavuelta: 'vuelta', grupos: 'copa' };
 
-export function importLegacy(old) {
+function importLegacy(old) {
   if (!old || !Array.isArray(old.tournaments)) return null;
 
   const eventFor = new Map();
@@ -110,7 +110,7 @@ let timer = null;
 
 /* Un cambio no dispara una escritura: se juntan los cambios de medio segundo
    y se manda uno solo. Cargar cinco goles seguidos ya no son cinco viajes. */
-export function save() {
+function save() {
   emit();
   try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
   if (!db) return;
@@ -186,8 +186,6 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
   return true;
 }
 
-export const isOnline = () => online;
-
 /* ---------- Papelera ---------- */
 
 /* Borrar no elimina: marca. Así se puede volver atrás durante TRASH_DAYS días. */
@@ -232,13 +230,24 @@ export function purgeTrash() {
 
 /* ---------- Consultas de uso común ---------- */
 
+/* El que se está jugando ahora. */
 export const liveTournament = () =>
-  tournaments().find(t => !t.finished) || null;
+  tournaments().find(isLive) || null;
+
+/* Los que están programados, del más cercano al más lejano. */
+export const scheduled = () =>
+  tournaments().filter(isScheduled)
+    .sort((a, b) => (kickoff(a)?.getTime() ?? Infinity) - (kickoff(b)?.getTime() ?? Infinity));
+
+/* El próximo que se viene. */
+export const nextTournament = () => scheduled()[0] || null;
+
+/* El que hay que mostrar primero: el que se juega, o si no el más cercano. */
+export const featured = () => liveTournament() || nextTournament();
 
 export const lastChampion = () =>
   tournaments()
     .filter(t => t.finished && t.champion)
     .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt))[0] || null;
 
-export const tournamentById = id =>
-  tournaments().find(t => t.id === id) || null;
+
