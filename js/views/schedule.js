@@ -3,9 +3,9 @@
 
 import { flag, esc, nameOf, say, longDate, whenDate } from '../ui/ui.js';
 import { CORE, TEAMS } from '../domain/teams.js';
-import { createTournament, formatName } from '../domain/engine.js';
-import { state, update, liveTournament } from '../core/store.js';
-import { MAX_TEAMS, MAX_PLAYERS } from '../config.js';
+import { createTournament, formatName, kickoff } from '../domain/engine.js';
+import { state, update, scheduled, liveTournament } from '../core/store.js';
+import { MAX_TEAMS } from '../config.js';
 import { go } from '../ui/router.js';
 
 const draft = {
@@ -15,17 +15,35 @@ const draft = {
 
 export function renderSchedule(view) {
   const live = liveTournament();
-  if (live) {
-    view.innerHTML = `<section class="block"><div class="empty">
-      <i class="ti ti-lock-exclamation"></i>
-      <strong>Ya hay un torneo en juego</strong>
-      Cerrá o cancelá «${esc(live.name)}» antes de programar el siguiente.
-      <div style="margin-top:14px"><button class="btn" data-go="curso">Ir al torneo</button></div>
-    </div></section>`;
-    return;
-  }
+  const pendientes = scheduled();
 
   view.innerHTML = `
+    ${live ? `<section class="block">
+      <div class="aviso">
+        <i class="ti ti-ball-football"></i>
+        <div>Se está jugando <b>${esc(live.name)}</b>. Podés dejar programado el
+        siguiente igual: en Inicio se muestra el más cercano.</div>
+      </div>
+    </section>` : ''}
+
+    ${pendientes.length ? `<section class="block">
+      <h2><i class="ti ti-calendar-check"></i>Ya programados</h2>
+      <div class="log">
+        ${pendientes.map(t => {
+          const d = kickoff(t);
+          return `<article class="log-item"><div class="log-head" style="cursor:default">
+            <div class="grow">
+              <div class="nm">${esc(t.name)}</div>
+              <div class="sub">${d ? d.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' }) : 'sin fecha'}
+                ${t.when?.time ? ' · ' + esc(t.when.time) + ' h' : ''}
+                ${t.place ? ' · ' + esc(t.place) : ''}</div>
+            </div>
+            <span class="tag soon">programado</span>
+          </div></article>`;
+        }).join('')}
+      </div>
+    </section>` : ''}
+
     <section class="block">
       <h2><i class="ti ti-calendar-plus"></i>Programar torneo</h2>
       <p class="block-note">Definí cuándo, dónde y quiénes juegan. Al confirmar se sortea el fixture y arranca la cuenta regresiva.</p>

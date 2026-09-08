@@ -1,11 +1,11 @@
 import {
-  flag, esc, nameOf, cup, whenDate, longDate, countdown, pad,
-  startConfetti, stopConfetti, crest, say
+  flag, esc, nameOf, cup, longDate, countdown, pad,
+  startConfetti, stopConfetti, crest
 } from '../ui/ui.js';
 import { standingsTable, gameRow, bracketView, groupsView } from '../ui/parts.js';
-import { championCard, eventCard, share } from '../ui/cards.js';
-import { state, liveTournament, lastChampion } from '../core/store.js';
-import { table, currentDay, formatName, progress, finalTable } from '../domain/engine.js';
+import { championCard, eventCard, compartirImagen } from '../ui/cards.js';
+import { liveTournament, nextTournament, scheduled, lastChampion } from '../core/store.js';
+import { currentDay, formatName, progress, finalTable, kickoff } from '../domain/engine.js';
 import { CHAMPION_BEFORE_APP } from '../config.js';
 import { isAdmin } from '../core/auth.js';
 
@@ -16,45 +16,33 @@ export function renderHome(view) {
   stopConfetti();
 
   const live = liveTournament();
+  const proximo = nextTournament();
+  const pendientes = scheduled();
   const last = lastChampion();
   const championId = last ? last.champion : CHAMPION_BEFORE_APP;
 
   view.innerHTML = `
     ${plaque(last, championId)}
-    ${live ? nextUp(live) : invite()}
+    ${proximo ? nextUp(proximo, pendientes.length) : ''}
     ${live ? live_(live) : ''}
+    ${!live && !proximo ? invite() : ''}
   `;
 
   startConfetti(view.querySelector('.fall'), championId);
 
   const btn = view.querySelector('[data-share-champ]');
-  if (btn) btn.onclick = async () => {
-    btn.disabled = true;
-    try {
-      const res = await share(await championCard(last), `campeon-${nameOf(last.champion)}`,
-        `🏆 ${nameOf(last.champion)} campeón de ${last.name}`);
-      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-    } catch (err) {
-      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-    }
-    btn.disabled = false;
-  };
+  if (btn) btn.onclick = () => compartirImagen(btn,
+    () => championCard(last),
+    `campeon-${nameOf(last.champion)}`,
+    `🏆 ${nameOf(last.champion)} campeón de ${last.name}`);
 
   const ev = view.querySelector('[data-share-event]');
-  if (ev) ev.onclick = async () => {
-    ev.disabled = true;
-    try {
-      const res = await share(await eventCard(live, whenDate(live.when)),
-        'proximo-torneo',
-        `⚽ Próximo torneo${live.place ? ' en ' + live.place : ''}`);
-      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-    } catch (err) {
-      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-    }
-    ev.disabled = false;
-  };
+  if (ev) ev.onclick = () => compartirImagen(ev,
+    () => eventCard(proximo, kickoff(proximo)),
+    'proximo-torneo',
+    `⚽ Próximo torneo${proximo.place ? ' en ' + proximo.place : ''}`);
 
-  const when = live && whenDate(live.when);
+  const when = proximo && kickoff(proximo);
   if (when) {
     const paint = () => {
       const slot = view.querySelector('[data-clock]');
@@ -101,18 +89,18 @@ function clockHtml(when) {
   </div>`;
 }
 
-function nextUp(t) {
-  const when = whenDate(t.when);
-  const started = !when || Date.now() >= when.getTime();
+function nextUp(t, cuantos) {
+  const when = kickoff(t);
 
   return `<section class="block">
     <div class="matchday">
       <div class="matchday-top">
-        <span class="dot ${started ? '' : 'wait'}"></span>
-        ${started ? 'Torneo en juego' : 'Fecha confirmada'}
+        <span class="dot wait"></span>
+        ${cuantos > 1 ? `Próximo de ${cuantos} programados` : 'Fecha confirmada'}
         <span style="margin-left:auto">${esc(formatName(t.format))}</span>
       </div>
       <div class="matchday-body" style="text-align:center">
+        ${t.name && when ? `<div class="matchday-nombre">${esc(t.name)}</div>` : ''}
         <div class="matchday-when">${when ? esc(longDate(when)) : esc(t.name)}</div>
         <div class="matchday-where">
           ${t.when?.time ? `${esc(t.when.time)} h` : ''}${t.when?.time && t.place ? ' · ' : ''}${t.place ? esc(t.place) : ''}
@@ -153,7 +141,7 @@ function live_(t) {
 
   return `<section class="block">
     <h2><i class="ti ti-list-numbers"></i>Cómo va</h2>
-    <p class="block-note">${p.played} de ${p.total} partidos jugados.</p>
+    <p class="block-note">${esc(t.name)} · ${p.played} de ${p.total} partidos jugados.</p>
     ${board}
     ${day ? `
       <div class="fixture-head">Fecha ${day.day}</div>

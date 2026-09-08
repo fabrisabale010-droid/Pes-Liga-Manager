@@ -1,9 +1,10 @@
-import { flag, esc, nameOf, crest, cup, say } from '../ui/ui.js';
+import { flag, esc, nameOf, crest, cup } from '../ui/ui.js';
 import { TEAMS } from '../domain/teams.js';
+import { allGamesBetween } from '../domain/profile.js';
 import {
   perfil, seleccionesConHistoria, comparar, quienGana, FILAS_COMPARACION
 } from '../domain/profile.js';
-import { profileCard, compareCard, share, precargar } from '../ui/cards.js';
+import { profileCard, compareCard, compartirImagen, precargar } from '../ui/cards.js';
 
 let abierta = null;
 let duoA = null, duoB = null;
@@ -210,41 +211,50 @@ function comparador(lista) {
         <i class="ti ti-share-2"></i>Compartir la comparación
       </button>
     </div>
+
+    ${cruces(c)}
   </section>`;
+}
+
+/* Todos los partidos entre las dos, en el orden que se jugaron. */
+function cruces(c) {
+  const lista = allGamesBetween(c.a.id, c.b.id);
+  if (!lista.length) return '';
+
+  return `
+    <div class="fixture-head">Todos los cruces</div>
+    ${lista.map(({ m, t }) => {
+      const ganaLocal = m.hg > m.ag || m.penWinner === m.home;
+      const ganaVisita = m.ag > m.hg || m.penWinner === m.away;
+      return `<div class="game done">
+        <span class="t ${ganaLocal ? 'win' : ''}">${flag(m.home)}<span>${esc(nameOf(m.home))}</span></span>
+        <span class="mark">
+          <span class="score" style="display:grid;place-items:center">${m.hg}</span>
+          <span class="score" style="display:grid;place-items:center">${m.ag}</span>
+        </span>
+        <span class="t away ${ganaVisita ? 'win' : ''}">${flag(m.away)}<span>${esc(nameOf(m.away))}</span></span>
+      </div>
+      <div class="duel-src">${esc(t.name)}${m.penWinner ? ` · ${esc(nameOf(m.penWinner))} por penales` : ''}</div>`;
+    }).join('')}`;
 }
 
 /* ---------- Compartir ---------- */
 
-async function compartirPerfil(btn) {
-  const id = btn.dataset.sharePerfil;
-  btn.disabled = true;
-  try {
-    const p = perfil(id);
-    const res = await share(await profileCard(p), `palmares-${p.nombre}`,
-      `${p.nombre}: ${p.titulos.total} ${p.titulos.total === 1 ? 'título' : 'títulos'}`);
-    if (res === 'descargada') say('No se pudo compartir: quedó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-  }
-  btn.disabled = false;
+function compartirPerfil(btn) {
+  const p = perfil(btn.dataset.sharePerfil);
+  compartirImagen(btn, () => profileCard(p), `palmares-${p.nombre}`,
+    `${p.nombre}: ${p.titulos.total} ${p.titulos.total === 1 ? 'título' : 'títulos'}`);
 }
 
-async function compartirComparacion(btn) {
+function compartirComparacion(btn) {
   if (duoA === duoB) return;
-  btn.disabled = true;
-  try {
-    const c = comparar(duoA, duoB);
-    const filas = FILAS_COMPARACION.map(f => ({
-      label: f.label,
-      a: f.texto ? f.texto(c.a) : f.valor(c.a),
-      b: f.texto ? f.texto(c.b) : f.valor(c.b),
-      gana: quienGana(f.valor(c.a), f.valor(c.b), f.menos)
-    }));
-    const res = await share(await compareCard(c, filas), `${nameOf(duoA)}-vs-${nameOf(duoB)}`,
-      `${nameOf(duoA)} vs ${nameOf(duoB)}`);
-    if (res === 'descargada') say('No se pudo compartir: quedó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-  }
-  btn.disabled = false;
+  const c = comparar(duoA, duoB);
+  const filas = FILAS_COMPARACION.map(f => ({
+    label: f.label,
+    a: f.texto ? f.texto(c.a) : f.valor(c.a),
+    b: f.texto ? f.texto(c.b) : f.valor(c.b),
+    gana: quienGana(f.valor(c.a), f.valor(c.b), f.menos)
+  }));
+  compartirImagen(btn, () => compareCard(c, filas),
+    `${nameOf(duoA)}-vs-${nameOf(duoB)}`, `${nameOf(duoA)} vs ${nameOf(duoB)}`);
 }

@@ -1,9 +1,9 @@
 import { flag, esc, nameOf, say, sayUndo, clip, whenDate } from '../ui/ui.js';
 import { standingsTable, bracketView } from '../ui/parts.js';
-import { tableCard, share } from '../ui/cards.js';
+import { tableCard, compartirImagen } from '../ui/cards.js';
 import { tournaments, trashed, trashDaysLeft,
          sendToTrash, restoreFromTrash, emptyTrash } from '../core/store.js';
-import { finalTable, formatName, progress } from '../domain/engine.js';
+import { finalTable, formatName, progress, isLive } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 
 let search = '';
@@ -141,7 +141,9 @@ function row(t) {
     <div class="log-head" data-open="${t.id}">
       <div class="grow">
         <div class="nm">${esc(t.name)}
-          <span class="tag ${t.finished ? 'done' : 'live'}">${t.finished ? 'terminado' : 'en juego'}</span>
+          <span class="tag ${t.finished ? 'done' : isLive(t) ? 'live' : 'soon'}">
+            ${t.finished ? 'terminado' : isLive(t) ? 'en juego' : 'programado'}
+          </span>
         </div>
         <div class="sub">${cuandoSeJugo(t).toLocaleDateString('es-AR')} · ${esc(formatName(t.format))} · ${p.played}/${p.total} partidos</div>
       </div>
@@ -163,19 +165,12 @@ function row(t) {
   </article>`;
 }
 
-async function compartirTabla(btn) {
+function compartirTabla(btn) {
   const t = tournaments().find(x => x.id === btn.dataset.shareTable);
   if (!t) return;
-  btn.disabled = true;
-  try {
-    const res = await share(await tableCard(t, finalTable(t)),
-      `tabla-${t.name.replace(/[^a-z0-9]+/gi, '-')}`,
-      `📋 ${t.name}${t.champion ? ' — campeón ' + nameOf(t.champion) : ''}`);
-    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-  }
-  btn.disabled = false;
+  compartirImagen(btn, () => tableCard(t, finalTable(t)),
+    `tabla-${t.name.replace(/[^a-z0-9]+/gi, '-')}`,
+    `📋 ${t.name}${t.champion ? ' — campeón ' + nameOf(t.champion) : ''}`);
 }
 
 function remove(id, paint) {

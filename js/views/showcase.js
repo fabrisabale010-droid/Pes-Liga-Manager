@@ -2,8 +2,7 @@ import { flag, esc, nameOf, cup, crest } from '../ui/ui.js';
 import { titlesCount } from '../ui/parts.js';
 import { tournaments } from '../core/store.js';
 import { crunch } from '../domain/stats.js';
-import { recordCard, cabinetCard, cabinetAllCard, share } from '../ui/cards.js';
-import { say } from '../ui/ui.js';
+import { recordCard, cabinetCard, cabinetAllCard, compartirImagen } from '../ui/cards.js';
 import { annualTitles } from '../domain/annual.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 
@@ -48,19 +47,12 @@ export function renderShowcase(view) {
     if (!hit) return;
     const datos = (window._recs || [])[Number(hit.dataset.rec)];
     if (!datos) return;
-    hit.disabled = true;
-    try {
-      const nombre = datos.holder ? nameOf(datos.holder)
-        : datos.match ? `${nameOf(datos.match.home)}-${nameOf(datos.match.away)}` : 'record';
-      const detalle = datos.holder ? ' — ' + nameOf(datos.holder)
-        : datos.match ? ` — ${nameOf(datos.match.home)} ${datos.match.hg}-${datos.match.ag} ${nameOf(datos.match.away)}` : '';
-      const res = await share(await recordCard(datos), `record-${nombre}`,
-        `${datos.value}${datos.unit} ${datos.label}${detalle}`);
-      if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-    } catch (err) {
-      say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-    }
-    hit.disabled = false;
+    const nombre = datos.holder ? nameOf(datos.holder)
+      : datos.match ? `${nameOf(datos.match.home)}-${nameOf(datos.match.away)}` : 'record';
+    const detalle = datos.holder ? ' — ' + nameOf(datos.holder)
+      : datos.match ? ` — ${nameOf(datos.match.home)} ${datos.match.hg}-${datos.match.ag} ${nameOf(datos.match.away)}` : '';
+    compartirImagen(hit, () => recordCard(datos), `record-${nombre}`,
+      `${datos.value}${datos.unit} ${datos.label}${detalle}`);
   });
 
   view.querySelector('.opts').addEventListener('click', e => {
@@ -109,32 +101,18 @@ function cabinet() {
     </div>`;
 }
 
-async function compartirSlot(btn) {
+function compartirSlot(btn) {
   const [id, n] = btn.dataset.shareSlot.split(':');
-  btn.disabled = true;
-  try {
-    const res = await share(await cabinetCard(id, Number(n), ETIQUETA[filter]),
-      `vitrina-${nameOf(id)}`,
-      `${nameOf(id)} · ${n} ${Number(n) === 1 ? 'título' : 'títulos'}`);
-    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-  }
-  btn.disabled = false;
+  compartirImagen(btn, () => cabinetCard(id, Number(n), ETIQUETA[filter]),
+    `vitrina-${nameOf(id)}`,
+    `${nameOf(id)} · ${n} ${Number(n) === 1 ? 'título' : 'títulos'}`);
 }
 
-async function compartirVitrina(btn) {
+function compartirVitrina(btn) {
   const lista = Object.entries(counts()).sort((a, b) => b[1] - a[1]);
   if (!lista.length) return;
-  btn.disabled = true;
-  try {
-    const res = await share(await cabinetAllCard(lista, ETIQUETA[filter]),
-      'vitrina', `🏆 La vitrina: ${lista.map(([id, n]) => `${nameOf(id)} ${n}`).join(' · ')}`);
-    if (res === 'descargada') say('Tu celular no deja compartir: se guardó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
-  }
-  btn.disabled = false;
+  compartirImagen(btn, () => cabinetAllCard(lista, ETIQUETA[filter]),
+    'vitrina', `🏆 La vitrina: ${lista.map(([id, n]) => `${nameOf(id)} ${n}`).join(' · ')}`);
 }
 
 /* ---------- Récords ---------- */

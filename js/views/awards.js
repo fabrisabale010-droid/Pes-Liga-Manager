@@ -1,8 +1,10 @@
-import { flag, esc, nameOf, crest, say, ballon } from '../ui/ui.js';
+import { flag, esc, nameOf, crest, say, cheer, ballon, cup } from '../ui/ui.js';
 import { tournaments } from '../core/store.js';
 import { years } from '../domain/stats.js';
 import { premiosDelAnio } from '../domain/awards.js';
-import { awardCard, share, precargar } from '../ui/cards.js';
+import { awardCard, compartirImagen, precargar } from '../ui/cards.js';
+import { isAdmin } from '../core/auth.js';
+import * as Annual from '../domain/annual.js';
 
 let year = null;
 let verCuenta = false;
@@ -10,7 +12,24 @@ let verCuenta = false;
 const enCurso = y => y === new Date().getFullYear();
 
 export function renderAwards(view) {
-  const paint = () => { view.innerHTML = html(); };
+  const paint = () => {
+    view.innerHTML = html();
+    /* Los goles de la Copa Anual se cargan con inputs, hay que engancharlos. */
+    view.querySelectorAll('[data-cup]').forEach(inp => {
+      inp.onchange = () => {
+        const [y, cual, lado] = inp.dataset.cup.split(':');
+        const d = Annual.draftOf(Number(y));
+        if (!d) return;
+        const g = d[cual];
+        g[lado] = inp.value === '' ? null : Math.max(0, parseInt(inp.value, 10) || 0);
+        g.played = g.hg !== null && g.ag !== null;
+        if (g.played && g.hg !== g.ag) g.penWinner = null;
+        Annual.refresh(Number(y));
+        if (g.played) cheer();
+        paint();
+      };
+    });
+  };
 
   view.addEventListener('click', e => {
     const y = e.target.closest('[data-year]');
@@ -22,7 +41,9 @@ export function renderAwards(view) {
     }
 
     const sp = e.target.closest('[data-share-premio]');
-    if (sp) compartir(sp);
+    if (sp) return compartir(sp);
+
+    if (copaAnualClicks(e, paint)) return;
   });
 
   paint();
@@ -52,7 +73,8 @@ function html() {
       ${ys.map(y => `<button class="opt ${year === y ? 'on' : ''}" data-year="${y}">${y}</button>`).join('')}
     </div>` : ''}
     ${anuales()}
-  </section>`;
+  </section>
+  ${copaAnual()}`;
 }
 
 function anuales() {
@@ -133,20 +155,139 @@ function cuenta(balon) {
     </div>` : ''}`;
 }
 
-async function compartir(btn) {
+function compartir(btn) {
   const [id, malo] = btn.dataset.sharePremio.split(':');
   const p = premiosDelAnio(year);
   if (!p) return;
   const premio = (malo === '1' ? p.papelones : p.dorados).find(x => x.id === id);
   if (!premio) return;
 
-  btn.disabled = true;
-  try {
-    const res = await share(await awardCard(premio, year, malo === '1', p.enCurso),
-      `premio-${premio.nombre}`, `${premio.nombre} ${year}: ${nameOf(premio.equipo)}`);
-    if (res === 'descargada') say('No se pudo compartir: quedó en Descargas');
-  } catch (err) {
-    say('No se pudo compartir: ' + (err.name || err.message || 'error'));
+  compartirImagen(btn, () => awardCard(premio, year, malo === '1', p.enCurso),
+    `premio-${premio.nombre}`, `${premio.nombre} ${year}: ${nameOf(premio.equipo)}`);
+}
+
+/* ---------- Copa Anual ---------- */
+
+function copaAnual() {
+  const y = year;
+  if (!y) return '';
+
+  const cup2026 = Annual.cupOf(y);
+  if (cup2026) {
+    return `<section class="block">
+      <h2>${cup()}Copa Anual ${y}</h2>
+      <div class="plaque">
+        <div class="plaque-in">
+          ${cup('cup')}
+          <div class="kicker">Campeón anual</div>
+          <div class="who">${esc(nameOf(cup2026.champion))}</div>
+          <span class="flag-xl">${crest(cup2026.champion, 132)}</span>
+        </div>
+      </div>
+      ${isAdmin() ? `<div style="text-align:center;margin-top:12px">
+        <button class="btn danger sm" data-cup-del="${cup2026.id}">Borrar la Copa Anual ${y}</button>
+      </div>` : ''}
+    </section>`;
   }
-  btn.disabled = false;
+
+  const d = Annual.draftOf(y);
+  if (d) return `<section class="block">
+    <h2>${cup()}Copa Anual ${y}</h2>
+    ${enCursoCopa(d, y)}
+  </section>`;
+
+  const cruce = Annual.matchup(y);
+  if (!cruce) return '';
+
+  const explica =
+    cruce.kind === 'repechaje'
+      ? `${flag(cruce.espera)} <b>${esc(nameOf(cruce.espera))}</b> lidera los puntos y los títulos de ${y},
+         así que espera en la final. ${flag(cruce.duelo[0])} ${esc(nameOf(cruce.duelo[0]))} y
+         ${flag(cruce.duelo[1])} ${esc(nameOf(cruce.duelo[1]))} definen quién lo enfrenta.`
+      : cruce.kind === 'barrida'
+        ? `${flag(cruce.lider)} <b>${esc(nameOf(cruce.lider))}</b> ganó todos los torneos de ${y} y además
+           sumó más puntos. Lo enfrenta ${flag(cruce.rival)} <b>${esc(nameOf(cruce.rival))}</b>, el segundo en puntos.`
+        : `${flag(cruce.final[0])} <b>${esc(nameOf(cruce.final[0]))}</b> sumó más puntos en ${y} y
+           ${flag(cruce.final[1])} <b>${esc(nameOf(cruce.final[1]))}</b> ganó más torneos.`;
+
+  return `<section class="block">
+    <h2>${cup()}Copa Anual ${y}</h2>
+    <p class="block-note">${explica}</p>
+    ${isAdmin()
+      ? `<button class="btn gold" data-cup-start="${y}">Armar la Copa Anual ${y}</button>`
+      : `<div class="empty"><i class="ti ti-hourglass"></i>
+          <strong>Falta que el organizador la arme</strong></div>`}
+  </section>`;
+}
+
+function enCursoCopa(d, y) {
+  const admin = isAdmin();
+
+  const partido = (g, cual, titulo) => `
+    <div class="fixture-head">${titulo}</div>
+    <div class="game ${g.played ? 'done' : ''}">
+      <span class="t ${Annual.winnerOf(g) === g.home ? 'win' : ''}">${flag(g.home)}<span>${esc(nameOf(g.home))}</span></span>
+      <span class="mark">
+        ${admin
+          ? `<input class="score" type="number" min="0" inputmode="numeric" value="${g.hg ?? ''}" placeholder="–" data-cup="${y}:${cual}:hg">
+             <input class="score" type="number" min="0" inputmode="numeric" value="${g.ag ?? ''}" placeholder="–" data-cup="${y}:${cual}:ag">`
+          : `<span class="score" style="display:grid;place-items:center">${g.hg ?? '–'}</span>
+             <span class="score" style="display:grid;place-items:center">${g.ag ?? '–'}</span>`}
+      </span>
+      <span class="t away ${Annual.winnerOf(g) === g.away ? 'win' : ''}">${flag(g.away)}<span>${esc(nameOf(g.away))}</span></span>
+    </div>
+    ${admin && g.played && g.hg === g.ag && !g.penWinner ? `
+      <div class="pens">Empataron. ¿Quién pasó por penales?
+        <div class="row">
+          <button class="btn sm" data-cup-pen="${y}:${cual}:${g.home}">${flag(g.home)} ${esc(nameOf(g.home))}</button>
+          <button class="btn sm" data-cup-pen="${y}:${cual}:${g.away}">${flag(g.away)} ${esc(nameOf(g.away))}</button>
+        </div>
+      </div>` : ''}`;
+
+  const campeon = Annual.winnerOf(d.final);
+
+  return `
+    ${d.semi ? partido(d.semi, 'semi', 'Repechaje: define quién juega la final') : ''}
+    ${d.stage === 'repechaje'
+      ? `<p class="block-note">${flag(d.waiting)} ${esc(nameOf(d.waiting))} espera en la final.</p>`
+      : partido(d.final, 'final', `Final de la Copa Anual ${y}`)}
+    ${campeon && admin ? `<div style="margin-top:12px">
+      <button class="btn gold" data-cup-crown="${y}">Coronar a ${esc(nameOf(campeon))}</button>
+    </div>` : ''}
+    ${admin ? `<div style="margin-top:10px">
+      <button class="btn danger sm" data-cup-cancel="${y}">Cancelar la Copa Anual</button>
+    </div>` : ''}`;
+}
+
+function copaAnualClicks(e, paint) {
+  const armar = e.target.closest('[data-cup-start]');
+  if (armar) { Annual.start(Number(armar.dataset.cupStart)); say('Copa Anual armada'); paint(); return true; }
+
+  const pen = e.target.closest('[data-cup-pen]');
+  if (pen) {
+    const [y, cual, quien] = pen.dataset.cupPen.split(':');
+    const d = Annual.draftOf(Number(y));
+    if (d) { d[cual].penWinner = quien; Annual.refresh(Number(y)); cheer(); }
+    paint(); return true;
+  }
+
+  const coronar = e.target.closest('[data-cup-crown]');
+  if (coronar) {
+    const campeon = Annual.crown(Number(coronar.dataset.cupCrown));
+    if (campeon) { say(`Campeón anual: ${nameOf(campeon)}`); cheer(); }
+    paint(); return true;
+  }
+
+  const cancelar = e.target.closest('[data-cup-cancel]');
+  if (cancelar) { Annual.cancelDraft(Number(cancelar.dataset.cupCancel)); say('Copa Anual cancelada'); paint(); return true; }
+
+  const borrar = e.target.closest('[data-cup-del]');
+  if (borrar) {
+    if (confirm('¿Borrar la Copa Anual? Se puede volver a armar.')) {
+      Annual.removeCup(borrar.dataset.cupDel);
+      say('Copa Anual borrada');
+    }
+    paint(); return true;
+  }
+  return false;
 }

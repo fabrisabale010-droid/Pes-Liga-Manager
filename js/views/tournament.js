@@ -1,15 +1,19 @@
-import { flag, esc, nameOf, say, sayUndo, cheer, thud, openSheet, closeSheet, startConfetti } from '../ui/ui.js';
+import { flag, esc, nameOf, say, sayUndo, cheer, thud } from '../ui/ui.js';
 import { standingsTable, gameRow, penaltyPicker, bracketView, groupsView } from '../ui/parts.js';
-import { update, liveTournament, sendToTrash, restoreFromTrash } from '../core/store.js';
+import { update, liveTournament, nextTournament, sendToTrash, restoreFromTrash } from '../core/store.js';
 import {
-  table, groupTable, currentDay, progress, formatName,
+  currentDay, progress, formatName, kickoff,
   qualifiers, buildBracket, advance, tieWinner, champion, needsDecider, finalTable
 } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 import { go } from '../ui/router.js';
 
 export function renderTournament(view) {
-  const t = liveTournament();
+  /* Si no hay ninguno en juego, se muestra el próximo programado: así se puede
+     mirar el fixture antes de tiempo, o arrancar antes si se juntan temprano. */
+  const jugando = liveTournament();
+  const t = jugando || nextTournament();
+
   if (!t) {
     view.innerHTML = `<section class="block"><div class="empty">
       <i class="ti ti-ball-football"></i>
@@ -19,6 +23,9 @@ export function renderTournament(view) {
     </div></section>`;
     return;
   }
+
+  const porJugarse = !jugando;
+  const arranca = kickoff(t);
 
   const admin = isAdmin();
   const p = progress(t);
@@ -32,6 +39,12 @@ export function renderTournament(view) {
       <p class="block-note">
         ${esc(formatName(t.format))} · ${t.teamIds.length} selecciones · ${p.played} de ${p.total} partidos
       </p>
+      ${porJugarse ? `<div class="aviso">
+        <i class="ti ti-clock"></i>
+        <div>Todavía no empezó${arranca ? `: se juega el ${arranca.toLocaleDateString('es-AR',
+          { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}.
+          El fixture ya está sorteado${admin ? ' y podés cargar resultados cuando arranquen' : ''}.</div>
+      </div>` : ''}
       ${t.format === 'copa' ? groupsView(t) : standingsTable(finalTable(t))}
     </section>
 
