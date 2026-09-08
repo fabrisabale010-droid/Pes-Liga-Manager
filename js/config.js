@@ -58,4 +58,3 @@ export const CRESTS_AVAILABLE = [
 ];
 
 export const MAX_TEAMS = 16;
-export const MAX_PLAYERS = 10;

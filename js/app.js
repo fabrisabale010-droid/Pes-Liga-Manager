@@ -1,6 +1,6 @@
-import { state, loadLocal, connect, subscribe, update, liveTournament, lastChampion, purgeTrash } from './core/store.js';
+import { state, loadLocal, connect, subscribe, update, featured, lastChampion, purgeTrash } from './core/store.js';
 import { isAdmin, signIn, signOut, onAdminChange, lockRemaining } from './core/auth.js';
-import { el, say, openModal, closeModal, closeSheet, setSound, esc, flag, nameOf } from './ui/ui.js';
+import { el, say, openModal, closeModal, closeSheet, setSound, esc, nameOf } from './ui/ui.js';
 import { enableTeamCards, standingsTable, groupsView, bracketView, gameRow } from './ui/parts.js';
 import { register, startRouter, drawNav, repaint, go, currentSection } from './ui/router.js';
 import { renderHome, stopHome } from './views/home.js';
@@ -103,7 +103,7 @@ paintSound();
 /* ---------- Modo pantalla ---------- */
 
 function paintScreen() {
-  const t = liveTournament() || lastChampion();
+  const t = featured() || lastChampion();
   const box = el('screenMode');
   if (!t) {
     box.innerHTML = screenShell(`<div class="empty"><i class="ti ti-device-tv"></i>
