@@ -27,8 +27,9 @@ function premiosDe(id) {
   years().forEach(y => {
     const p = premiosDelAnio(y);
     if (!p) return;
-    p.dorados.forEach(x => { if (x.equipo === id) dorados.push({ ...x, year: y, enCurso: p.enCurso }); });
-    p.papelones.forEach(x => { if (x.equipo === id) papelones.push({ ...x, year: y, enCurso: p.enCurso }); });
+    const suyo = x => (x.equipos || [x.equipo]).includes(id);
+    p.dorados.forEach(x => { if (suyo(x)) dorados.push({ ...x, year: y, enCurso: p.enCurso }); });
+    p.papelones.forEach(x => { if (suyo(x)) papelones.push({ ...x, year: y, enCurso: p.enCurso }); });
   });
   return { dorados, papelones };
 }

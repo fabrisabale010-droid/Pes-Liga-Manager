@@ -199,9 +199,15 @@ export function premiosDelAnio(year) {
   const resolver = lista => lista.map(p => {
     const aptos = p.exige ? teams.filter(p.exige) : teams;
     if (!aptos.length) return null;
-    const ganador = [...aptos].sort((a, b) => p.orden(b) - p.orden(a))[0];
+
+    /* Si varios empatan en la punta, el premio es de todos. */
+    const mejor = Math.max(...aptos.map(p.orden));
+    const ganadores = aptos.filter(t => p.orden(t) === mejor);
+    const ganador = ganadores[0];
+
     return {
       ...p,
+      equipos: ganadores.map(t => t.id),
       equipo: ganador.id,
       valorTexto: String(p.valor(ganador)),
       pieTexto: p.pie(ganador),
