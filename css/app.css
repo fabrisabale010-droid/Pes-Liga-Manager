@@ -354,7 +354,10 @@ table.standings th.sticky-r::before{
 .rec-n i{font-family:'Space Mono',monospace; font-size:14px; font-style:normal;}
 .rec-b{min-width:0; flex:1;}
 .rec-w{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700;}
+.rec-w{flex-wrap:wrap; gap:4px 7px;}
 .rec-w span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+/* Separador cuando un récord lo comparten varios. */
+.rec-w .y{font-style:normal; font-size:11.5px; color:var(--ink-faint); font-weight:500;}
 .rec-l{font-size:11.5px; color:var(--ink-faint); margin-top:2px; line-height:1.3;}
 
 /* Botón de compartir de cada récord: discreto hasta que se lo busca. */
@@ -464,7 +467,8 @@ table.standings th.sticky-r::before{
   display:flex; align-items:center; justify-content:center; gap:6px;
   font-size:13px; font-weight:600; margin-top:8px;
 }
-.premio-quien span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.premio-quien{flex-wrap:wrap; gap:4px 8px;}
+.premio-quien .quien{display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
 .premio-val{
   font-family:'Space Mono',monospace; font-size:26px; font-weight:700;
   color:var(--trophy); margin-top:6px; line-height:1;
