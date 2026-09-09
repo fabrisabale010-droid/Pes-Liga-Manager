@@ -271,8 +271,11 @@ function marcador(ctx, m, top, imgs) {
 
 /* ---------- Placa de récord ---------- */
 
-export async function recordCard({ value, unit = '', holder, label, bad = false, match = null, contexto = null }) {
-  const img = holder ? await insignia(holder) : null;
+export async function recordCard({ value, unit = '', holder, holders, label,
+                                   bad = false, match = null, contexto = null }) {
+  /* Puede haber más de un dueño del récord: se muestran todos. */
+  const duenos = (holders && holders.length ? holders : holder ? [holder] : []).slice(0, 3);
+  const imgs1 = await insignias(duenos);
   const imgs = match ? await insignias([match.home, match.away]) : [null, null];
   const c = lienzo();
   const ctx = c.getContext('2d');
@@ -306,11 +309,29 @@ export async function recordCard({ value, unit = '', holder, label, bad = false,
         texto(ctx, fechaLarga(contexto.date), base + 448, { size: 28, color: TENUE });
       }
     }
-  } else if (holder) {
-    marca(ctx, holder, W / 2, base + 130, 190, img);
-    const nom = ajustar(ctx, nameOf(holder).toUpperCase(), W - 220, 88, 'Rajdhani', '700');
-    texto(ctx, nameOf(holder).toUpperCase(), base + 300,
+  } else if (duenos.length === 1) {
+    marca(ctx, duenos[0], W / 2, base + 130, 190, imgs1[0]);
+    const nom = ajustar(ctx, nameOf(duenos[0]).toUpperCase(), W - 220, 88, 'Rajdhani', '700');
+    texto(ctx, nameOf(duenos[0]).toUpperCase(), base + 300,
           { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
+  } else if (duenos.length > 1) {
+    /* Empatados: uno al lado del otro, más chicos para que entren. */
+    const lado = duenos.length === 2 ? 165 : 130;
+    const sep = 60;
+    const ancho = duenos.length * lado + (duenos.length - 1) * sep;
+    let x = W / 2 - ancho / 2 + lado / 2;
+
+    duenos.forEach((id, i) => {
+      marca(ctx, id, x, base + 120, lado, imgs1[i]);
+      const nom = ajustar(ctx, nameOf(id).toUpperCase(), lado + sep - 10, 40, 'Rajdhani', '700');
+      ctx.fillStyle = TEXTO;
+      ctx.font = `700 ${nom}px Rajdhani, Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(nameOf(id).toUpperCase(), x, base + 240);
+      x += lado + sep;
+    });
+
+    texto(ctx, 'empatados', base + 300, { size: 28, color: TENUE });
   }
 
   pie(ctx);
@@ -639,8 +660,9 @@ export async function cabinetAllCard(lista, categoria = '') {
 /* ---------- Placa de premio anual ---------- */
 
 export async function awardCard(premio, year, malo = false, enCurso = false) {
-  const [ins, copa] = await Promise.all([
-    insignia(premio.equipo),
+  const duenos = (premio.equipos || [premio.equipo]).slice(0, 3);
+  const [inss, copa] = await Promise.all([
+    insignias(duenos),
     premio.id === 'balon' ? cargarBalon() : Promise.resolve(null)
   ]);
 
@@ -666,11 +688,28 @@ export async function awardCard(premio, year, malo = false, enCurso = false) {
   if (copa) copaImg(ctx, copa, W / 2, 360, 180);
 
   const yIns = copa ? 700 : 560;
-  marca(ctx, premio.equipo, W / 2, yIns, 210, ins);
 
-  const tam = ajustar(ctx, nameOf(premio.equipo).toUpperCase(), W - 200, 92, 'Rajdhani', '700');
-  texto(ctx, nameOf(premio.equipo).toUpperCase(), yIns + 190,
-        { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+  if (duenos.length === 1) {
+    marca(ctx, duenos[0], W / 2, yIns, 210, inss[0]);
+    const tam = ajustar(ctx, nameOf(duenos[0]).toUpperCase(), W - 200, 92, 'Rajdhani', '700');
+    texto(ctx, nameOf(duenos[0]).toUpperCase(), yIns + 190,
+          { size: tam, color: TEXTO, weight: '700', font: 'Rajdhani' });
+  } else {
+    const lado = duenos.length === 2 ? 175 : 140;
+    const sep = 64;
+    const ancho = duenos.length * lado + (duenos.length - 1) * sep;
+    let x = W / 2 - ancho / 2 + lado / 2;
+    duenos.forEach((id, i) => {
+      marca(ctx, id, x, yIns, lado, inss[i]);
+      const tam = ajustar(ctx, nameOf(id).toUpperCase(), lado + sep - 10, 42, 'Rajdhani', '700');
+      ctx.fillStyle = TEXTO;
+      ctx.font = `700 ${tam}px Rajdhani, Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(nameOf(id).toUpperCase(), x, yIns + 150);
+      x += lado + sep;
+    });
+    texto(ctx, 'compartido', yIns + 200, { size: 28, color: TENUE });
+  }
 
   ctx.fillStyle = color;
   ctx.font = '700 96px Rajdhani, Arial, sans-serif';
