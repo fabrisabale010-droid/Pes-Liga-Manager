@@ -94,7 +94,10 @@ function anuales() {
               title="Compartir"><i class="ti ti-share-2"></i></button>
       <div class="premio-ico"><i class="ti ${x.icono}"></i></div>
       <div class="premio-nom">${esc(x.nombre)}</div>
-      <div class="premio-quien">${flag(x.equipo)} <span>${esc(nameOf(x.equipo))}</span></div>
+      <div class="premio-quien">
+        ${(x.equipos || [x.equipo]).map(id =>
+          `<span class="quien">${flag(id)} ${esc(nameOf(id))}</span>`).join('')}
+      </div>
       <div class="premio-val">${esc(x.valorTexto)}</div>
       <div class="premio-pie">${esc(x.pieTexto)}</div>
     </article>`;
@@ -107,7 +110,7 @@ function anuales() {
         <div class="balon-trofeo">${ballon()}</div>
         <div class="balon-kicker">Balón de Oro ${year}${enCurso(year) ? ' · por ahora' : ''}</div>
         <div class="balon-crest">${crest(balon.equipo, 120)}</div>
-        <div class="balon-nom">${esc(nameOf(balon.equipo))}</div>
+        <div class="balon-nom">${(balon.equipos || [balon.equipo]).map(nameOf).map(esc).join(' y ')}</div>
         <div class="balon-puntaje">${esc(balon.valorTexto)}</div>
         <div class="balon-pie">${esc(balon.pieTexto)}</div>
         ${cuenta(balon)}

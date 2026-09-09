@@ -47,9 +47,10 @@ export function renderShowcase(view) {
     if (!hit) return;
     const datos = (window._recs || [])[Number(hit.dataset.rec)];
     if (!datos) return;
-    const nombre = datos.holder ? nameOf(datos.holder)
+    const quienes = (datos.holders || []).map(nameOf).join(' y ');
+    const nombre = quienes ? quienes.replace(/ y /g, '-')
       : datos.match ? `${nameOf(datos.match.home)}-${nameOf(datos.match.away)}` : 'record';
-    const detalle = datos.holder ? ' — ' + nameOf(datos.holder)
+    const detalle = quienes ? ' — ' + quienes
       : datos.match ? ` — ${nameOf(datos.match.home)} ${datos.match.hg}-${datos.match.ag} ${nameOf(datos.match.away)}` : '';
     compartirImagen(hit, () => recordCard(datos), `record-${nombre}`,
       `${datos.value}${datos.unit} ${datos.label}${detalle}`);
@@ -127,18 +128,33 @@ function records() {
   const pool = jugaron.filter(x => x.pj >= MIN_PJ);
   const base = pool.length ? pool : jugaron;
 
-  const best  = fn => [...base].sort((a, b) => fn(b) - fn(a))[0];
-  const worst = fn => [...base].sort((a, b) => fn(a) - fn(b))[0];
+  /* Devuelven TODOS los que empatan en la punta, no solo el primero:
+     si dos pusieron la misma cantidad de goleadas, aparecen los dos. */
+  const top = (fn, alReves = false) => {
+    const valor = alReves ? (x => -fn(x)) : fn;
+    const mejor = Math.max(...base.map(valor));
+    return base.filter(x => valor(x) === mejor);
+  };
+  const best  = fn => top(fn)[0];
+  const worst = fn => top(fn, true)[0];
   const ef = x => x.pts / (x.pj * 3);
   const dec = v => Number(v).toFixed(2);
   const who = x => `${flag(x.id)} <span>${esc(nameOf(x.id))}</span>`;
 
+  /* Varios empatados: se muestran todos, uno al lado del otro. */
+  const todos = lista => lista.length === 1
+    ? who(lista[0])
+    : lista.map(x => `${flag(x.id)} <span>${esc(nameOf(x.id))}</span>`).join('<i class="y">y</i>');
+
   /* Cada ficha guarda sus datos crudos para poder dibujar la imagen. */
   const guardadas = [];
-  const card = (value, unit, holder, label, bad, teamId, match, contexto) => {
+  const card = (value, unit, holder, label, bad, equipos, match, contexto) => {
+    const lista = Array.isArray(equipos) ? equipos.map(x => x.id ?? x)
+                : equipos ? [equipos] : [];
     const i = guardadas.push({
       value, unit, label, bad: !!bad,
-      holder: teamId || null,
+      holders: lista,
+      holder: lista[0] || null,
       match: match || null,
       contexto: contexto ? { name: contexto.name, date: contexto.finishedAt || contexto.createdAt } : null
     }) - 1;
@@ -168,14 +184,14 @@ function records() {
 
   const bien = [
     titulos ? card(titulos[1], '', `${flag(titulos[0])} <span>${esc(nameOf(titulos[0]))}</span>`, 'títulos ganados', 0, titulos[0]) : '',
-    card(puntos.pts, '', who(puntos), 'puntos sumados en total', 0, puntos.id),
-    card(wins.pg, '', who(wins), 'partidos ganados', 0, wins.id),
+    card(puntos.pts, '', todos(top(x => x.pts)), 'puntos sumados en total', 0, top(x => x.pts)),
+    card(wins.pg, '', todos(top(x => x.pg)), 'partidos ganados', 0, top(x => x.pg)),
     card(dec(ataque.gf / ataque.pj), '', who(ataque), 'goles por partido', 0, ataque.id),
     card(dec(valla.gc / valla.pj), '', who(valla), 'goles recibidos por partido', 0, valla.id),
     card(Math.round(ef(efect) * 100), '%', who(efect), 'de los puntos que jugó', 0, efect.id),
-    rachaG.rachaG > 1 ? card(rachaG.rachaG, '', who(rachaG), 'victorias al hilo', 0, rachaG.id) : '',
-    goleador.goleadasDadas ? card(goleador.goleadasDadas, '', who(goleador), 'goleadas puestas', 0, goleador.id) : '',
-    podios.podios ? card(podios.podios, '', who(podios), 'veces en el podio', 0, podios.id) : ''
+    rachaG.rachaG > 1 ? card(rachaG.rachaG, '', todos(top(x => x.rachaG)), 'victorias al hilo', 0, top(x => x.rachaG)) : '',
+    goleador.goleadasDadas ? card(goleador.goleadasDadas, '', todos(top(x => x.goleadasDadas)), 'goleadas puestas', 0, top(x => x.goleadasDadas)) : '',
+    podios.podios ? card(podios.podios, '', todos(top(x => x.podios)), 'veces en el podio', 0, top(x => x.podios)) : ''
   ].filter(Boolean).join('');
 
   const derrotas  = best(x => x.pp);
@@ -191,15 +207,15 @@ function records() {
                              .sort((a, b) => b.torneos - a.torneos)[0];
 
   const mal = [
-    card(derrotas.pp, '', who(derrotas), 'partidos perdidos', 1, derrotas.id),
+    card(derrotas.pp, '', todos(top(x => x.pp)), 'partidos perdidos', 1, top(x => x.pp)),
     card(dec(colador.gc / colador.pj), '', who(colador), 'goles recibidos por partido', 1, colador.id),
     card(dec(flojito.gf / flojito.pj), '', who(flojito), 'goles por partido, el ataque más flojo', 1, flojito.id),
-    sinGanar.rachaSinGanar > 1 ? card(sinGanar.rachaSinGanar, '', who(sinGanar), 'partidos seguidos sin ganar', 1, sinGanar.id) : '',
-    rachaP.rachaP > 1 ? card(rachaP.rachaP, '', who(rachaP), 'derrotas al hilo', 1, rachaP.id) : '',
-    humillado.goleadasRecibidas ? card(humillado.goleadasRecibidas, '', who(humillado), 'goleadas recibidas', 1, humillado.id) : '',
-    empatador.pe ? card(empatador.pe, '', who(empatador), 'empates, el rey del punto', 1, empatador.id) : '',
+    sinGanar.rachaSinGanar > 1 ? card(sinGanar.rachaSinGanar, '', todos(top(x => x.rachaSinGanar)), 'partidos seguidos sin ganar', 1, top(x => x.rachaSinGanar)) : '',
+    rachaP.rachaP > 1 ? card(rachaP.rachaP, '', todos(top(x => x.rachaP)), 'derrotas al hilo', 1, top(x => x.rachaP)) : '',
+    humillado.goleadasRecibidas ? card(humillado.goleadasRecibidas, '', todos(top(x => x.goleadasRecibidas)), 'goleadas recibidas', 1, top(x => x.goleadasRecibidas)) : '',
+    empatador.pe ? card(empatador.pe, '', todos(top(x => x.pe)), 'empates, el rey del punto', 1, top(x => x.pe)) : '',
     card(Math.round(ef(peorEf) * 100), '%', who(peorEf), 'de los puntos que jugó, la peor cosecha', 1, peorEf.id),
-    ultimo.ultimos ? card(ultimo.ultimos, '', who(ultimo), 'veces último en la tabla', 1, ultimo.id) : '',
+    ultimo.ultimos ? card(ultimo.ultimos, '', todos(top(x => x.ultimos)), 'veces último en la tabla', 1, top(x => x.ultimos)) : '',
     secos ? card(secos.torneos, '', who(secos), 'torneos jugados sin ganar ninguno', 1, secos.id) : ''
   ].filter(Boolean).join('');
 
