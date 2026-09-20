@@ -3,11 +3,19 @@
 
 import { firebaseConfig, DOC_PATH, LEGACY_DOC_PATH, LOCAL_KEY, TRASH_DAYS } from '../config.js';
 import { uid, advance, isLive, isScheduled, kickoff } from '../domain/engine.js';
+import { merge3, same, clone } from './merge.js';
+
+const BASE_KEY = LOCAL_KEY + '_base';
 
 const listeners = new Set();
+const statusWatchers = new Set();
 let db = null;
-let online = false;
-let writing = false;
+let ref = null;
+
+/* `base` es la última copia que sabemos que está en la nube. Con ella se
+   distingue qué cambió cada organizador y se fusiona en vez de pisar. */
+let base = null;
+let synced = false;        // ya llegó al menos una copia real de la nube
 
 export let state = blank();
 
@@ -15,13 +23,33 @@ function blank() {
   return { v: 2, tournaments: [], annualCups: [], annualDrafts: {}, sound: true };
 }
 
+/* `source` dice de dónde vino el cambio: 'local' (lo hizo este celular) o
+   'remote' (lo hizo otro organizador y llegó por la nube). */
 export function subscribe(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
-function emit() {
-  listeners.forEach(fn => fn(state));
+function emit(source = 'local') {
+  listeners.forEach(fn => fn(state, source));
+}
+
+/* 'local' sin nube · 'sync' buscando · 'ok' todo guardado ·
+   'saving' guardando · 'error' hay cambios que todavía no subieron */
+let status = 'local';
+export const syncStatus = () => status;
+
+/* Un dispositivo nuevo, sin nada guardado, mientras busca en la nube: hasta
+   que llegue algo no se sabe si "no hay torneos" es cierto. */
+export const isLoading = () => status === 'sync' && !state.tournaments.length;
+export function onSyncStatus(fn) {
+  statusWatchers.add(fn);
+  return () => statusWatchers.delete(fn);
+}
+function setStatus(next) {
+  if (next === status) return;
+  status = next;
+  statusWatchers.forEach(fn => fn(status));
 }
 
 /* ---------- Normalizar ---------- */
@@ -40,7 +68,20 @@ function normalize(raw) {
     t.games = Array.isArray(t.games) ? t.games : [];
     t.teamIds = Array.isArray(t.teamIds) ? t.teamIds : [];
     t.finished = !!t.finished;
-    if (t.bracket) advance(t.bracket);
+
+    /* "Jugado" se deduce de los goles. Así, si dos organizadores cargan el
+       mismo partido a la vez y la fusión mezcla campos, nunca queda un partido
+       a medias marcado como jugado. */
+    const fixPlayed = g => {
+      if (g.bye) return;
+      g.played = Number.isInteger(g.hg) && Number.isInteger(g.ag);
+    };
+    t.games.forEach(fixPlayed);
+    if (t.bracket) {
+      t.bracket.games = Array.isArray(t.bracket.games) ? t.bracket.games : [];
+      t.bracket.games.forEach(fixPlayed);
+      advance(t.bracket);
+    }
   });
   return s;
 }
@@ -106,29 +147,126 @@ function importLegacy(old) {
 
 /* ---------- Guardar ---------- */
 
+/* Por qué así (y no `set(state)` a secas):
+   guardar todo el documento pisaba lo que otro organizador hubiera cargado
+   desde la última vez que este celular se enteró. Ahora cada guardado corre
+   dentro de una transacción: se lee lo que hay en la nube, se fusiona con lo
+   que cambió acá (ver merge.js) y recién ahí se escribe. Nada se sobreescribe
+   a ciegas, y nada se sube antes de haber visto la copia real de la nube. */
+
 let timer = null;
+let retryTimer = null;
+let retryMs = 4000;
+let pushing = false;
+let bytes = 0;
+
+/* Quién puede guardar en la nube. Con cuentas reales, sólo los organizadores:
+   quien mira no intenta escribir (las reglas de Firestore se lo rechazarían
+   y quedaría reintentando sin parar). Lo cambia app.js con `setWriteGuard`. */
+let canWrite = () => true;
+export const setWriteGuard = fn => { canWrite = fn; };
+
+/* Al iniciar sesión, lo que quedó pendiente sube en el momento. */
+export const flushSoon = () => schedulePush(0);
+
+/* Cuánto pesa lo guardado. Firestore admite 1 MB por documento. */
+export const stateBytes = () => bytes;
+
+function persist() {
+  try {
+    const raw = JSON.stringify(state);
+    bytes = raw.length;
+    localStorage.setItem(LOCAL_KEY, raw);
+    if (base) localStorage.setItem(BASE_KEY, JSON.stringify(base));
+  } catch {}
+}
+
+const hasPending = () => !base || !same(state, base);
 
 /* Un cambio no dispara una escritura: se juntan los cambios de medio segundo
    y se manda uno solo. Cargar cinco goles seguidos ya no son cinco viajes. */
 function save() {
-  emit();
-  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
-  if (!db) return;
-  clearTimeout(timer);
-  timer = setTimeout(push, 500);
+  persist();
+  emit('local');
+  schedulePush(500);
 }
 
-function push() {
-  if (!db) return;
-  writing = true;
-  db.doc(DOC_PATH).set(state)
-    .catch(err => console.warn('No se pudo guardar en la nube:', err))
-    .finally(() => { setTimeout(() => { writing = false; }, 300); });
+function schedulePush(delay) {
+  if (!db || !synced) return;               // nunca antes de ver la nube
+  if (!hasPending() || !canWrite()) { setStatus('ok'); return; }
+  setStatus('saving');
+  clearTimeout(timer);
+  timer = setTimeout(push, delay);
+}
+
+/* Una copia por día de lo que había en la nube justo antes de escribir.
+   Si algún día algo sale mal, hay de dónde recuperar. Es un extra: si la base
+   de datos no lo permite, se ignora y el guardado sigue igual. */
+function backupOnce(remote) {
+  if (!remote || !remote.tournaments?.length) return;
+  const day = new Date().toISOString().slice(0, 10);
+  const key = LOCAL_KEY + '_backup_day';
+  try {
+    if (localStorage.getItem(key) === day) return;
+    localStorage.setItem(key, day);
+  } catch {}
+  db.doc(`${DOC_PATH.split('/')[0]}/respaldo_v2_${day}`)
+    .set({ at: new Date().toISOString(), data: JSON.stringify(remote) })
+    .catch(() => {});
+}
+
+async function push() {
+  if (!db || !synced || !canWrite()) return;
+  if (pushing) return;                      // se reprograma al terminar
+  pushing = true;
+
+  let sent = null, sentFrom = null, before = null;
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      before = snap.exists ? normalize(snap.data()) : null;
+      sentFrom = clone(state);
+      sent = before ? merge3(base, sentFrom, before) : sentFrom;
+      tx.set(ref, sent);
+    });
+
+    /* Quedó en la nube: esa es la nueva base. Lo que se haya tocado mientras
+       viajaba se conserva encima. */
+    base = clone(sent);
+    const merged = normalize(merge3(sentFrom, state, sent));
+    const changed = !same(merged, state);
+    state = merged;
+    persist();
+    if (changed) emit('remote');
+    if (before) backupOnce(before);
+
+    retryMs = 4000;
+    pushing = false;
+    if (hasPending()) schedulePush(300); else setStatus('ok');
+  } catch (err) {
+    pushing = false;
+    console.warn('No se pudo guardar en la nube, se reintenta:', err);
+    setStatus('error');
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(() => schedulePush(0), retryMs);
+    retryMs = Math.min(retryMs * 2, 60000);
+  }
 }
 
 export function update(fn) {
   fn(state);
   save();
+}
+
+/* Llegó una copia de la nube: se funde con lo que hay acá.
+   Devuelve true si lo que se ve cambió. */
+function absorb(remote) {
+  const merged = normalize(merge3(base ?? clone(state), state, remote));
+  const changed = !same(merged, state);
+  state = merged;
+  base = clone(remote);
+  persist();
+  return changed;
 }
 
 /* ---------- Arrancar ---------- */
@@ -137,6 +275,12 @@ export function loadLocal() {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
     if (raw) state = normalize(JSON.parse(raw));
+
+    /* La base guardada dice qué se vio por última vez en la nube. Sin ella
+       (primera vez con esta versión) se toma lo local como ya sincronizado:
+       así, ante cualquier diferencia, manda la nube y no se pisa nada. */
+    const rawBase = localStorage.getItem(BASE_KEY);
+    base = rawBase ? normalize(JSON.parse(rawBase)) : (raw ? clone(state) : null);
   } catch {}
   return state;
 }
@@ -146,23 +290,37 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
     if (!window.firebase) throw new Error('SDK no disponible');
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
-    online = true;
+    ref = db.doc(DOC_PATH);
   } catch (err) {
     console.warn('Sin conexión a la nube, se trabaja local:', err);
     return false;
   }
 
   onSyncStart?.();
+  setStatus('sync');
   let first = true;
 
-  db.doc(DOC_PATH).onSnapshot(async snap => {
-    if (first) { onSyncEnd?.(); first = false; }
+  /* Sin señal, Firestore no avisa nada: se queda esperando. Pasado un rato se
+     muestra como sin conexión, para que la pantalla no quede cargando. */
+  setTimeout(() => { if (!synced) setStatus('error'); }, 8000);
+
+  const listen = () => ref.onSnapshot(async snap => {
+    /* Escrituras nuestras que todavía no confirmó el servidor: se espera. */
+    if (snap.metadata.hasPendingWrites) return;
+
+    /* "No existe" desde la memoria del navegador no prueba nada: sólo se
+       cree que no existe cuando lo dice el servidor. */
+    if (!snap.exists && snap.metadata.fromCache) return;
 
     if (snap.exists) {
-      if (writing) return;              // eco de nuestra propia escritura
-      state = normalize(snap.data());
-      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
-      emit();
+      const changed = absorb(normalize(snap.data()));
+      synced = true;
+      const wasFirst = first;
+      first = false;
+      if (changed) emit('remote');
+      if (wasFirst) onSyncEnd?.();
+      schedulePush(300);            // si acá quedó algo sin subir, sube ahora
+      if (!hasPending()) setStatus('ok');
       return;
     }
 
@@ -172,16 +330,26 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
       const brought = legacy.exists ? importLegacy(legacy.data()) : null;
       if (brought && brought.tournaments.length) {
         state = brought;
-        emit();
+        emit('remote');
       }
     } catch (err) {
       console.warn('No se pudo importar la versión anterior:', err);
     }
-    push();
+    base = null;                    // no hay nada en la nube todavía
+    synced = true;
+    if (first) { first = false; onSyncEnd?.(); }
+    schedulePush(0);
   }, err => {
-    onSyncEnd?.();
+    if (first) { first = false; onSyncEnd?.(); }
     console.warn('Se cortó la sincronización:', err);
+    setStatus('error');
+    setTimeout(listen, 8000);       // vuelve a engancharse solo
   });
+
+  /* Un listener por vez: si se corta, `listen` lo reengancha. */
+  listen();
+  window.addEventListener('online', () => schedulePush(0));
+  window.addEventListener('focus', () => { if (synced && hasPending()) schedulePush(0); });
 
   return true;
 }

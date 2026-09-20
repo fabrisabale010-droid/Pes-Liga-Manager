@@ -59,8 +59,14 @@ function paint() {
   view.tabIndex = -1;
   old.replaceWith(view);
 
+  /* La entrada animada sólo al cambiar de sección, no al repintar la misma. */
+  if (!sigueIgual) view.classList.add('enter');
+
   views.get(id)?.(view);
-  view.focus({ preventScroll: true });
+
+  /* El foco va al contenido para lectores de pantalla, salvo que la vista ya
+     haya puesto el cursor en algún lado (por ejemplo, el casillero siguiente). */
+  if (!view.contains(document.activeElement)) view.focus({ preventScroll: true });
 
   if (sigueIgual) {
     /* Se espera al dibujado para que la página ya tenga su altura final. */

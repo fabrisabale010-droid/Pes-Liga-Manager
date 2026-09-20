@@ -52,9 +52,10 @@ export function crest(id, size = 34) {
     : (t.crest || (enCarpeta ? `${CRESTS_PATH}${id}.png` : null));
   if (!file) return flag(id);
 
-  const fallback = flag(id).replace(/"/g, '&quot;');
+  /* La bandera de respaldo viaja escapada en un atributo y se lee al fallar:
+     meterla dentro del onerror rompía con las banderas que llevan comillas. */
   return `<img src="${file}" alt="" class="crest-img" style="width:${size}px;height:${size}px"
-    onerror="this.outerHTML='${fallback}'">`;
+    data-fb="${esc(flag(id))}" onerror="this.outerHTML=this.dataset.fb">`;
 }
 
 /* ---------- Avisos ---------- */
@@ -100,6 +101,26 @@ export function closeModal() {
   const box = el('modal');
   box.hidden = true;
   box.innerHTML = '';
+}
+
+/* Pregunta antes de algo que no se puede deshacer. Devuelve una promesa:
+   true si confirma, false si se arrepiente. Reemplaza al confirm() del
+   navegador, que rompe el estilo y en el celular se ve como un error. */
+export function askConfirm({ title, text, yes = 'Aceptar', no = 'Volver', danger = true }) {
+  return new Promise(resolve => {
+    openModal(`
+      <i class="ti ti-alert-triangle big-i" style="color:var(--red)" aria-hidden="true"></i>
+      <h3>${esc(title)}</h3>
+      <p>${esc(text)}</p>
+      <div class="row">
+        <button class="btn" data-no>${esc(no)}</button>
+        <button class="btn ${danger ? 'danger' : 'main'}" data-yes>${esc(yes)}</button>
+      </div>
+    `, box => {
+      box.querySelector('[data-no]').onclick = () => { closeModal(); resolve(false); };
+      box.querySelector('[data-yes]').onclick = () => { closeModal(); resolve(true); };
+    });
+  });
 }
 
 export function openSheet(html, ready) {

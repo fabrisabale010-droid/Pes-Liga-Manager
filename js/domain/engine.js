@@ -132,6 +132,51 @@ export function currentDay(t) {
   return null;
 }
 
+/* El fixture ordenado en bloques: uno por fecha (y grupo, si hay). Con
+   `bracket: true` suma las rondas de llaves que ya tienen los dos equipos.
+   Lo usan la pantalla, la imagen para compartir y el texto, así los tres
+   cuentan lo mismo y en el mismo orden. */
+export function fixtureBlocks(t, { bracket = false } = {}) {
+  const byKey = new Map();
+  t.games.forEach(m => {
+    const key = `${m.group || ''}|${m.day}`;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(m);
+  });
+
+  const blocks = [...byKey.keys()]
+    .sort((a, b) => {
+      const [ga, da] = a.split('|'), [gb, db] = b.split('|');
+      return ga.localeCompare(gb) || Number(da) - Number(db);
+    })
+    .map(key => {
+      const [group, day] = key.split('|');
+      return {
+        key, group: group || null, day: Number(day),
+        title: `${group ? `Grupo ${group} · ` : ''}Fecha ${day}`,
+        games: byKey.get(key)
+      };
+    });
+
+  if (bracket && t.bracket) {
+    const rounds = new Map();
+    t.bracket.games
+      .filter(m => !m.bye && m.home && m.away)
+      .forEach(m => {
+        if (!rounds.has(m.round)) rounds.set(m.round, []);
+        rounds.get(m.round).push(m);
+      });
+    [...rounds.keys()].sort((a, b) => a - b).forEach(r => {
+      blocks.push({
+        key: `llave|${r}`, group: null, day: null, isBracket: true,
+        title: roundName(r, t.bracket.rounds),
+        games: rounds.get(r).sort((a, b) => a.pos - b.pos)
+      });
+    });
+  }
+  return blocks;
+}
+
 /* ---------- Llaves ---------- */
 
 function seedOrder(size) {

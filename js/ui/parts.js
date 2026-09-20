@@ -1,6 +1,6 @@
 import { flag, esc, nameOf, openModal, crest } from './ui.js';
 import { mainColorOf } from '../domain/teams.js';
-import { table, tieWinner, roundName, groupTable } from '../domain/engine.js';
+import { table, tieWinner, roundName, groupTable, fixtureBlocks, currentDay, isLive } from '../domain/engine.js';
 import { tournaments } from '../core/store.js';
 import { TITLES_BEFORE_APP } from '../config.js';
 
@@ -37,13 +37,29 @@ export function gameRow(m, { editable = false, kind = 'game' } = {}) {
     <span class="t ${homeWin ? 'win' : ''}">${flag(m.home)}<span>${esc(nameOf(m.home))}</span></span>
     <span class="mark">
       ${editable
-        ? `<input class="score" type="number" min="0" inputmode="numeric" value="${m.hg ?? ''}" placeholder="–" data-score="${kind}:${m.id}:hg">
-           <input class="score" type="number" min="0" inputmode="numeric" value="${m.ag ?? ''}" placeholder="–" data-score="${kind}:${m.id}:ag">`
-        : `<span class="score" style="display:grid;place-items:center">${m.hg ?? '–'}</span>
-           <span class="score" style="display:grid;place-items:center">${m.ag ?? '–'}</span>`}
+        ? `<input class="score" type="number" min="0" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next"
+                  aria-label="Goles de ${esc(nameOf(m.home))}" value="${m.hg ?? ''}" placeholder="–" data-score="${kind}:${m.id}:hg">
+           <input class="score" type="number" min="0" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next"
+                  aria-label="Goles de ${esc(nameOf(m.away))}" value="${m.ag ?? ''}" placeholder="–" data-score="${kind}:${m.id}:ag">`
+        : `<span class="score ro">${m.hg ?? '–'}</span>
+           <span class="score ro">${m.ag ?? '–'}</span>`}
     </span>
     <span class="t away ${awayWin ? 'win' : ''}">${flag(m.away)}<span>${esc(nameOf(m.away))}</span></span>
   </div>`;
+}
+
+/* Todos los partidos, fecha por fecha. Se usa en "En juego" (editable, con la
+   fecha actual marcada) y en Historial (sólo lectura, para revivir el torneo). */
+export function fixtureView(t, { editable = false } = {}) {
+  const now = !t.finished && isLive(t) ? currentDay(t) : null;
+
+  return fixtureBlocks(t).map(b => {
+    const live = now && b.games.some(m => m.id === now.games[0]?.id);
+    return `<div class="fixture-head">
+        ${esc(b.title)}${live ? ' <span class="tag live">en juego</span>' : ''}
+      </div>
+      ${b.games.map(m => gameRow(m, { editable, kind: 'g' })).join('')}`;
+  }).join('');
 }
 
 export function penaltyPicker(m, kind) {
@@ -88,12 +104,20 @@ export function bracketView(t) {
 /* ---------- Grupos ---------- */
 
 export function groupsView(t) {
+  const pasan = t.groupsConfig.advance;
   return t.groups.map(g => `
     <div style="margin-bottom:16px">
       <div class="fixture-head">Grupo ${g.label}</div>
-      ${standingsTable(groupTable(t, g.label), { qualify: t.groupsConfig.advance })}
-    </div>`).join('');
+      ${standingsTable(groupTable(t, g.label), { qualify: pasan })}
+    </div>`).join('') + `
+    <p class="legend"><span class="qkey" aria-hidden="true">1</span>
+      ${pasan === 1 ? 'Pasa a las llaves el primero de cada grupo' : `Pasan a las llaves los ${pasan} primeros de cada grupo`}</p>`;
 }
+
+/* Esqueletos: mientras llegan los datos se dibuja la forma de lo que viene,
+   en vez de mostrar por un instante "no hay nada". */
+export const skeleton = () =>
+  `<div aria-busy="true" aria-label="Cargando"><div class="skel tall"></div><div class="skel mid"></div></div>`;
 
 /* ---------- Ficha rápida de una selección ---------- */
 

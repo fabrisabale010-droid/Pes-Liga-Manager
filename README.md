@@ -34,6 +34,44 @@ probaron: fixture, empates, llaves con pases directos y penales.
 **Guardado.** Antes cada gol era un viaje a la nube. Ahora los cambios se juntan
 y se manda uno solo cada medio segundo.
 
+**Varios organizadores a la vez.** Cada guardado corre en una transacción que
+lee lo que hay en la nube y lo fusiona con lo cambiado en el celular
+(`js/core/merge.js`): dos personas cargando partidos distintos, o una creando un
+torneo mientras otra carga resultados, se suman en vez de pisarse. Nada se sube
+antes de haber visto la copia real de la nube, y si no hay señal los cambios
+esperan y suben solos. Arriba de todo aparece "Guardando…" o "Sin conexión".
+Además, la primera vez que se guarda cada día se deja una copia del estado en
+Firestore (`pes6_liga/respaldo_v2_AAAA-MM-DD`), por si algún día hay que volver
+atrás.
+
+**Diseño.** Sigue siendo el estadio de noche (azul de reflector, dorado sólo
+para campeones), ahora sobre tokens en `css/app.css`: espaciado en múltiplos de
+4, tres niveles de sombra, tiempos de movimiento y un mínimo de 44 px para
+tocar. Textos con contraste AA y ninguno menor a 11 px. Los campos son de 16 px
+para que el iPhone no haga zoom. Los marcadores editables tienen caja y los de
+sólo lectura no. Quien pasa de ronda se marca con número y leyenda, no sólo con
+color. Las secciones entran con una animación corta (no al cargar un gol) y
+respetan "reducir movimiento". Mientras un dispositivo nuevo busca datos se ven
+esqueletos en vez de "no hay torneos". El modo organizador se ve en verde en el
+encabezado. Los nombres de `crests/`, `FWC.png`, `BDO.png` y `logo.png` no
+cambian.
+
+**Cargar resultados rápido.** En "En juego", el botón "Cargar resultados de la
+Fecha N" abre una hoja con botones grandes − / + que recorre los partidos que
+faltan ("Guardar y seguir"). En los casilleros de siempre, al tipear un número
+de una cifra se guarda solo y el cursor pasa al siguiente casillero vacío.
+Al sortear un torneo se ofrece compartir el fixture en el momento.
+
+**Cuentas reales (opcional).** Por defecto el modo organizador usa el PIN.
+Para seguridad de verdad (sólo ciertas cuentas de Google pueden guardar, aunque
+alguien toque el código) seguí `AUTH.md`; las reglas están en `firestore.rules`.
+El sonido dejó de compartirse entre dispositivos: ahora es de cada celular.
+
+**Compartir el fixture.** Desde Inicio, En juego, Programar o Historial:
+"Compartir fixture" arma una o varias imágenes (fechas enteras, con banderas) o
+un texto listo para WhatsApp. En los torneos ya jugados sale con los resultados.
+En Historial, cada torneo tiene las pestañas Tabla y Partidos.
+
 **Identificadores.** Se terminó el contador que provocaba torneos con el mismo
 número (el bug de "borro uno y desaparece otro"). Cada torneo nace con un id
 único e irrepetible.

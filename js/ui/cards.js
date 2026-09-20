@@ -4,6 +4,7 @@
 import { nameOf, colorsOf, team } from '../domain/teams.js';
 import { USE_CRESTS, CRESTS_FROM_FOLDER, CRESTS_PATH, CRESTS_AVAILABLE } from '../config.js';
 import { TROPHY_SRC, BALLON_SRC, say } from './ui.js';
+import { kickoff, fixtureBlocks, tieWinner } from '../domain/engine.js';
 
 const W = 1080;
 const H = 1350;                 // proporción vertical, la que mejor entra en el chat
@@ -359,16 +360,19 @@ const aBlob = canvas =>
 
 /* Abre el menú de compartir del celular con la imagen lista.
    Si el dispositivo no lo permite, la descarga. */
-async function share(canvas, nombre, texto = '') {
-  const blob = await aBlob(canvas);
-  if (!blob) throw new Error('No se pudo generar la imagen');
+async function share(lienzos, nombre, texto = '') {
+  /* Acepta una placa o varias (el fixture largo sale en más de una imagen). */
+  const lista = Array.isArray(lienzos) ? lienzos : [lienzos];
+  const blobs = await Promise.all(lista.map(aBlob));
+  if (blobs.some(b => !b)) throw new Error('No se pudo generar la imagen');
 
-  const file = new File([blob], `${nombre}.png`, { type: 'image/png' });
+  const nombreDe = i => lista.length > 1 ? `${nombre}-${i + 1}` : nombre;
+  const files = blobs.map((b, i) => new File([b], `${nombreDe(i)}.png`, { type: 'image/png' }));
 
   /* Algunos navegadores tienen navigator.share pero responden mal a
      canShare, así que se intenta igual y recién se descarga si falla. */
   if (navigator.share) {
-    const intentos = [{ files: [file], text: texto }, { files: [file] }];
+    const intentos = [{ files, text: texto }, { files }];
     for (const datos of intentos) {
       try {
         if (navigator.canShare && !navigator.canShare(datos)) continue;
@@ -381,14 +385,16 @@ async function share(canvas, nombre, texto = '') {
     }
   }
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${nombre}.png`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  blobs.forEach((blob, i) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nombreDe(i)}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  });
   return 'descargada';
 }
 
@@ -548,6 +554,199 @@ export async function eventCard(t, cuando) {
 
   pie(ctx);
   return c;
+}
+
+/* ---------- Placas de fixture ---------- */
+
+/* Un fixture completo no entra en una sola imagen: se reparte en las que
+   hagan falta (fechas enteras, nunca cortadas al medio) y se comparten juntas.
+   Sirve para el que viene (con "vs") y para los ya jugados (con resultados). */
+
+const FX_X = 120, FX_ANCHO = W - 240;
+const FX_HEAD = 64, FX_FILA = 62, FX_GAP = 16;
+const FX_TOPE = 385, FX_BASE = H - 150;
+
+const banderaDe = async id => {
+  const t = team(id);
+  if (!t) return { tipo: 'nada', img: null };
+  const img = await cargar(`https://flagcdn.com/w320/${t.iso}.png`);
+  return img ? { tipo: 'bandera', img } : { tipo: 'nada', img: null };
+};
+
+const altoBloque = b => FX_HEAD + b.games.length * FX_FILA + FX_GAP;
+
+function repartir(bloques) {
+  const paginas = [[]];
+  let usado = 0;
+  bloques.forEach(b => {
+    const alto = altoBloque(b);
+    /* El margen de abajo del último bloque no ocupa lugar: no se cuenta. */
+    if (usado + alto - FX_GAP > FX_BASE - FX_TOPE && paginas.at(-1).length) {
+      paginas.push([]);
+      usado = 0;
+    }
+    paginas.at(-1).push(b);
+    usado += alto;
+  });
+  return paginas;
+}
+
+export async function fixtureCards(t) {
+  const bloques = fixtureBlocks(t, { bracket: true });
+  const ids = [...new Set(bloques.flatMap(b => b.games.flatMap(m => [m.home, m.away])))];
+  const banderas = new Map(await Promise.all(ids.map(async id => [id, await banderaDe(id)])));
+
+  const paginas = repartir(bloques);
+  const jugado = t.games.some(g => g.played) || (t.bracket?.games || []).some(g => g.played);
+  const etiqueta = t.finished ? 'RESULTADOS' : jugado ? 'FIXTURE Y RESULTADOS' : 'FIXTURE';
+  const pendienteLlaves = t.format === 'copa' && !t.bracket;
+
+  return paginas.map((bloquesDeLaPagina, i) => {
+    const c = lienzo();
+    const ctx = c.getContext('2d');
+
+    fondo(ctx, 'rgba(77,141,255,.20)');
+    marco(ctx, 'rgba(77,141,255,.45)');
+
+    texto(ctx, etiqueta, 150, { size: 28, color: LUZ, weight: '700', track: 9 });
+    if (paginas.length > 1) {
+      ctx.fillStyle = TENUE;
+      ctx.font = '600 24px Inter, Arial, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${i + 1} / ${paginas.length}`, W - 100, 150);
+      ctx.textAlign = 'center';
+    }
+
+    const nom = ajustar(ctx, t.name, W - 240, 62, 'Rajdhani', '700');
+    texto(ctx, t.name, 228, { size: nom, color: TEXTO, weight: '700', font: 'Rajdhani' });
+
+    const cuando = kickoff(t);
+    const dia = cuando
+      ? cuando.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long',
+          ...(t.finished ? { year: 'numeric' } : {}) })
+      : fechaLarga(t.finishedAt || t.createdAt);
+    const linea1 = [dia.charAt(0).toUpperCase() + dia.slice(1),
+      t.when?.time ? `${t.when.time} h` : ''].filter(Boolean).join(' · ');
+    texto(ctx, linea1, 284, { size: 30, color: TENUE });
+
+    const linea2 = [t.place, t.host ? `casa de ${nameOf(t.host)}` : ''].filter(Boolean).join(' · ');
+    if (linea2) {
+      const s = ajustar(ctx, linea2, W - 240, 28, 'Inter', '500');
+      texto(ctx, linea2, 326, { size: s, color: TENUE, weight: '500' });
+    }
+
+    let y = FX_TOPE;
+    bloquesDeLaPagina.forEach(b => {
+      dibujarBloque(ctx, b, y, banderas);
+      y += altoBloque(b);
+    });
+
+    if (i === paginas.length - 1 && pendienteLlaves) {
+      texto(ctx, 'Las llaves se arman al terminar la fase de grupos', Math.min(y + 24, FX_BASE + 10),
+            { size: 26, color: TENUE, weight: '500' });
+    }
+
+    pie(ctx);
+    return c;
+  });
+}
+
+function dibujarBloque(ctx, b, y, banderas) {
+  const color = b.isBracket ? ORO : LUZ;
+
+  ctx.fillStyle = color;
+  ctx.font = '700 30px Rajdhani, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  const titulo = b.title.toUpperCase();
+  ctx.fillText(titulo, FX_X, y + 34);
+  const finTitulo = FX_X + ctx.measureText(titulo).width + 18;
+  ctx.strokeStyle = b.isBracket ? 'rgba(224,178,61,.35)' : 'rgba(77,141,255,.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(finTitulo, y + 26);
+  ctx.lineTo(FX_X + FX_ANCHO, y + 26);
+  ctx.stroke();
+
+  b.games.forEach((m, i) => {
+    const top = y + FX_HEAD - 6 + i * FX_FILA;
+    const alto = FX_FILA - 8;
+    const cy = top + alto / 2;
+
+    ctx.fillStyle = 'rgba(255,255,255,.045)';
+    redondo(ctx, FX_X, top, FX_ANCHO, alto, 14);
+    ctx.fill();
+
+    const ganador = m.played || m.penWinner ? tieWinner(m) : null;
+    const colorDe = id => (!ganador || ganador === id) ? TEXTO : TENUE;
+    const penal = id => (b.isBracket && m.penWinner === id) ? ' (p)' : '';
+
+    marca(ctx, m.home, FX_X + 58, cy, 38, banderas.get(m.home));
+    marca(ctx, m.away, FX_X + FX_ANCHO - 58, cy, 38, banderas.get(m.away));
+
+    const nombreMax = 245;
+    const nh = (nameOf(m.home).toUpperCase()) + penal(m.home);
+    const na = (nameOf(m.away).toUpperCase()) + penal(m.away);
+
+    ctx.fillStyle = colorDe(m.home);
+    let s = ajustar(ctx, nh, nombreMax, 34, 'Rajdhani', '700');
+    ctx.font = `700 ${s}px Rajdhani, Arial, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(nh, FX_X + 106, cy + s * .34);
+
+    ctx.fillStyle = colorDe(m.away);
+    s = ajustar(ctx, na, nombreMax, 34, 'Rajdhani', '700');
+    ctx.font = `700 ${s}px Rajdhani, Arial, sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText(na, FX_X + FX_ANCHO - 106, cy + s * .34);
+
+    ctx.textAlign = 'center';
+    if (m.played) {
+      ctx.fillStyle = TEXTO;
+      ctx.font = '700 34px "Space Mono", monospace';
+      ctx.fillText(`${m.hg}-${m.ag}`, W / 2, cy + 12);
+    } else {
+      ctx.fillStyle = TENUE;
+      ctx.font = '600 26px Inter, Arial, sans-serif';
+      ctx.fillText('vs', W / 2, cy + 9);
+    }
+  });
+  ctx.textAlign = 'center';
+}
+
+/* Lo mismo, como texto: para pegarlo en el grupo sin imagen. */
+const emojiBandera = id => {
+  const iso = team(id)?.iso;
+  if (!iso) return '';
+  if (iso.includes('-')) {                       // Inglaterra, Escocia…
+    const sub = iso.replace('-', '');
+    return String.fromCodePoint(0x1F3F4,
+      ...[...sub].map(ch => 0xE0000 + ch.charCodeAt(0)), 0xE007F);
+  }
+  return [...iso.toUpperCase()].map(ch => String.fromCodePoint(0x1F1E6 + ch.charCodeAt(0) - 65)).join('');
+};
+
+export function fixtureText(t, link = '') {
+  const cuando = kickoff(t);
+  const dia = cuando
+    ? cuando.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+    : '';
+  const lineas = [`⚽ *${t.name}*`];
+  if (dia || t.when?.time) {
+    lineas.push(`📅 ${[dia, t.when?.time ? t.when.time + ' h' : ''].filter(Boolean).join(' · ')}`);
+  }
+  if (t.place) lineas.push(`📍 ${t.place}`);
+  if (t.host) lineas.push(`🏠 En casa de ${nameOf(t.host)}`);
+
+  fixtureBlocks(t, { bracket: true }).forEach(b => {
+    lineas.push('', `*${b.title}*`);
+    b.games.forEach(m => {
+      const centro = m.played ? `${m.hg} - ${m.ag}` : 'vs';
+      lineas.push(`${emojiBandera(m.home)} ${nameOf(m.home)} ${centro} ${nameOf(m.away)} ${emojiBandera(m.away)}`);
+    });
+  });
+  if (t.format === 'copa' && !t.bracket) lineas.push('', '_Las llaves se arman al terminar la fase de grupos._');
+  if (link) lineas.push('', link);
+  return lineas.join('\n');
 }
 
 /* ---------- Placa de vitrina: una selección ---------- */

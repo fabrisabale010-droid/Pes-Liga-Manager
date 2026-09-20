@@ -7,6 +7,7 @@ import { createTournament, formatName, kickoff } from '../domain/engine.js';
 import { state, update, scheduled, liveTournament } from '../core/store.js';
 import { MAX_TEAMS } from '../config.js';
 import { go } from '../ui/router.js';
+import { openFixtureShare } from '../ui/fixtureShare.js';
 
 const draft = {
   name: '', date: '', time: '21:00', place: '', host: '',
@@ -38,6 +39,9 @@ export function renderSchedule(view) {
                 ${t.when?.time ? ' · ' + esc(t.when.time) + ' h' : ''}
                 ${t.place ? ' · ' + esc(t.place) : ''}</div>
             </div>
+            <button class="ico" data-share-fixture="${t.id}" aria-label="Compartir fixture de ${esc(t.name)}" title="Compartir fixture">
+              <i class="ti ti-share-2" aria-hidden="true"></i>
+            </button>
             <span class="tag soon">programado</span>
           </div></article>`;
         }).join('')}
@@ -107,6 +111,13 @@ export function renderSchedule(view) {
   paintExtras(view);
   paintCopa(view);
   wire(view);
+
+  view.querySelectorAll('[data-share-fixture]').forEach(btn => {
+    btn.onclick = () => {
+      const t = scheduled().find(x => x.id === btn.dataset.shareFixture);
+      if (t) openFixtureShare(t);
+    };
+  });
 }
 
 const card = t => `
@@ -235,6 +246,6 @@ function confirm(view) {
   draft.teams = [];
   draft.place = '';
   draft.name = '';
-  say('Fixture sorteado');
   go('inicio');
+  openFixtureShare(t, { recien: true });
 }

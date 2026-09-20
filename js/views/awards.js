@@ -1,4 +1,4 @@
-import { flag, esc, nameOf, crest, say, cheer, ballon, cup } from '../ui/ui.js';
+import { flag, esc, nameOf, crest, say, cheer, ballon, cup, askConfirm } from '../ui/ui.js';
 import { tournaments } from '../core/store.js';
 import { years } from '../domain/stats.js';
 import { premiosDelAnio } from '../domain/awards.js';
@@ -286,11 +286,16 @@ function copaAnualClicks(e, paint) {
 
   const borrar = e.target.closest('[data-cup-del]');
   if (borrar) {
-    if (confirm('¿Borrar la Copa Anual? Se puede volver a armar.')) {
-      Annual.removeCup(borrar.dataset.cupDel);
-      say('Copa Anual borrada');
-    }
-    paint(); return true;
+    const id = borrar.dataset.cupDel;
+    askConfirm({
+      title: '¿Borrar la Copa Anual?',
+      text: 'Se puede volver a armar cuando quieran.',
+      yes: 'Sí, borrar'
+    }).then(ok => {
+      if (ok) { Annual.removeCup(id); say('Copa Anual borrada'); }
+      paint();
+    });
+    return true;
   }
   return false;
 }

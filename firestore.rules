@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Reglas de Firestore para PES6 Liga Manager 2.0.
+// NO las pegues en la consola hasta haber hecho los pasos 1 a 4 de AUTH.md.
+//
+// Idea: todos pueden MIRAR (los amigos ven fixture y tablas sin loguearse);
+// sólo los organizadores de la lista pueden GUARDAR.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cambiá estos correos por los de los organizadores. Tienen que ser los
+    // mismos que están en ORGANIZER_EMAILS de js/config.js, en minúsculas.
+    function esOrganizador() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'organizador1@gmail.com',
+          'organizador2@gmail.com'
+        ];
+    }
+
+    // La 2.0: la ve cualquiera, la modifican sólo los organizadores.
+    match /pes6_liga/estado_v2 {
+      allow read: if true;
+      allow write: if esOrganizador();
+    }
+
+    // La 1.0 sigue exactamente como estaba, para no romperla. Cuando la dejen
+    // de usar, cambiá "write: if true" por "write: if false".
+    match /pes6_liga/estado {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Copias de respaldo diarias (respaldo_v2_AAAA-MM-DD) y cualquier otro
+    // documento de esta colección: sólo organizadores.
+    match /pes6_liga/{doc} {
+      allow read, write: if esOrganizador();
+    }
+
+    // Todo lo demás queda cerrado.
+  }
+}

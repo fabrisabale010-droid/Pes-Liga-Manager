@@ -24,8 +24,26 @@ export const LOCAL_KEY = 'pes6_liga_v2';
 */
 export const ADMIN_HASH = '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab';
 
-/* La sesión de organizador caduca sola. */
+/* La sesión de organizador caduca sola (sólo en modo 'pin'). */
 export const ADMIN_HOURS = 12;
+
+/* Cómo entran los organizadores.
+
+   'pin'    El PIN de siempre. Evita toques por error, pero no es seguridad
+            real: cualquiera con conocimientos técnicos lo saltea.
+   'google' Cuenta de Google + reglas de Firestore. Seguridad de verdad: sólo
+            los correos de la lista pueden guardar, aunque toquen el código.
+
+   Dejalo en 'pin' hasta hacer los pasos de AUTH.md. Si lo cambiás antes,
+   nadie va a poder entrar como organizador. */
+export const AUTH_MODE = 'pin';
+
+/* Los Gmail de los organizadores (sólo en modo 'google'). Tienen que ser los
+   mismos que van en firestore.rules: acá sólo decide qué se muestra, las
+   reglas son las que de verdad dejan o no guardar. */
+export const ORGANIZER_EMAILS = [
+  // 'fabrisabale010@gmail.com',
+];
 
 /* Títulos ganados antes de que existiera la app. */
 export const TITLES_BEFORE_APP = { BRA:6, ITA:2, FRA:1 };

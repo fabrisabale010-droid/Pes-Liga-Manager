@@ -1,7 +1,8 @@
-import { flag, esc, nameOf, say, sayUndo, clip, whenDate } from '../ui/ui.js';
-import { standingsTable, bracketView } from '../ui/parts.js';
+import { flag, esc, nameOf, say, sayUndo, clip, whenDate, askConfirm } from '../ui/ui.js';
+import { standingsTable, bracketView, fixtureView, skeleton } from '../ui/parts.js';
 import { tableCard, compartirImagen } from '../ui/cards.js';
-import { tournaments, trashed, trashDaysLeft,
+import { openFixtureShare } from '../ui/fixtureShare.js';
+import { tournaments, trashed, trashDaysLeft, isLoading,
          sendToTrash, restoreFromTrash, emptyTrash } from '../core/store.js';
 import { finalTable, formatName, progress, isLive } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
@@ -9,6 +10,7 @@ import { isAdmin } from '../core/auth.js';
 let search = '';
 let openId = null;
 let showTrash = false;
+const tabs = {};              // qué pestaña tiene abierta cada torneo: 'tabla' | 'partidos'
 
 /* El router entrega un contenedor nuevo en cada visita, así que el listener
    se engancha una sola vez acá y todo lo demás sólo repinta el contenido. */
@@ -27,14 +29,36 @@ export function renderHistory(view) {
     };
   };
 
+  view.addEventListener('keydown', e => {
+    const head = e.target.closest?.('[data-open]');
+    if (head && e.target === head && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      head.click();
+    }
+  });
+
   view.addEventListener('click', e => {
     const head = e.target.closest('[data-open]');
     if (head) {
       openId = openId === head.dataset.open ? null : head.dataset.open;
       return paint();
     }
+    const tab = e.target.closest('[data-tab]');
+    if (tab) {
+      const at = tab.dataset.tab.lastIndexOf(':');
+      tabs[tab.dataset.tab.slice(0, at)] = tab.dataset.tab.slice(at + 1);
+      return paint();
+    }
+
     const compartir = e.target.closest('[data-share-table]');
     if (compartir) return compartirTabla(compartir);
+
+    const fx = e.target.closest('[data-share-fixture]');
+    if (fx) {
+      const t = tournaments().find(x => x.id === fx.dataset.shareFixture);
+      if (t) openFixtureShare(t);
+      return;
+    }
 
     const del = e.target.closest('[data-del]');
     if (del) return remove(del.dataset.del, paint);
@@ -50,10 +74,18 @@ export function renderHistory(view) {
       return paint();
     }
     if (e.target.closest('[data-empty-trash]')) {
-      if (!confirm('¿Vaciar la papelera? Lo que hay adentro se pierde para siempre.')) return;
-      emptyTrash();
-      say('Papelera vacía');
-      return paint();
+      const n = trashed().length;
+      askConfirm({
+        title: '¿Vaciar la papelera?',
+        text: `${n === 1 ? 'Se va 1 torneo' : `Se van ${n} torneos`} para siempre. No hay vuelta atrás.`,
+        yes: 'Sí, vaciar'
+      }).then(ok => {
+        if (!ok) return;
+        emptyTrash();
+        say('Papelera vacía');
+        paint();
+      });
+      return;
     }
   });
 
@@ -61,6 +93,7 @@ export function renderHistory(view) {
 }
 
 function html() {
+  if (isLoading()) return skeleton();
   const all = [...tournaments()].sort((a, b) => cuandoSeJugo(b) - cuandoSeJugo(a));
 
   if (!all.length) {
@@ -133,12 +166,13 @@ function cuandoSeJugo(t) {
 
 function row(t) {
   const open = openId === t.id;
+  const tab = tabs[t.id] || 'tabla';
   const p = progress(t);
   const rows = finalTable(t);
   const podium = rows.slice(0, 3);
 
   return `<article class="log-item ${open ? 'open' : ''}">
-    <div class="log-head" data-open="${t.id}">
+    <div class="log-head" data-open="${t.id}" role="button" tabindex="0" aria-expanded="${open}">
       <div class="grow">
         <div class="nm">${esc(t.name)}
           <span class="tag ${t.finished ? 'done' : isLive(t) ? 'live' : 'soon'}">
@@ -154,11 +188,22 @@ function row(t) {
       ${t.finished && podium.length ? `<div class="podium">
         ${podium.map((r, i) => `<div>${['🥇','🥈','🥉'][i]} ${flag(r.id)} ${esc(nameOf(r.id))}</div>`).join('')}
       </div>` : ''}
-      ${t.format === 'copa' && t.bracket ? bracketView(t) : ''}
-      ${standingsTable(rows)}
+      <div class="seg" role="tablist" aria-label="Qué ver de este torneo">
+        ${[['tabla', 'Tabla', 'ti-list-numbers'], ['partidos', 'Partidos', 'ti-clipboard-list']].map(([k, label, icon]) => `
+          <button role="tab" aria-selected="${tab === k}" class="${tab === k ? 'on' : ''}" data-tab="${t.id}:${k}">
+            <i class="ti ${icon}" aria-hidden="true"></i>${label}
+          </button>`).join('')}
+      </div>
+      ${tab === 'partidos' ? `
+        ${t.format === 'copa' && t.bracket ? `<div class="fixture-head">Llaves</div>${bracketView(t)}` : ''}
+        ${fixtureView(t)}` : `
+        ${t.format === 'copa' && t.bracket ? bracketView(t) : ''}
+        ${standingsTable(rows)}`}
       <div class="row" style="margin-top:12px">
+        <button class="btn sm" data-share-fixture="${t.id}" style="flex:0 0 auto">
+          <i class="ti ti-share-2" aria-hidden="true"></i>${t.finished ? 'Compartir resultados' : 'Compartir fixture'}</button>
         ${t.finished ? `<button class="btn sm" data-share-table="${t.id}" style="flex:0 0 auto">
-          <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}
+          <i class="ti ti-share-2" aria-hidden="true"></i>Compartir tabla</button>` : ''}
         ${isAdmin() ? `<button class="btn danger sm" data-del="${t.id}" style="flex:0 0 auto">Borrar torneo</button>` : ''}
       </div>
     </div>

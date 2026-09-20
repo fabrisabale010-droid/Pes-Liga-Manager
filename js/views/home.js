@@ -2,18 +2,21 @@ import {
   flag, esc, nameOf, cup, longDate, countdown, pad,
   startConfetti, stopConfetti, crest
 } from '../ui/ui.js';
-import { standingsTable, gameRow, bracketView, groupsView } from '../ui/parts.js';
+import { standingsTable, gameRow, bracketView, groupsView, skeleton } from '../ui/parts.js';
 import { championCard, eventCard, compartirImagen } from '../ui/cards.js';
-import { liveTournament, nextTournament, scheduled, lastChampion } from '../core/store.js';
+import { liveTournament, nextTournament, scheduled, lastChampion, isLoading } from '../core/store.js';
 import { currentDay, formatName, progress, finalTable, kickoff } from '../domain/engine.js';
 import { CHAMPION_BEFORE_APP } from '../config.js';
 import { isAdmin } from '../core/auth.js';
+import { openFixtureShare } from '../ui/fixtureShare.js';
 
 let tick = null;
 
 export function renderHome(view) {
   clearInterval(tick);
   stopConfetti();
+
+  if (isLoading()) { view.innerHTML = skeleton(); return; }
 
   const live = liveTournament();
   const proximo = nextTournament();
@@ -41,6 +44,9 @@ export function renderHome(view) {
     () => eventCard(proximo, kickoff(proximo)),
     'proximo-torneo',
     `⚽ Próximo torneo${proximo.place ? ' en ' + proximo.place : ''}`);
+
+  const fx = view.querySelector('[data-share-fixture]');
+  if (fx) fx.onclick = () => openFixtureShare(proximo);
 
   const when = proximo && kickoff(proximo);
   if (when) {
@@ -108,8 +114,13 @@ function nextUp(t, cuantos) {
         ${t.host ? `<div class="matchday-where">En casa de ${flag(t.host)} ${esc(nameOf(t.host))}</div>` : ''}
         <div class="matchday-who">${t.teamIds.map(id => flag(id)).join('')}</div>
         <div data-clock>${when ? clockHtml(when) : ''}</div>
-        <div style="margin-top:16px">
-          <button class="btn sm" data-share-event><i class="ti ti-share-2"></i>Compartir</button>
+        <div class="actions-center">
+          <button class="btn sm main" data-share-fixture>
+            <i class="ti ti-list-details" aria-hidden="true"></i>Compartir fixture
+          </button>
+          <button class="btn sm" data-share-event>
+            <i class="ti ti-share-2" aria-hidden="true"></i>Compartir invitación
+          </button>
         </div>
       </div>
     </div>
