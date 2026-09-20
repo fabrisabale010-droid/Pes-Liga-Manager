@@ -946,6 +946,17 @@ input.score:not(:placeholder-shown){border-color:rgba(77,141,255,.4); background
 
 .btn.ghost{border-color:transparent; color:var(--ink-dim);}
 
+/* ---------- Tabla del Balón de Oro ---------- */
+
+table.balon-tabla{min-width:460px;}
+table.balon-tabla th small{display:block; font-size:var(--fs-xs); font-weight:500; color:var(--ink-faint); margin-top:1px;}
+table.balon-tabla .pts{color:var(--trophy);}
+/* El primero va en dorado: es el Balón de Oro. Las celdas fijas necesitan fondo opaco. */
+table.balon-tabla tr.lead td,
+table.balon-tabla tr.lead td.sticky-l,
+table.balon-tabla tr.lead td.sticky-r{background:#1a1608;}
+table.balon-tabla tr.lead .rank{color:var(--trophy);}
+
 /* En pantallas anchas la hoja no se estira de lado a lado. */
 @media (min-width:820px){
   .sheet-panel{max-width:520px; margin-inline:auto;}
