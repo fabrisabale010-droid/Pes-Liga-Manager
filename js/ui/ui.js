@@ -140,31 +140,68 @@ export function closeSheet() {
 /* ---------- Papelitos ---------- */
 
 let rain = null;
+let burst = [];
 
-/* Caen dentro del contenedor que se le pase, con los colores de esa bandera. */
+/* Un color muy oscuro (el negro de Alemania) casi no se ve sobre el fondo. */
+function esOscuro(hex) {
+  const c = [1, 3, 5]
+    .map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(v => (v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4));
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2] < .06;
+}
+
+const entre = (a, b) => a + Math.random() * (b - a);
+
+/* Papelitos de los colores de la selección, cayendo dentro del contenedor.
+   Los hay rectangulares (la mayoría), cuadraditos y serpentinas finas; cada
+   uno se mece y se da vuelta a su ritmo. */
 export function startConfetti(container, teamId) {
   stopConfetti();
   if (!container) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const colors = colorsOf(teamId);
+  const MAX = 260;                                  // tope: cuida la batería
+
   const drop = () => {
-    const bit = document.createElement('i');
-    const size = 5 + Math.random() * 5;
-    const round = Math.random() > .5;
-    const life = 2.2 + Math.random() * 1.6;
-    bit.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${round ? size : size * 1.7}px;
-      background:${colors[Math.floor(Math.random() * colors.length)]};
-      border-radius:${round ? '50%' : '2px'};animation-duration:${life}s`;
-    container.appendChild(bit);
-    setTimeout(() => bit.remove(), life * 1000 + 200);
+    if (document.hidden || container.childElementCount >= MAX) return;
+
+    const forma = Math.random();
+    let w, h;
+    if (forma < .62)      { w = entre(6, 10);  h = w * entre(1.5, 2.2); }   // papelito
+    else if (forma < .84) { w = h = entre(5, 9); }                          // cuadradito
+    else                  { w = entre(3, 5);   h = entre(16, 26); }         // serpentina
+
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const dur = entre(3.4, 5.4);
+    const giro = entre(-45, 45);
+
+    const pieza = document.createElement('i');
+    pieza.className = 'pp';
+    pieza.style.cssText =
+      `left:${entre(0, 100)}%;--dur:${dur}s;` +
+      `--dist:${(container.clientHeight || 420) + 40}px;--drift:${entre(-46, 46)}px`;
+
+    const papel = document.createElement('b');
+    papel.style.cssText =
+      `--w:${w}px;--h:${h}px;--c:${color};--r0:${giro}deg;--r1:${giro + entre(60, 150)}deg;` +
+      `animation-duration:${entre(.7, 1.8)}s;animation-delay:-${entre(0, 1.5)}s`;
+    if (esOscuro(color)) papel.classList.add('edge');
+
+    pieza.appendChild(papel);
+    container.appendChild(pieza);
+    setTimeout(() => pieza.remove(), dur * 1000 + 200);
   };
-  for (let i = 0; i < 9; i++) setTimeout(drop, i * 90);
-  rain = setInterval(drop, 240);
+
+  /* Una ráfaga al empezar y después una lluvia constante. */
+  for (let i = 0; i < 72; i++) burst.push(setTimeout(drop, i * 18));
+  rain = setInterval(drop, 40);
 }
 
 export function stopConfetti() {
   if (rain) { clearInterval(rain); rain = null; }
+  burst.forEach(clearTimeout);
+  burst = [];
 }
 
 /* ---------- Sonido y vibración ---------- */
