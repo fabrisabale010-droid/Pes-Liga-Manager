@@ -206,7 +206,19 @@ main{
 .plaque .flag-xl{font-size:34px; margin:20px 0 6px; display:block;}
 
 .fall{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
-.fall i{position:absolute; top:-12px; display:block; opacity:.88; animation:fall linear forwards;}
+
+/* Papelitos: la caída (i) y el aleteo (b) van separados. Una sola animación no
+   alcanza para que se vean girar y mecerse como papel de verdad. */
+.fall i.pp{
+  position:absolute; top:-30px; display:block;
+  animation:ppFall var(--dur) linear forwards;
+}
+.fall i.pp b{
+  display:block; width:var(--w); height:var(--h); background:var(--c); border-radius:1px;
+  animation:ppFlip 1s ease-in-out infinite alternate;
+}
+/* Los colores muy oscuros (el negro de Alemania) se perderían en el fondo. */
+.fall i.pp b.edge{box-shadow:0 0 0 1px rgba(255,255,255,.5);}
 
 /* Penumbra en el centro: el confeti sigue cayendo, pero no le pelea
    el contraste al nombre del campeón. */
@@ -215,9 +227,15 @@ main{
   background:radial-gradient(115% 62% at 50% 46%,
     rgba(8,12,22,.86) 0%, rgba(8,12,22,.62) 42%, rgba(8,12,22,0) 76%);
 }
-@keyframes fall{
-  from{transform:translateY(0) rotate(0); opacity:1;}
-  to{transform:translateY(300px) rotate(400deg); opacity:0;}
+@keyframes ppFall{
+  0%  {transform:translate3d(0,0,0); opacity:0;}
+  6%  {opacity:1;}
+  88% {opacity:1;}
+  100%{transform:translate3d(var(--drift),var(--dist),0); opacity:0;}
+}
+@keyframes ppFlip{
+  from{transform:perspective(260px) rotate(var(--r0)) rotateX(0deg)   translateX(-7px);}
+  to  {transform:perspective(260px) rotate(var(--r1)) rotateX(220deg) translateX(7px);}
 }
 
 /* ---------- Tarjeta de próximo partido ---------- */
