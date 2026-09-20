@@ -152,8 +152,9 @@ function cuenta(balon) {
         <div class="cuenta-pts">${esc(balon.valorTexto)}</div>
       </div>
       <p class="cuenta-nota">
-        Los títulos y la diferencia se comparan con el mejor del año: quien
-        lidera se lleva el máximo y el resto, la parte que le corresponde.
+        Los títulos y la diferencia se comparan con el mejor del año: quien más
+        ganó se lleva el máximo del puntaje y el resto, la parte proporcional.
+        Que alguien tenga el máximo no quiere decir que ganó todos los torneos.
       </p>
     </div>` : ''}`;
 }
@@ -207,6 +208,10 @@ function copaAnual() {
       ? `${flag(cruce.espera)} <b>${esc(nameOf(cruce.espera))}</b> lidera los puntos y los títulos de ${y},
          así que espera en la final. ${flag(cruce.duelo[0])} ${esc(nameOf(cruce.duelo[0]))} y
          ${flag(cruce.duelo[1])} ${esc(nameOf(cruce.duelo[1]))} definen quién lo enfrenta.`
+      : cruce.kind === 'doble'
+        ? `${flag(cruce.lider)} <b>${esc(nameOf(cruce.lider))}</b> lidera los puntos y los títulos de ${y}.
+           Lo enfrenta ${flag(cruce.rival)} <b>${esc(nameOf(cruce.rival))}</b>, que quedó segundo en las dos tablas
+           (ganó algún torneo y sumó más puntos que el resto), así que no hace falta repechaje.`
       : cruce.kind === 'barrida'
         ? `${flag(cruce.lider)} <b>${esc(nameOf(cruce.lider))}</b> ganó todos los torneos de ${y} y además
            sumó más puntos. Lo enfrenta ${flag(cruce.rival)} <b>${esc(nameOf(cruce.rival))}</b>, el segundo en puntos.`
