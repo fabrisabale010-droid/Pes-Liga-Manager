@@ -46,11 +46,17 @@ export function matchup(year) {
     };
   }
 
-  const rival = segundoTitulos || segundoPuntos;
-  if (!rival || rival === lider) return null;
+  /* Si el segundo en títulos es también el segundo en puntos, no hay dos
+     equipos para un repechaje: ese equipo pasa directo a la final. Es un caso
+     distinto de la barrida, porque acá el rival SÍ ganó algún torneo. */
+  if (segundoTitulos && segundoTitulos !== lider) {
+    return { kind: 'doble', lider, rival: segundoTitulos, final: [lider, segundoTitulos] };
+  }
 
-  /* Ganó todos los torneos del año: no hay con quién armar el repechaje,
-     así que lo espera el segundo en puntos. */
+  /* Ganó todos los torneos del año: no hay otro campeón, así que lo espera
+     el segundo en puntos. */
+  const rival = segundoPuntos;
+  if (!rival || rival === lider) return null;
   return { kind: 'barrida', lider, rival, final: [lider, rival] };
 }
 

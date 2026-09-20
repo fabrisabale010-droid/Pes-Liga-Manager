@@ -163,6 +163,19 @@ function calcularPuntajes(teams) {
   const maxTitulos = Math.max(1, ...teams.map(t => t.titulos));
   const maxDif = Math.max(0.01, ...teams.map(t => Math.max(0, prom(t.dg, t.pj))));
 
+  /* Cómo se cuentan los títulos, dicho de manera que no parezca "ganó todos":
+     el denominador del puntaje es lo que ganó el que más ganó, no el total de
+     torneos del año, y eso se aclara con palabras en vez de un "2 de 2". */
+  const masGanado = Math.max(0, ...teams.map(t => t.titulos));
+  const conMas = teams.filter(t => t.titulos === masGanado).length;
+  const plural = n => `${n} ${n === 1 ? 'título' : 'títulos'}`;
+  const detalleTitulos = t =>
+    masGanado === 0 ? 'nadie ganó torneos todavía'
+    : t.titulos === 0 ? `ningún título; el que más ganó tiene ${masGanado}`
+    : t.titulos === masGanado
+      ? `${plural(t.titulos)}: ${conMas > 1 ? 'igualado con otros en lo más alto' : 'es quien más ganó en el año'}`
+      : `${plural(t.titulos)}; el que más ganó tiene ${masGanado}`;
+
   return teams.map(t => {
     const rendimiento = Math.min(1, prom(t.pts, t.pj) / 3) * 70;
     const titulos = (t.titulos / maxTitulos) * 20;
@@ -177,9 +190,7 @@ function calcularPuntajes(teams) {
       },
       titulos: {
         puntos: titulos, tope: 20,
-        detalle: maxTitulos > 1 || t.titulos
-          ? `${t.titulos} de ${maxTitulos} ${maxTitulos === 1 ? 'título' : 'títulos'}, comparado con el que más ganó`
-          : 'nadie ganó torneos todavía'
+        detalle: detalleTitulos(t)
       },
       diferencia: {
         puntos: diferencia, tope: 10,
