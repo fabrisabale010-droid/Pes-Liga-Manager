@@ -226,11 +226,21 @@ export function premiosDelAnio(year) {
     };
   }).filter(Boolean);
 
+  /* Todas las selecciones con su puntaje, de mayor a menor. Si empatan,
+     desempata quien sumó más puntos y después la diferencia de gol. */
+  const ranking = [...teams]
+    .sort((a, b) => b.puntaje - a.puntaje || b.pts - a.pts || b.dg - a.dg)
+    .map(t => ({
+      id: t.id, pj: t.pj, pts: t.pts, dg: t.dg, titulos: t.titulos,
+      puntaje: t.puntaje, partes: t.partes
+    }));
+
   return {
     year,
     /* Mientras el año no termine, los premios pueden cambiar. */
     enCurso: year === new Date().getFullYear(),
     dorados: resolver(DORADOS),
-    papelones: resolver(PAPELONES)
+    papelones: resolver(PAPELONES),
+    ranking
   };
 }
