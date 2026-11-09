@@ -13,7 +13,7 @@
 
   --ink:#e8edf7;
   --ink-dim:#8d9ab4;
-  --ink-faint:#7f8ba3;      /* 5.4:1 sobre --stand (antes #5d6880 = 3.3:1, no llegaba a AA) */
+  --ink-faint:#5d6880;
 
   --light:#4d8dff;
   --light-soft:#9dc2ff;
@@ -32,28 +32,51 @@
 
   --wrap:960px;
 
-  /* Espaciado: múltiplos de 4 */
-  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px;
+  /* Superficies que antes estaban escritas a mano. */
+  --lead-cell:#101b30;
+  --plaque-bg:linear-gradient(180deg,#0e1424,#080c16);
+  --slot-bg:rgba(16,12,4,.4);
+  --slot-top-bg:rgba(38,28,8,.55);
+  --scrim:8,12,22;
+  --sombra:0 16px 40px rgba(0,0,0,.45);
+}
 
-  /* Tamaños de texto. Nada por debajo de 11px. */
-  --fs-xs:12px; --fs-sm:13px; --fs-md:15px; --fs-lg:17px; --fs-xl:22px;
+/* ---------- Tema claro, estilo sitio de liga ----------
+   Cambia solo los colores: la estructura es la misma, así que todo lo que
+   funciona sigue funcionando. Se activa con el botón de la paleta. */
+:root[data-theme="liga"]{
+  --pitch:#eef1f6;
+  --stand:#ffffff;
+  --stand-2:#f5f7fa;
+  --line:#d9dfe9;
+  --line-soft:#e8ecf3;
 
-  /* Elevación: tres niveles y no más */
-  --sh-1:inset 0 1px 0 rgba(255,255,255,.04), 0 2px 10px rgba(0,0,0,.30);
-  --sh-2:0 12px 30px rgba(0,0,0,.45);
-  --sh-3:0 26px 60px rgba(0,0,0,.60);
+  --ink:#101722;
+  --ink-dim:#5b6678;
+  --ink-faint:#8a94a6;
 
-  /* Movimiento: rápido para responder, lento para acompañar */
-  --t-fast:120ms; --t-base:200ms; --t-slow:320ms;
-  --ease:cubic-bezier(.2,.8,.2,1);
+  --light:#0b57d0;
+  --light-soft:#0a46a8;
+  --light-deep:#083a8c;
 
-  /* Mínimo para tocar con el dedo */
-  --tap:44px;
+  --trophy:#9a7212;
+  --trophy-hi:#c79a28;
+  --trophy-lo:#6f5008;
+
+  --grass:#157a46;
+  --red:#b62335;
+
+  --lead-cell:#e8effc;
+  --plaque-bg:linear-gradient(180deg,#ffffff,#f4f6fa);
+  --slot-bg:#ffffff;
+  --slot-top-bg:#fffaed;
+  --scrim:255,255,255;
+  --sombra:0 8px 24px rgba(16,23,34,.10);
 }
 
 *{box-sizing:border-box; margin:0; padding:0;}
 
-html{-webkit-text-size-adjust:100%; color-scheme:dark;}
+html{-webkit-text-size-adjust:100%;}
 
 body{
   background:
@@ -68,7 +91,7 @@ body{
   overflow-x:hidden;
 }
 
-h1,h2,h3{font-family:'Rajdhani',sans-serif; font-weight:700; line-height:1.15; letter-spacing:.01em; text-wrap:balance;}
+h1,h2,h3{font-family:'Rajdhani',sans-serif; font-weight:700; line-height:1.15; letter-spacing:.01em;}
 h2{font-size:21px;}
 h3{font-size:17px;}
 
@@ -103,7 +126,7 @@ a{color:inherit; text-decoration:none;}
 .brand-mark img{width:100%; height:100%; object-fit:cover; display:block;}
 .brand-text{display:flex; flex-direction:column; min-width:0;}
 .brand-text strong{font-family:'Rajdhani',sans-serif; font-size:19px; letter-spacing:.02em;}
-.brand-text small{font-size:var(--fs-xs); color:var(--ink-faint); white-space:nowrap;}
+.brand-text small{font-size:11px; color:var(--ink-faint); white-space:nowrap;}
 
 .top-actions{margin-left:auto; display:flex; gap:6px;}
 .ico{
@@ -111,12 +134,10 @@ a{color:inherit; text-decoration:none;}
   display:grid; place-items:center; font-size:16px;
   background:transparent; border:1px solid var(--line); border-radius:50%;
   color:var(--ink); cursor:pointer;
-  transition:border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition:border-color .15s, color .15s;
 }
-.ico:active{transform:scale(.94);}
-@media (hover:hover){ .ico:hover{border-color:var(--light); color:var(--light-soft);} }
-.ico.on{border-color:var(--grass); color:#7ddba5; background:rgba(47,168,106,.10);}
-.brand-text small.on{color:#7ddba5; font-weight:600;}
+.ico:hover{border-color:var(--light); color:var(--light-soft);}
+.ico.on{border-color:var(--trophy); color:var(--trophy);}
 
 /* ---------- Navegación ---------- */
 
@@ -127,7 +148,6 @@ a{color:inherit; text-decoration:none;}
   color:var(--ink-dim); font:inherit; font-weight:600; font-size:14px;
   padding:8px 12px; cursor:pointer; white-space:nowrap;
 }
-.nav-wide button{min-height:var(--tap); transition:color var(--t-base), border-color var(--t-base);}
 .nav-wide button:hover{color:var(--ink);}
 .nav-wide button.on{color:var(--light-soft); border-bottom-color:var(--light);}
 
@@ -139,17 +159,12 @@ a{color:inherit; text-decoration:none;}
   padding:5px 4px calc(5px + env(safe-area-inset-bottom));
 }
 .nav-bar button{
-  position:relative; flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
   background:none; border:0; color:var(--ink-faint); font:inherit;
-  padding:7px 2px; min-height:var(--tap); border-radius:10px; cursor:pointer;
-  transition:color var(--t-base), background var(--t-fast);
-}
-.nav-bar button.on::before{
-  content:''; position:absolute; top:-5px; left:28%; right:28%; height:3px;
-  border-radius:0 0 3px 3px; background:var(--light); box-shadow:0 0 12px rgba(77,141,255,.7);
+  padding:7px 2px; border-radius:10px; cursor:pointer;
 }
 .nav-bar button i{font-size:20px; line-height:1;}
-.nav-bar button span{font-size:var(--fs-xs); font-weight:600;}
+.nav-bar button span{font-size:10px; font-weight:600;}
 .nav-bar button.on{color:var(--light-soft);}
 .nav-bar button:active{background:rgba(77,141,255,.12);}
 
@@ -193,8 +208,8 @@ main{
   border:1px solid var(--trophy-lo); border-radius:var(--r-l);
   background:
     radial-gradient(520px 200px at 50% -40px, rgba(224,178,61,.20), transparent 70%),
-    linear-gradient(180deg,#0e1424,#080c16);
-  box-shadow:inset 0 1px 0 rgba(255,243,207,.16), 0 18px 44px rgba(0,0,0,.5);
+    var(--plaque-bg);
+  box-shadow:inset 0 1px 0 rgba(255,243,207,.16), var(--sombra);
   padding:30px 18px 26px; text-align:center;
 }
 .plaque-in{position:relative; z-index:2;}
@@ -206,44 +221,25 @@ main{
 .plaque .flag-xl{font-size:34px; margin:20px 0 6px; display:block;}
 
 .fall{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
-
-/* Papelitos: la caída (i) y el aleteo (b) van separados. Una sola animación no
-   alcanza para que se vean girar y mecerse como papel de verdad. */
-.fall i.pp{
-  position:absolute; top:-30px; display:block;
-  animation:ppFall var(--dur) linear forwards;
-}
-.fall i.pp b{
-  display:block; width:var(--w); height:var(--h); background:var(--c); border-radius:1px;
-  animation:ppFlip 1s ease-in-out infinite alternate;
-}
-/* Los colores muy oscuros (el negro de Alemania) se perderían en el fondo. */
-.fall i.pp b.edge{box-shadow:0 0 0 1px rgba(255,255,255,.5);}
+.fall i{position:absolute; top:-12px; display:block; opacity:.88; animation:fall linear forwards;}
 
 /* Penumbra en el centro: el confeti sigue cayendo, pero no le pelea
    el contraste al nombre del campeón. */
 .fall::after{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:radial-gradient(115% 62% at 50% 46%,
-    rgba(8,12,22,.86) 0%, rgba(8,12,22,.62) 42%, rgba(8,12,22,0) 76%);
+    rgba(var(--scrim),.86) 0%, rgba(var(--scrim),.62) 42%, rgba(var(--scrim),0) 76%);
 }
-@keyframes ppFall{
-  0%  {transform:translate3d(0,0,0); opacity:0;}
-  6%  {opacity:1;}
-  88% {opacity:1;}
-  100%{transform:translate3d(var(--drift),var(--dist),0); opacity:0;}
-}
-@keyframes ppFlip{
-  from{transform:perspective(260px) rotate(var(--r0)) rotateX(0deg)   translateX(-7px);}
-  to  {transform:perspective(260px) rotate(var(--r1)) rotateX(220deg) translateX(7px);}
+@keyframes fall{
+  from{transform:translateY(0) rotate(0); opacity:1;}
+  to{transform:translateY(300px) rotate(400deg); opacity:0;}
 }
 
 /* ---------- Tarjeta de próximo partido ---------- */
 
 .matchday{
-  border:1px solid var(--line); border-radius:var(--r-l);
+  border:1px solid var(--line); border-radius:var(--r-m);
   background:linear-gradient(180deg,var(--stand-2),var(--stand));
-  box-shadow:var(--sh-1);
   overflow:hidden;
 }
 .matchday-top{
@@ -255,25 +251,24 @@ main{
   box-shadow:0 0 0 3px rgba(47,168,106,.18);}
 .matchday-top .dot.wait{background:var(--light);box-shadow:0 0 0 3px rgba(77,141,255,.18);}
 .matchday-body{padding:16px 14px;}
-.matchday-when{font-family:'Rajdhani',sans-serif; font-size:29px; line-height:1.1; font-weight:700;}
-.matchday-when::first-letter{text-transform:uppercase;}   /* "Sábado, 26 de septiembre", no "De" */
+.matchday-when{font-family:'Rajdhani',sans-serif; font-size:25px; font-weight:700; text-transform:capitalize;}
 .matchday-where{font-size:13px; color:var(--ink-dim); margin-top:2px;}
 .matchday-who{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:14px; font-size:19px;}
 
 .clock{display:flex; gap:7px; justify-content:center; margin-top:16px;}
 .clock div{
-  min-width:62px; padding:9px 8px; text-align:center;
+  min-width:56px; padding:9px 8px; text-align:center;
   background:rgba(0,0,0,.34); border:1px solid var(--line); border-radius:var(--r-s);
 }
-.clock b{font-family:'Space Mono',monospace; font-size:22px; color:var(--light-soft); display:block; line-height:1;}
-.clock span{font-size:var(--fs-xs); color:var(--ink-faint); display:block; margin-top:4px;}
+.clock b{font-family:'Space Mono',monospace; font-size:19px; color:var(--light-soft); display:block; line-height:1;}
+.clock span{font-size:9.5px; color:var(--ink-faint); display:block; margin-top:4px;}
 
 /* ---------- Tabla de posiciones ---------- */
 
 .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
 table.standings{width:100%; border-collapse:collapse; font-size:13.5px; min-width:430px;}
 table.standings th{
-  text-align:center; font-size:var(--fs-xs); font-weight:600; color:var(--ink-faint);
+  text-align:center; font-size:11px; font-weight:600; color:var(--ink-faint);
   padding:8px 6px; border-bottom:1px solid var(--line); white-space:nowrap;
 }
 table.standings th:first-child{text-align:left; padding-left:12px;}
@@ -291,7 +286,7 @@ table.standings td.sticky-l{position:sticky; left:0; z-index:2; background:var(-
 table.standings th.sticky-r,
 table.standings td.sticky-r{position:sticky; right:0; z-index:2; background:var(--stand);}
 table.standings tr.lead td.sticky-l,
-table.standings tr.lead td.sticky-r{background:#101b30;}
+table.standings tr.lead td.sticky-r{background:var(--lead-cell);}
 table.standings th.sticky-l,table.standings th.sticky-r{z-index:3;}
 table.standings td.sticky-l::after,
 table.standings th.sticky-l::after{
@@ -306,7 +301,7 @@ table.standings th.sticky-r::before{
 
 .side{display:flex; align-items:center; gap:9px; white-space:nowrap; cursor:pointer;}
 .side .rank{
-  font-family:'Space Mono',monospace; font-size:var(--fs-xs); color:var(--ink-faint);
+  font-family:'Space Mono',monospace; font-size:11px; color:var(--ink-faint);
   width:16px; text-align:right; flex:0 0 16px;
 }
 .side .nm{font-weight:600;}
@@ -316,7 +311,7 @@ table.standings th.sticky-r::before{
 
 .fixture{display:flex; flex-direction:column;}
 .fixture-head{
-  font-size:var(--fs-xs); color:var(--ink-faint); font-weight:600;
+  font-size:11.5px; color:var(--ink-faint); font-weight:600;
   padding:14px 2px 7px; border-bottom:1px solid var(--line);
 }
 .game{
@@ -345,7 +340,7 @@ table.standings th.sticky-r::before{
 
 .bracket{display:flex; gap:14px; overflow-x:auto; padding:4px 2px 10px;}
 .round{display:flex; flex-direction:column; justify-content:center; gap:11px; flex:0 0 190px;}
-.round-name{font-size:var(--fs-xs); color:var(--light-soft); font-weight:700; text-align:center;}
+.round-name{font-size:11px; color:var(--light-soft); font-weight:700; text-align:center;}
 .tie{background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:var(--r-s); padding:9px 10px; font-size:12.5px;}
 .tie .l{display:flex; justify-content:space-between; gap:6px; padding:3px 0;}
 .tie .l span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -360,7 +355,7 @@ table.standings th.sticky-r::before{
   position:relative; z-index:0; overflow:hidden;
   display:flex; flex-direction:column; align-items:center; gap:7px;
   border:1px solid rgba(224,178,61,.28); border-radius:var(--r-m);
-  background:rgba(16,12,4,.4); padding:20px 12px 16px; text-align:center;
+  background:var(--slot-bg); padding:20px 12px 16px; text-align:center;
 }
 /* El botón de compartir de cada tarjeta, discreto en la esquina. */
 .slot{position:relative;}
@@ -371,7 +366,7 @@ table.standings th.sticky-r::before{
 .slot-share:hover{border-color:var(--trophy); color:var(--trophy);}
 
 .slot.top{
-  border-color:var(--trophy); background:rgba(38,28,8,.55);
+  border-color:var(--trophy); background:var(--slot-top-bg);
   box-shadow:inset 0 0 0 1px rgba(224,178,61,.28);
 }
 .slot .fl{font-size:29px; line-height:1; display:block; min-height:92px;}
@@ -379,7 +374,7 @@ table.standings th.sticky-r::before{
 .slot .n{display:flex; align-items:center; justify-content:center; gap:10px; color:var(--trophy); margin-top:4px;}
 .slot .n b{font-family:'Space Mono',monospace; font-size:38px; font-weight:700; line-height:1;}
 .slot .n i{font-size:17px;}
-.slot .u{font-size:var(--fs-xs); color:var(--ink-faint);}
+.slot .u{font-size:10.5px; color:var(--ink-faint);}
 
 /* ---------- Récords ---------- */
 
@@ -403,8 +398,8 @@ table.standings th.sticky-r::before{
 .rec-w{flex-wrap:wrap; gap:4px 7px;}
 .rec-w span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 /* Separador cuando un récord lo comparten varios. */
-.rec-w .y{font-style:normal; font-size:var(--fs-xs); color:var(--ink-faint); font-weight:500;}
-.rec-l{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:2px; line-height:1.3;}
+.rec-w .y{font-style:normal; font-size:11.5px; color:var(--ink-faint); font-weight:500;}
+.rec-l{font-size:11.5px; color:var(--ink-faint); margin-top:2px; line-height:1.3;}
 
 /* Botón de compartir de cada récord: discreto hasta que se lo busca. */
 .rec{position:relative;}
@@ -426,8 +421,8 @@ table.standings th.sticky-r::before{
   border:1px solid var(--trophy-lo); border-radius:var(--r-l);
   background:
     radial-gradient(520px 200px at 50% -40px, rgba(224,178,61,.22), transparent 70%),
-    linear-gradient(180deg,#0e1424,#080c16);
-  box-shadow:inset 0 1px 0 rgba(255,243,207,.14), 0 16px 40px rgba(0,0,0,.45);
+    var(--plaque-bg);
+  box-shadow:inset 0 1px 0 rgba(255,243,207,.14), var(--sombra);
   padding:26px 18px 22px;
 }
 .balon-trofeo{margin-bottom:4px;}
@@ -469,14 +464,14 @@ table.standings th.sticky-r::before{
 .cuenta-fila.total{border-bottom:0; padding-bottom:4px;}
 .cuenta-nom{flex:1; min-width:0;}
 .cuenta-nom b{display:block; font-size:13.5px; font-weight:600;}
-.cuenta-nom span{display:block; font-size:var(--fs-xs); color:var(--ink-faint); margin-top:2px;}
+.cuenta-nom span{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
 .cuenta-pts{
   flex:0 0 auto; font-family:'Space Mono',monospace; font-weight:700;
   font-size:19px; color:var(--trophy);
 }
 .cuenta-pts i{font-style:normal; font-size:12px; color:var(--ink-faint);}
 .cuenta-fila.total .cuenta-pts{font-size:23px;}
-.cuenta-nota{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:10px; line-height:1.4;}
+.cuenta-nota{font-size:11px; color:var(--ink-faint); margin-top:10px; line-height:1.4;}
 
 .aviso{
   display:flex; align-items:flex-start; gap:10px;
@@ -520,7 +515,7 @@ table.standings th.sticky-r::before{
   color:var(--trophy); margin-top:6px; line-height:1;
 }
 .premio.malo .premio-val{color:#f0909e;}
-.premio-pie{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:5px; line-height:1.3;}
+.premio-pie{font-size:10.5px; color:var(--ink-faint); margin-top:5px; line-height:1.3;}
 .premio-share{top:6px; right:6px; width:26px; height:26px; font-size:12px;}
 
 /* ---------- Palmarés por selección ---------- */
@@ -531,7 +526,7 @@ table.standings th.sticky-r::before{
 .ficha-escudo{flex:0 0 auto; line-height:0;}
 .ficha-nom{flex:1; min-width:0;}
 .ficha-nom strong{display:block; font-size:15px;}
-.ficha-nom span{display:block; font-size:var(--fs-xs); color:var(--ink-faint); margin-top:2px;}
+.ficha-nom span{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
 .ficha-titulos{
   display:flex; align-items:center; gap:6px; flex:0 0 auto;
   font-family:'Space Mono',monospace; font-size:22px; font-weight:700; color:var(--trophy);
@@ -543,7 +538,7 @@ table.standings th.sticky-r::before{
 
 .pal-grupo{margin-top:16px;}
 .pal-titulo{
-  font-size:var(--fs-xs); letter-spacing:.1em; text-transform:uppercase;
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--ink-faint); font-weight:700; margin-bottom:8px;
 }
 .pal-lista{display:flex; flex-wrap:wrap; gap:8px;}
@@ -563,8 +558,8 @@ table.standings th.sticky-r::before{
 }
 .pal-premio.malo{background:rgba(214,69,91,.10); border-color:rgba(214,69,91,.3); color:#f0909e;}
 .pal-premio i{font-size:14px;}
-.pal-premio b{font-family:'Space Mono',monospace; font-size:var(--fs-xs); opacity:.85;}
-.pal-nota{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:8px;}
+.pal-premio b{font-family:'Space Mono',monospace; font-size:11px; opacity:.85;}
+.pal-nota{font-size:11px; color:var(--ink-faint); margin-top:8px;}
 
 /* ---------- Comparador ---------- */
 
@@ -605,29 +600,27 @@ table.standings th.sticky-r::before{
 .duel-side{display:flex; flex-direction:column; align-items:center; gap:3px;}
 .duel-side span{font-size:30px;}
 .duel-side b{font-family:'Space Mono',monospace; font-size:30px; color:var(--light-soft); line-height:1;}
-.duel-side small{font-size:var(--fs-xs); color:var(--ink-dim); text-align:center;}
+.duel-side small{font-size:11.5px; color:var(--ink-dim); text-align:center;}
 .duel-mid{display:flex; flex-direction:column; align-items:center; gap:2px; padding:0 6px;}
 .duel-mid b{font-family:'Space Mono',monospace; font-size:21px; color:var(--ink-dim);}
-.duel-mid small{font-size:var(--fs-xs); color:var(--ink-faint);}
-.duel-mid span{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:4px;}
-.duel-src{font-size:var(--fs-xs); color:var(--ink-faint); padding:0 4px 10px; margin-top:-6px;}
+.duel-mid small{font-size:10px; color:var(--ink-faint);}
+.duel-mid span{font-size:10px; color:var(--ink-faint); margin-top:4px;}
+.duel-src{font-size:10.5px; color:var(--ink-faint); padding:0 4px 10px; margin-top:-6px;}
 
 /* ---------- Historial ---------- */
 
 .log{display:flex; flex-direction:column; gap:8px;}
 .log-item{border:1px solid var(--line); border-radius:var(--r-m); background:rgba(0,0,0,.22); overflow:hidden;}
-.log-head{display:flex; align-items:center; gap:10px; padding:13px 14px; min-height:var(--tap); cursor:pointer; transition:background var(--t-fast);}
-.log-head:active{background:rgba(77,141,255,.08);}
-@media (hover:hover){ .log-head:hover{background:rgba(255,255,255,.03);} }
+.log-head{display:flex; align-items:center; gap:10px; padding:13px 14px; cursor:pointer;}
 .log-head .grow{min-width:0; flex:1;}
 .log-head .nm{font-weight:600; font-size:14px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
-.log-head .sub{font-size:var(--fs-xs); color:var(--ink-faint); margin-top:2px;}
+.log-head .sub{font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
 .log-body{display:none; padding:0 14px 14px; border-top:1px solid var(--line-soft);}
 .log-item.open .log-body{display:block;}
 .log-item.open .log-head .chev{transform:rotate(180deg);}
 .chev{color:var(--ink-faint); transition:transform .2s;}
 
-.tag{font-size:var(--fs-xs); font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap;}
+.tag{font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap;}
 .tag.live{background:rgba(47,168,106,.16); color:var(--grass);}
 .tag.done{background:rgba(224,178,61,.14); color:var(--trophy);}
 .tag.soon{background:rgba(77,141,255,.14); color:var(--light-soft);}
@@ -642,14 +635,9 @@ table.standings th.sticky-r::before{
   font:inherit; font-weight:600; font-size:14px;
   padding:10px 18px; border-radius:999px; cursor:pointer;
   border:1px solid var(--line); background:transparent; color:var(--ink);
-  transition:border-color var(--t-fast), background var(--t-fast), transform var(--t-fast), filter var(--t-fast);
+  transition:border-color .15s, background .15s;
 }
-.btn:active:not(:disabled){transform:scale(.97);}
-@media (hover:hover){
-  .btn:hover:not(:disabled){border-color:var(--light); background:rgba(77,141,255,.08);}
-  .btn.main:hover:not(:disabled),.btn.gold:hover:not(:disabled){filter:brightness(1.07);}
-  .btn.danger:hover:not(:disabled){border-color:var(--red); background:rgba(214,69,91,.10);}
-}
+.btn:hover{border-color:var(--light);}
 .btn:disabled{opacity:.4; cursor:not-allowed;}
 .btn.main{background:linear-gradient(180deg,#5d99ff,var(--light)); border-color:var(--light); color:#04060b;}
 .btn.gold{background:linear-gradient(180deg,var(--trophy-hi),var(--trophy)); border-color:var(--trophy); color:#1b1405;}
@@ -659,14 +647,9 @@ table.standings th.sticky-r::before{
 
 label.field{display:block; font-size:12px; color:var(--ink-dim); margin:0 0 6px;}
 input[type=text],input[type=date],input[type=time],input[type=password],input[type=search],select{
-  width:100%; min-height:var(--tap); padding:11px 12px; font:inherit; font-size:16px;
+  width:100%; padding:11px 12px; font:inherit; font-size:14px;
   background:rgba(0,0,0,.34); border:1px solid var(--line); border-radius:var(--r-s); color:var(--ink);
-  transition:border-color var(--t-fast), box-shadow var(--t-fast);
 }
-input:focus,select:focus{
-  outline:none; border-color:var(--light); box-shadow:0 0 0 3px rgba(77,141,255,.28);
-}
-input[type=date],input[type=time]{color-scheme:dark;}
 input::placeholder{color:var(--ink-faint);}
 select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--ink-faint) 50%),linear-gradient(135deg,var(--ink-faint) 50%,transparent 50%);
   background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat;}
@@ -690,7 +673,7 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 }
 .pick .fi,.pick .fi-x{width:2em; height:1.5em;}
 .pick .abbr{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px;}
-.pick .full{font-size:var(--fs-xs); color:var(--ink-faint); text-align:center; line-height:1.2;}
+.pick .full{font-size:10px; color:var(--ink-faint); text-align:center; line-height:1.2;}
 
 .chips{display:flex; flex-wrap:wrap; gap:7px;}
 .chip{
@@ -760,7 +743,7 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:14px;}
 .stat{background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:var(--r-s); padding:11px 8px;}
 .stat b{display:block; font-family:'Space Mono',monospace; font-size:19px; color:var(--light-soft);}
-.stat span{font-size:var(--fs-xs); color:var(--ink-faint);}
+.stat span{font-size:10px; color:var(--ink-faint);}
 
 .sheet{position:fixed; inset:0; z-index:110;}
 .sheet-veil{position:absolute; inset:0; background:rgba(3,5,10,.66);}
@@ -807,56 +790,8 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
   background:rgba(12,19,34,.94); border:1px solid var(--line); border-radius:999px;
   padding:6px 15px; font-size:12px; font-weight:600; color:var(--light-soft);
 }
-.sync.spin i,.spin{animation:spin 1s linear infinite;}
-.sync.warn{border-color:rgba(214,69,91,.55); color:#f0909e; max-width:calc(100vw - 24px);}
+.sync i{animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* ---------- Encabezado de sección con acción ---------- */
-
-.block-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;}
-.block-bar h2{display:flex; align-items:center; gap:8px;}
-.block-bar h2 i{color:var(--light); font-size:18px;}
-
-.actions-center{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px;}
-
-/* ---------- Pestañas dentro de una tarjeta ---------- */
-
-.seg{
-  display:flex; gap:4px; padding:4px; margin:12px 0 10px;
-  background:rgba(0,0,0,.34); border:1px solid var(--line); border-radius:999px;
-}
-.seg button{
-  flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px;
-  min-height:38px; padding:0 12px; border:0; border-radius:999px; cursor:pointer;
-  background:transparent; color:var(--ink-dim); font:inherit; font-size:13px; font-weight:600;
-  transition:background .15s, color .15s;
-}
-.seg button:hover{color:var(--ink);}
-.seg button.on{background:rgba(77,141,255,.18); color:var(--light-soft); box-shadow:inset 0 0 0 1px rgba(77,141,255,.4);}
-
-/* ---------- Ventana de compartir ---------- */
-
-.modal-card{max-height:calc(100dvh - 40px); overflow-y:auto;}
-.share-prev{
-  display:grid; place-items:center; gap:6px; min-height:120px; margin-bottom:14px;
-  border:1px dashed var(--line); border-radius:var(--r-m); background:rgba(0,0,0,.28);
-  color:var(--ink-dim); font-size:13px; padding:10px;
-}
-.share-prev img{display:block; width:auto; max-width:100%; max-height:36dvh; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.5);}
-.share-prev small{color:var(--ink-faint); font-size:12px;}
-.share-opts{display:flex; flex-direction:column; gap:8px;}
-.share-opts .btn{min-height:44px;}
-
-/* ---------- Tocar con el dedo ---------- */
-
-@media (pointer:coarse){
-  .ico{width:44px; height:44px; flex-basis:44px; font-size:18px;}
-  .top-actions{gap:2px;}
-  .btn,.btn.sm,.opt{min-height:44px;}
-  .score{width:44px; height:44px; font-size:16px;}
-  .chip button{min-width:32px; min-height:32px;}
-  .nav-bar button span{font-size:var(--fs-xs);}
-}
 
 .screen-mode{
   position:fixed; inset:0; z-index:140; overflow-y:auto;
@@ -868,134 +803,64 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 .screen-in h2{font-size:30px; text-align:center;}
 .screen-in .sub{text-align:center; color:var(--ink-dim); font-size:13px; margin-bottom:22px;}
 
-/* ---------- Marcador: leer no es lo mismo que editar ---------- */
-
-/* Un campo que se puede escribir tiene caja; un resultado sólo para leer
-   no la tiene, así nadie intenta tocarlo. */
-.score.ro{
-  display:grid; place-items:center; background:transparent; border-color:transparent;
-  color:var(--ink-faint);
-}
-.game.done .score.ro{background:rgba(255,255,255,.06); color:var(--ink);}
-input.score:focus{outline:none; border-color:var(--light); box-shadow:0 0 0 3px rgba(77,141,255,.28);}
-input.score:not(:placeholder-shown){border-color:rgba(77,141,255,.4); background:rgba(77,141,255,.08);}
-
-/* ---------- Quién pasa de ronda: no sólo con color ---------- */
-
-.side.q .rank{
-  width:20px; flex-basis:20px; text-align:center; border-radius:5px;
-  background:rgba(47,168,106,.22); color:#7ddba5; font-weight:700;
-}
-.legend{display:flex; align-items:center; gap:8px; font-size:var(--fs-xs); color:var(--ink-dim); margin:0 2px 14px;}
-.legend .qkey{
-  display:inline-grid; place-items:center; width:20px; height:18px; border-radius:5px;
-  background:rgba(47,168,106,.22); color:#7ddba5; font:700 11px 'Space Mono',monospace;
-}
-
-/* ---------- Movimiento: sólo donde cuenta una historia ---------- */
-
-@keyframes rise{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
-@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
-@keyframes pop{ from{opacity:0; transform:translateY(8px) scale(.97);} to{opacity:1; transform:none;} }
-@keyframes toastIn{ from{opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);} }
-@keyframes shimmer{ to{background-position:-200% 0;} }
-
-/* Al cambiar de sección entran escalonadas. Al cargar un gol, que se repinta
-   la misma pantalla, no se mueve nada: sería molesto ver saltar la tabla. */
-#view.enter > *{animation:rise var(--t-slow) var(--ease) both;}
-#view.enter > :nth-child(2){animation-delay:45ms;}
-#view.enter > :nth-child(3){animation-delay:90ms;}
-#view.enter > :nth-child(4){animation-delay:135ms;}
-#view.enter > :nth-child(n+5){animation-delay:180ms;}
-
-.modal{animation:fadeIn var(--t-base) ease both;}
-.modal-card{animation:pop var(--t-base) var(--ease) both;}
-.toast{animation:toastIn var(--t-base) var(--ease) both;}
-.log-item.open .log-body{animation:fadeIn var(--t-base) ease both;}
-
-/* ---------- Cargando: la forma de lo que viene ---------- */
-
-.skel{
-  border-radius:var(--r-l);
-  background:linear-gradient(90deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.04) 70%);
-  background-size:200% 100%; animation:shimmer 1.5s linear infinite;
-}
-.skel.tall{height:230px;}
-.skel.mid{height:150px;}
-.skel + .skel{margin-top:14px;}
-
-/* ---------- Carga rápida de resultados ---------- */
-
-.quick-cta{
-  width:100%; flex-direction:column; gap:2px; padding:14px 18px; margin:6px 0 10px;
-  font-size:16px; border-radius:var(--r-l);
-}
-.quick-cta i{font-size:20px;}
-.quick-cta small{font-size:var(--fs-xs); font-weight:500; opacity:.75;}
-
-.qs{padding-bottom:6px;}
-.qs-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;}
-.qs-head strong{display:block; font-family:'Rajdhani',sans-serif; font-size:20px;}
-.qs-head span{font-size:var(--fs-xs); color:var(--ink-dim);}
-.qs-side{
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  background:rgba(0,0,0,.28); border:1px solid var(--line); border-radius:var(--r-m);
-  padding:10px 12px;
-}
-.qs-team{display:flex; align-items:center; gap:10px; min-width:0; font-weight:700; font-size:16px;}
-.qs-team span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.qs-team .fi,.qs-team .fi-x{font-size:22px;}
-.qs-step{display:flex; align-items:center; gap:10px; flex:0 0 auto;}
-.qs-btn{
-  width:56px; height:56px; border-radius:50%; cursor:pointer;
-  background:transparent; border:1px solid var(--line); color:var(--ink);
-  font:700 28px/1 'Rajdhani',sans-serif;
-  transition:transform var(--t-fast), background var(--t-fast), border-color var(--t-fast);
-}
-.qs-btn:active:not(:disabled){transform:scale(.92);}
-.qs-btn:disabled{opacity:.35; cursor:not-allowed;}
-.qs-btn.plus{background:linear-gradient(180deg,#5d99ff,var(--light)); border-color:var(--light); color:#04060b;}
-.qs-num{
-  min-width:48px; text-align:center;
-  font:700 44px/1 'Space Mono',monospace; color:var(--ink);
-}
-.qs-vs{text-align:center; font-size:var(--fs-xs); color:var(--ink-faint); margin:6px 0;}
-.qs-actions{margin-top:16px;}
-
-.btn.ghost{border-color:transparent; color:var(--ink-dim);}
-
-/* ---------- Tabla del Balón de Oro ---------- */
-
-table.balon-tabla{min-width:460px;}
-table.balon-tabla th small{display:block; font-size:var(--fs-xs); font-weight:500; color:var(--ink-faint); margin-top:1px;}
-table.balon-tabla .pts{color:var(--trophy);}
-/* El primero va en dorado: es el Balón de Oro. Las celdas fijas necesitan fondo opaco. */
-table.balon-tabla tr.lead td,
-table.balon-tabla tr.lead td.sticky-l,
-table.balon-tabla tr.lead td.sticky-r{background:#1a1608;}
-table.balon-tabla tr.lead .rank{color:var(--trophy);}
-
-/* En pantallas anchas la hoja no se estira de lado a lado. */
-@media (min-width:820px){
-  .sheet-panel{max-width:520px; margin-inline:auto;}
-}
-
-/* ---------- Saltar al contenido (teclado y lectores de pantalla) ---------- */
-
-.skip{
-  position:absolute; left:16px; top:-64px; z-index:200;
-  background:var(--light); color:#04060b; font:inherit; font-weight:700; font-size:var(--fs-sm);
-  border:0; border-radius:999px; padding:10px 18px; cursor:pointer;
-}
-.skip:focus{top:calc(8px + env(safe-area-inset-top));}
-
-/* ---------- Textos largos con mejor corte ---------- */
-
-.block-note,.modal-card p,.aviso{text-wrap:pretty;}
-
-@media (min-width:820px){
-  .plaque{padding:38px 24px 32px;}
-  .plaque .who{font-size:38px;}
-}
-
 [hidden]{display:none !important;}
+
+/* ---------- Retoques del tema claro ----------
+   Lo que en oscuro se resolvía con transparencias blancas, en claro
+   necesita transparencias negras para que se vea el relieve. */
+:root[data-theme="liga"] body{
+  background:
+    radial-gradient(900px 500px at 50% -220px, rgba(11,87,208,.07), transparent 70%),
+    var(--pitch);
+}
+:root[data-theme="liga"] .top{background:rgba(255,255,255,.88);}
+:root[data-theme="liga"] .navbar{background:rgba(255,255,255,.95);}
+
+:root[data-theme="liga"] .panel,
+:root[data-theme="liga"] .log-item,
+:root[data-theme="liga"] .ficha,
+:root[data-theme="liga"] .votacion,
+:root[data-theme="liga"] .premio,
+:root[data-theme="liga"] .matchday,
+:root[data-theme="liga"] .game{background:var(--stand); box-shadow:var(--sombra);}
+
+:root[data-theme="liga"] .rec{
+  background:linear-gradient(90deg,rgba(21,122,70,.08),transparent 55%),var(--stand);
+  box-shadow:var(--sombra);
+}
+:root[data-theme="liga"] .rec.bad{
+  background:linear-gradient(90deg,rgba(182,35,53,.08),transparent 55%),var(--stand);
+}
+
+:root[data-theme="liga"] table.standings tr:nth-child(even) td{background:rgba(16,23,34,.025);}
+:root[data-theme="liga"] table.standings tr.lead td{background:rgba(11,87,208,.07);}
+:root[data-theme="liga"] table.standings thead th{
+  background:var(--stand-2); color:var(--ink-dim);
+  border-bottom:2px solid var(--line);
+}
+:root[data-theme="liga"] table.standings td.sticky-l::after,
+:root[data-theme="liga"] table.standings th.sticky-l::after{
+  background:linear-gradient(90deg,rgba(16,23,34,.10),transparent);
+}
+:root[data-theme="liga"] table.standings td.sticky-r::before,
+:root[data-theme="liga"] table.standings th.sticky-r::before{
+  background:linear-gradient(270deg,rgba(16,23,34,.10),transparent);
+}
+
+:root[data-theme="liga"] .score{background:var(--stand-2); border-color:var(--line);}
+:root[data-theme="liga"] .ico{background:var(--stand); border-color:var(--line);}
+:root[data-theme="liga"] .opt{background:var(--stand); border-color:var(--line);}
+:root[data-theme="liga"] .opt.on{background:rgba(11,87,208,.10); border-color:var(--light);}
+:root[data-theme="liga"] .voto{background:var(--stand); border-color:var(--line);}
+:root[data-theme="liga"] .cuenta{background:var(--stand-2);}
+:root[data-theme="liga"] .cmp-fila:nth-child(odd){background:rgba(16,23,34,.025);}
+:root[data-theme="liga"] .toast{color:#fff; background:linear-gradient(180deg,#0b57d0,#083a8c);}
+:root[data-theme="liga"] .toast button{
+  background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.4); color:#fff;
+}
+:root[data-theme="liga"] .empty{background:var(--stand); border-color:var(--line);}
+:root[data-theme="liga"] .balon{background:
+  radial-gradient(520px 200px at 50% -40px, rgba(199,154,40,.18), transparent 70%), var(--stand);}
+
+/* El botón de tema, al lado de los otros del encabezado. */
+.ico.tema i{font-size:17px;}

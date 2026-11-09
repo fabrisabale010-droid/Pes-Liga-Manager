@@ -25,8 +25,6 @@
 </head>
 <body>
 
-<button class="skip" id="skip" type="button">Saltar al contenido</button>
-
 <header class="top">
   <div class="top-in">
     <a class="brand" href="#/inicio">
@@ -37,9 +35,10 @@
       </span>
     </a>
     <div class="top-actions">
-      <button id="btnAdmin" class="ico" title="Entrar como organizador" aria-label="Entrar como organizador"><i class="ti ti-lock" aria-hidden="true"></i></button>
-      <button id="btnScreen" class="ico" title="Modo pantalla" aria-label="Modo pantalla"><i class="ti ti-device-tv" aria-hidden="true"></i></button>
-      <button id="btnSound" class="ico" title="Sonido" aria-label="Sonido"><i class="ti ti-volume" aria-hidden="true"></i></button>
+      <button id="btnAdmin" class="ico" title="Entrar como organizador"><i class="ti ti-lock"></i></button>
+      <button id="btnScreen" class="ico" title="Modo pantalla"><i class="ti ti-device-tv"></i></button>
+      <button id="btnSound" class="ico" title="Sonido"><i class="ti ti-volume"></i></button>
+      <button id="btnTema" class="ico tema" title="Cambiar el aspecto"><i class="ti ti-palette"></i></button>
     </div>
   </div>
   <nav class="nav-wide" id="navWide"></nav>
@@ -56,8 +55,8 @@
 
 <div class="modal" id="modal" hidden></div>
 <div class="screen-mode" id="screenMode" hidden></div>
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<div class="sync" id="sync" role="status" aria-live="polite" hidden><i class="ti ti-refresh" aria-hidden="true"></i> Buscando cambios</div>
+<div class="toast" id="toast" hidden></div>
+<div class="sync" id="sync" hidden><i class="ti ti-refresh"></i> Buscando cambios</div>
 
 <script type="module" src="./js/app.js"></script>
 </body>

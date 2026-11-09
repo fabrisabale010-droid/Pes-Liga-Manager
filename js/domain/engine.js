@@ -2,6 +2,7 @@
    así que se puede razonar y probar sin abrir la app. */
 
 import { nameOf } from './teams.js';
+import { DESEMPATE_SOLO_PUNTOS } from '../config.js';
 
 export const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
@@ -132,51 +133,6 @@ export function currentDay(t) {
   return null;
 }
 
-/* El fixture ordenado en bloques: uno por fecha (y grupo, si hay). Con
-   `bracket: true` suma las rondas de llaves que ya tienen los dos equipos.
-   Lo usan la pantalla, la imagen para compartir y el texto, así los tres
-   cuentan lo mismo y en el mismo orden. */
-export function fixtureBlocks(t, { bracket = false } = {}) {
-  const byKey = new Map();
-  t.games.forEach(m => {
-    const key = `${m.group || ''}|${m.day}`;
-    if (!byKey.has(key)) byKey.set(key, []);
-    byKey.get(key).push(m);
-  });
-
-  const blocks = [...byKey.keys()]
-    .sort((a, b) => {
-      const [ga, da] = a.split('|'), [gb, db] = b.split('|');
-      return ga.localeCompare(gb) || Number(da) - Number(db);
-    })
-    .map(key => {
-      const [group, day] = key.split('|');
-      return {
-        key, group: group || null, day: Number(day),
-        title: `${group ? `Grupo ${group} · ` : ''}Fecha ${day}`,
-        games: byKey.get(key)
-      };
-    });
-
-  if (bracket && t.bracket) {
-    const rounds = new Map();
-    t.bracket.games
-      .filter(m => !m.bye && m.home && m.away)
-      .forEach(m => {
-        if (!rounds.has(m.round)) rounds.set(m.round, []);
-        rounds.get(m.round).push(m);
-      });
-    [...rounds.keys()].sort((a, b) => a - b).forEach(r => {
-      blocks.push({
-        key: `llave|${r}`, group: null, day: null, isBracket: true,
-        title: roundName(r, t.bracket.rounds),
-        games: rounds.get(r).sort((a, b) => a.pos - b.pos)
-      });
-    });
-  }
-  return blocks;
-}
-
 /* ---------- Llaves ---------- */
 
 function seedOrder(size) {
@@ -277,21 +233,23 @@ export function champion(t) {
   if (t.games.some(m => !m.played)) return null;
   const rows = table(t.teamIds, t.games);
   if (rows.length < 2) return rows[0]?.id ?? null;
-  const tied = rows[0].pts === rows[1].pts &&
-               rows[0].dg === rows[1].dg &&
-               rows[0].gf === rows[1].gf;
-  if (tied) return t.penWinner ?? null;
+
+  /* Si hay empate que exige desempate, no hay campeón hasta resolverlo. */
+  if (needsDecider(t)) return t.penWinner ?? null;
   return rows[0].id;
 }
 
-/* Empate exacto en la punta: hace falta definir a mano. */
+/* Empate en la punta: hace falta definirlo a mano.
+   Por defecto alcanza con empatar en puntos; se cambia en config.js. */
 export function needsDecider(t) {
   if (t.format === 'copa' || t.games.some(m => !m.played)) return null;
   const rows = table(t.teamIds, t.games);
   if (rows.length < 2) return null;
-  const top = rows.filter(r =>
-    r.pts === rows[0].pts && r.dg === rows[0].dg && r.gf === rows[0].gf
-  );
+
+  const top = rows.filter(r => DESEMPATE_SOLO_PUNTOS
+    ? r.pts === rows[0].pts
+    : r.pts === rows[0].pts && r.dg === rows[0].dg && r.gf === rows[0].gf);
+
   return top.length > 1 ? top.map(r => r.id) : null;
 }
 

@@ -1,11 +1,10 @@
-import { flag, esc, nameOf, crest, say, cheer, ballon, cup, askConfirm } from '../ui/ui.js';
+import { flag, esc, nameOf, crest, say, cheer, ballon, cup } from '../ui/ui.js';
 import { tournaments } from '../core/store.js';
 import { years } from '../domain/stats.js';
 import { premiosDelAnio } from '../domain/awards.js';
 import { awardCard, compartirImagen, precargar } from '../ui/cards.js';
 import { isAdmin } from '../core/auth.js';
 import * as Annual from '../domain/annual.js';
-import { mainColorOf } from '../domain/teams.js';
 
 let year = null;
 let verCuenta = false;
@@ -117,54 +116,11 @@ function anuales() {
         ${cuenta(balon)}
       </div>` : ''}
 
-    ${tablaBalon(p.ranking)}
-
     <h3 style="margin:20px 0 10px">Los dorados</h3>
     <div class="premios">${resto.map(x => ficha(x, false)).join('')}</div>
 
     <h3 style="margin:24px 0 10px">Los papelones</h3>
     <div class="premios">${p.papelones.map(x => ficha(x, true)).join('')}</div>`;
-}
-
-/* La tabla completa del Balón de Oro: todas las selecciones, con lo que aporta
-   cada parte del puntaje. Sirve para ver por qué uno queda arriba del otro. */
-function tablaBalon(ranking) {
-  if (!ranking?.length) return '';
-  const uno = n => n.toFixed(1);
-
-  return `
-    <h3 style="margin:24px 0 4px">Tabla del Balón de Oro</h3>
-    <p class="block-note">
-      Todas las selecciones con al menos 3 partidos en ${year}, de mayor a menor puntaje.
-      Cada columna muestra cuántos puntos aporta esa parte.
-    </p>
-    <div class="table-scroll">
-      <table class="standings balon-tabla" aria-label="Tabla del Balón de Oro ${year}">
-        <thead><tr>
-          <th class="sticky-l">Selección</th>
-          <th>PJ</th>
-          <th>Rendim.<small>de 70</small></th>
-          <th>Títulos<small>de 20</small></th>
-          <th>Dif. gol<small>de 10</small></th>
-          <th class="sticky-r">Total<small>de 100</small></th>
-        </tr></thead>
-        <tbody>
-          ${ranking.map((r, i) => `
-            <tr class="${i === 0 ? 'lead' : ''}">
-              <td class="sticky-l" style="border-left:3px solid ${mainColorOf(r.id)}">
-                <span class="side" data-team="${r.id}">
-                  <span class="rank">${i + 1}</span>${flag(r.id)}<span class="nm">${esc(nameOf(r.id))}</span>
-                </span>
-              </td>
-              <td class="num">${r.pj}</td>
-              <td class="num">${uno(r.partes.rendimiento.puntos)}</td>
-              <td class="num">${uno(r.partes.titulos.puntos)}</td>
-              <td class="num">${uno(r.partes.diferencia.puntos)}</td>
-              <td class="pts sticky-r">${uno(r.puntaje)}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
 }
 
 /* De dónde sale el puntaje, con los números de esta selección. */
@@ -196,9 +152,8 @@ function cuenta(balon) {
         <div class="cuenta-pts">${esc(balon.valorTexto)}</div>
       </div>
       <p class="cuenta-nota">
-        Los títulos y la diferencia se comparan con el mejor del año: quien más
-        ganó se lleva el máximo del puntaje y el resto, la parte proporcional.
-        Que alguien tenga el máximo no quiere decir que ganó todos los torneos.
+        Los títulos y la diferencia se comparan con el mejor del año: quien
+        lidera se lleva el máximo y el resto, la parte que le corresponde.
       </p>
     </div>` : ''}`;
 }
@@ -252,10 +207,6 @@ function copaAnual() {
       ? `${flag(cruce.espera)} <b>${esc(nameOf(cruce.espera))}</b> lidera los puntos y los títulos de ${y},
          así que espera en la final. ${flag(cruce.duelo[0])} ${esc(nameOf(cruce.duelo[0]))} y
          ${flag(cruce.duelo[1])} ${esc(nameOf(cruce.duelo[1]))} definen quién lo enfrenta.`
-      : cruce.kind === 'doble'
-        ? `${flag(cruce.lider)} <b>${esc(nameOf(cruce.lider))}</b> lidera los puntos y los títulos de ${y}.
-           Lo enfrenta ${flag(cruce.rival)} <b>${esc(nameOf(cruce.rival))}</b>, que quedó segundo en las dos tablas
-           (ganó algún torneo y sumó más puntos que el resto), así que no hace falta repechaje.`
       : cruce.kind === 'barrida'
         ? `${flag(cruce.lider)} <b>${esc(nameOf(cruce.lider))}</b> ganó todos los torneos de ${y} y además
            sumó más puntos. Lo enfrenta ${flag(cruce.rival)} <b>${esc(nameOf(cruce.rival))}</b>, el segundo en puntos.`
@@ -335,16 +286,11 @@ function copaAnualClicks(e, paint) {
 
   const borrar = e.target.closest('[data-cup-del]');
   if (borrar) {
-    const id = borrar.dataset.cupDel;
-    askConfirm({
-      title: '¿Borrar la Copa Anual?',
-      text: 'Se puede volver a armar cuando quieran.',
-      yes: 'Sí, borrar'
-    }).then(ok => {
-      if (ok) { Annual.removeCup(id); say('Copa Anual borrada'); }
-      paint();
-    });
-    return true;
+    if (confirm('¿Borrar la Copa Anual? Se puede volver a armar.')) {
+      Annual.removeCup(borrar.dataset.cupDel);
+      say('Copa Anual borrada');
+    }
+    paint(); return true;
   }
   return false;
 }

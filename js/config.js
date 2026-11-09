@@ -24,26 +24,8 @@ export const LOCAL_KEY = 'pes6_liga_v2';
 */
 export const ADMIN_HASH = '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab';
 
-/* La sesión de organizador caduca sola (sólo en modo 'pin'). */
+/* La sesión de organizador caduca sola. */
 export const ADMIN_HOURS = 12;
-
-/* Cómo entran los organizadores.
-
-   'pin'    El PIN de siempre. Evita toques por error, pero no es seguridad
-            real: cualquiera con conocimientos técnicos lo saltea.
-   'google' Cuenta de Google + reglas de Firestore. Seguridad de verdad: sólo
-            los correos de la lista pueden guardar, aunque toquen el código.
-
-   Dejalo en 'pin' hasta hacer los pasos de AUTH.md. Si lo cambiás antes,
-   nadie va a poder entrar como organizador. */
-export const AUTH_MODE = 'pin';
-
-/* Los Gmail de los organizadores (sólo en modo 'google'). Tienen que ser los
-   mismos que van en firestore.rules: acá sólo decide qué se muestra, las
-   reglas son las que de verdad dejan o no guardar. */
-export const ORGANIZER_EMAILS = [
-  // 'fabrisabale010@gmail.com',
-];
 
 /* Títulos ganados antes de que existiera la app. */
 export const TITLES_BEFORE_APP = { BRA:6, ITA:2, FRA:1 };
@@ -74,5 +56,13 @@ export const CRESTS_PATH = './crests/';
 export const CRESTS_AVAILABLE = [
   'ARG', 'BRA', 'ENG', 'ESP', 'FRA', 'GER', 'ITA', 'NED', 'POR', 'URU'
 ];
+
+/* Cuándo hace falta jugar un desempate en una liga.
+
+   true  = alcanza con empatar en puntos (como se juega de verdad: si dos
+           terminan igualados arriba, se define en la cancha).
+   false = la diferencia de gol y los goles a favor desempatan solos, y el
+           partido extra solo aparece si están iguales en todo. */
+export const DESEMPATE_SOLO_PUNTOS = true;
 
 export const MAX_TEAMS = 16;

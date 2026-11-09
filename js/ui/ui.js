@@ -52,10 +52,9 @@ export function crest(id, size = 34) {
     : (t.crest || (enCarpeta ? `${CRESTS_PATH}${id}.png` : null));
   if (!file) return flag(id);
 
-  /* La bandera de respaldo viaja escapada en un atributo y se lee al fallar:
-     meterla dentro del onerror rompía con las banderas que llevan comillas. */
+  const fallback = flag(id).replace(/"/g, '&quot;');
   return `<img src="${file}" alt="" class="crest-img" style="width:${size}px;height:${size}px"
-    data-fb="${esc(flag(id))}" onerror="this.outerHTML=this.dataset.fb">`;
+    onerror="this.outerHTML='${fallback}'">`;
 }
 
 /* ---------- Avisos ---------- */
@@ -103,26 +102,6 @@ export function closeModal() {
   box.innerHTML = '';
 }
 
-/* Pregunta antes de algo que no se puede deshacer. Devuelve una promesa:
-   true si confirma, false si se arrepiente. Reemplaza al confirm() del
-   navegador, que rompe el estilo y en el celular se ve como un error. */
-export function askConfirm({ title, text, yes = 'Aceptar', no = 'Volver', danger = true }) {
-  return new Promise(resolve => {
-    openModal(`
-      <i class="ti ti-alert-triangle big-i" style="color:var(--red)" aria-hidden="true"></i>
-      <h3>${esc(title)}</h3>
-      <p>${esc(text)}</p>
-      <div class="row">
-        <button class="btn" data-no>${esc(no)}</button>
-        <button class="btn ${danger ? 'danger' : 'main'}" data-yes>${esc(yes)}</button>
-      </div>
-    `, box => {
-      box.querySelector('[data-no]').onclick = () => { closeModal(); resolve(false); };
-      box.querySelector('[data-yes]').onclick = () => { closeModal(); resolve(true); };
-    });
-  });
-}
-
 export function openSheet(html, ready) {
   const box = el('sheet');
   el('sheetPanel').innerHTML = `<div class="sheet-grip"></div>${html}`;
@@ -140,68 +119,31 @@ export function closeSheet() {
 /* ---------- Papelitos ---------- */
 
 let rain = null;
-let burst = [];
 
-/* Un color muy oscuro (el negro de Alemania) casi no se ve sobre el fondo. */
-function esOscuro(hex) {
-  const c = [1, 3, 5]
-    .map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map(v => (v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4));
-  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2] < .06;
-}
-
-const entre = (a, b) => a + Math.random() * (b - a);
-
-/* Papelitos de los colores de la selección, cayendo dentro del contenedor.
-   Los hay rectangulares (la mayoría), cuadraditos y serpentinas finas; cada
-   uno se mece y se da vuelta a su ritmo. */
+/* Caen dentro del contenedor que se le pase, con los colores de esa bandera. */
 export function startConfetti(container, teamId) {
   stopConfetti();
   if (!container) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const colors = colorsOf(teamId);
-  const MAX = 260;                                  // tope: cuida la batería
-
   const drop = () => {
-    if (document.hidden || container.childElementCount >= MAX) return;
-
-    const forma = Math.random();
-    let w, h;
-    if (forma < .62)      { w = entre(6, 10);  h = w * entre(1.5, 2.2); }   // papelito
-    else if (forma < .84) { w = h = entre(5, 9); }                          // cuadradito
-    else                  { w = entre(3, 5);   h = entre(16, 26); }         // serpentina
-
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const dur = entre(3.4, 5.4);
-    const giro = entre(-45, 45);
-
-    const pieza = document.createElement('i');
-    pieza.className = 'pp';
-    pieza.style.cssText =
-      `left:${entre(0, 100)}%;--dur:${dur}s;` +
-      `--dist:${(container.clientHeight || 420) + 40}px;--drift:${entre(-46, 46)}px`;
-
-    const papel = document.createElement('b');
-    papel.style.cssText =
-      `--w:${w}px;--h:${h}px;--c:${color};--r0:${giro}deg;--r1:${giro + entre(60, 150)}deg;` +
-      `animation-duration:${entre(.7, 1.8)}s;animation-delay:-${entre(0, 1.5)}s`;
-    if (esOscuro(color)) papel.classList.add('edge');
-
-    pieza.appendChild(papel);
-    container.appendChild(pieza);
-    setTimeout(() => pieza.remove(), dur * 1000 + 200);
+    const bit = document.createElement('i');
+    const size = 5 + Math.random() * 5;
+    const round = Math.random() > .5;
+    const life = 2.2 + Math.random() * 1.6;
+    bit.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${round ? size : size * 1.7}px;
+      background:${colors[Math.floor(Math.random() * colors.length)]};
+      border-radius:${round ? '50%' : '2px'};animation-duration:${life}s`;
+    container.appendChild(bit);
+    setTimeout(() => bit.remove(), life * 1000 + 200);
   };
-
-  /* Una ráfaga al empezar y después una lluvia constante. */
-  for (let i = 0; i < 72; i++) burst.push(setTimeout(drop, i * 18));
-  rain = setInterval(drop, 40);
+  for (let i = 0; i < 9; i++) setTimeout(drop, i * 90);
+  rain = setInterval(drop, 240);
 }
 
 export function stopConfetti() {
   if (rain) { clearInterval(rain); rain = null; }
-  burst.forEach(clearTimeout);
-  burst = [];
 }
 
 /* ---------- Sonido y vibración ---------- */
@@ -260,3 +202,34 @@ export function countdown(target) {
 export const pad = n => String(n).padStart(2, '0');
 
 export { nameOf };
+
+/* ---------- Aspecto ---------- */
+
+/* Dos temas: el oscuro de siempre y uno claro estilo sitio de liga.
+   La elección queda guardada en el teléfono. */
+const TEMA_KEY = 'pes6_v2_tema';
+const TEMAS = ['oscuro', 'liga'];
+
+export function temaActual() {
+  try { return localStorage.getItem(TEMA_KEY) || 'oscuro'; }
+  catch { return 'oscuro'; }
+}
+
+export function aplicarTema(nombre) {
+  const tema = TEMAS.includes(nombre) ? nombre : 'oscuro';
+  if (tema === 'oscuro') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', tema);
+
+  /* La barra del navegador acompaña el color de fondo. */
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = tema === 'liga' ? '#eef1f6' : '#05070d';
+
+  try { localStorage.setItem(TEMA_KEY, tema); } catch {}
+  return tema;
+}
+
+export function alternarTema() {
+  const siguiente = temaActual() === 'oscuro' ? 'liga' : 'oscuro';
+  aplicarTema(siguiente);
+  return siguiente;
+}
