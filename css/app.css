@@ -5,19 +5,22 @@
    ============================================================ */
 
 :root{
-  --pitch:#05070d;
-  --stand:#0c1322;
-  --stand-2:#111a2c;
-  --line:#1d2942;
-  --line-soft:#16203440;
+  /* Azules grisáceos de consola, con celeste de acento: el aire de Steam.
+     El fondo no es negro sino azul apagado, y los paneles se separan por
+     tono, no por bordes marcados. */
+  --pitch:#171a21;
+  --stand:#1b2838;
+  --stand-2:#23394d;
+  --line:#2f4661;
+  --line-soft:#2f466140;
 
-  --ink:#e8edf7;
-  --ink-dim:#8d9ab4;
-  --ink-faint:#5d6880;
+  --ink:#e6eef5;
+  --ink-dim:#8fa3b6;
+  --ink-faint:#657b8e;
 
-  --light:#4d8dff;
-  --light-soft:#9dc2ff;
-  --light-deep:#1e3f8a;
+  --light:#66c0f4;
+  --light-soft:#a7dbf8;
+  --light-deep:#1a44c2;
 
   --trophy:#e0b23d;
   --trophy-hi:#fff3cf;
@@ -33,11 +36,11 @@
   --wrap:960px;
 
   /* Superficies que antes estaban escritas a mano. */
-  --lead-cell:#101b30;
-  --plaque-bg:linear-gradient(180deg,#0e1424,#080c16);
+  --lead-cell:#2a4a63;
+  --plaque-bg:linear-gradient(180deg,#2a3f54,#16202c);
   --slot-bg:rgba(16,12,4,.4);
   --slot-top-bg:rgba(38,28,8,.55);
-  --scrim:8,12,22;
+  --scrim:22,32,44;
   --sombra:0 16px 40px rgba(0,0,0,.45);
 }
 
@@ -221,7 +224,7 @@ main{
 .plaque .flag-xl{font-size:34px; margin:20px 0 6px; display:block;}
 
 .fall{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
-.fall i{position:absolute; top:-12px; display:block; opacity:.88; animation:fall linear forwards;}
+.fall i{position:absolute; top:-12px; display:block; animation:fall linear forwards;}
 
 /* Penumbra en el centro: el confeti sigue cayendo, pero no le pelea
    el contraste al nombre del campeón. */
@@ -231,7 +234,7 @@ main{
     rgba(var(--scrim),.86) 0%, rgba(var(--scrim),.62) 42%, rgba(var(--scrim),0) 76%);
 }
 @keyframes fall{
-  from{transform:translateY(0) rotate(0); opacity:1;}
+  from{transform:translateY(0) rotate(0); opacity:.85;}
   to{transform:translateY(300px) rotate(400deg); opacity:0;}
 }
 
@@ -864,3 +867,64 @@ select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,v
 
 /* El botón de tema, al lado de los otros del encabezado. */
 .ico.tema i{font-size:17px;}
+
+/* ---------- Acabado de consola ----------
+   Los paneles se separan por tono y un degradé tenue, como las fichas de
+   Steam: casi sin borde visible, apoyados sobre un fondo más oscuro. */
+:root:not([data-theme]) .panel,
+:root:not([data-theme]) .log-item,
+:root:not([data-theme]) .ficha,
+:root:not([data-theme]) .matchday,
+:root:not([data-theme]) .premio,
+:root:not([data-theme]) .rec,
+:root:not([data-theme]) .empty{
+  background:linear-gradient(180deg,#22384c,#1a2735);
+  border-color:#000a;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 2px 8px rgba(0,0,0,.35);
+}
+
+/* Los botones principales usan el degradé celeste de las fichas. */
+:root:not([data-theme]) .btn:not(.danger):not(.gold):not(.sm){
+  background:linear-gradient(180deg,#67c1f5,#2a73b8);
+  border:0; color:#0b1620; font-weight:700;
+}
+:root:not([data-theme]) .btn:not(.danger):not(.gold):not(.sm):hover{
+  background:linear-gradient(180deg,#8fd4fb,#3a8ad4);
+}
+
+/* La pestaña activa se marca con una línea abajo, no con relleno. */
+:root:not([data-theme]) .opt.on{
+  background:transparent; color:var(--light-soft);
+  border-color:transparent; box-shadow:inset 0 -2px 0 var(--light);
+  border-radius:var(--r-s) var(--r-s) 0 0;
+}
+
+/* ---------- Qué cambió en la tabla ----------
+   Al cargar un resultado, la fila que se movió se enciende un momento y
+   muestra hacia dónde fue. Dura poco: avisa y se va. */
+table.standings tr.sube td,
+table.standings tr.baja td{animation:movio 1.6s ease-out;}
+table.standings tr.sube td{--mov:47,168,106;}
+table.standings tr.baja td{--mov:214,69,91;}
+@keyframes movio{
+  0%   {background:rgba(var(--mov),.28);}
+  70%  {background:rgba(var(--mov),.12);}
+  100% {background:transparent;}
+}
+.side .mov{
+  font-size:14px; margin-left:2px; opacity:0;
+  animation:asomar 1.6s ease-out;
+}
+tr.sube .mov{color:var(--grass);}
+tr.baja .mov{color:var(--red);}
+@keyframes asomar{
+  0%,80%{opacity:1;}
+  100%  {opacity:0;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  table.standings tr.sube td,
+  table.standings tr.baja td,
+  .side .mov{animation:none;}
+  .side .mov{opacity:.7;}
+}
