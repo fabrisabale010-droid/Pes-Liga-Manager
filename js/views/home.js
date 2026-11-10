@@ -137,7 +137,7 @@ function live_(t) {
 
   const board = t.format === 'copa'
     ? groupsView(t) + (t.bracket ? bracketView(t) : '')
-    : standingsTable(finalTable(t));
+    : standingsTable(finalTable(t), { clave: 'inicio-' + t.id });
 
   return `<section class="block">
     <h2><i class="ti ti-list-numbers"></i>Cómo va</h2>

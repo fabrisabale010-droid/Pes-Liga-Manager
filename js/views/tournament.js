@@ -45,7 +45,7 @@ export function renderTournament(view) {
           { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}.
           El fixture ya está sorteado${admin ? ' y podés cargar resultados cuando arranquen' : ''}.</div>
       </div>` : ''}
-      ${t.format === 'copa' ? groupsView(t) : standingsTable(finalTable(t))}
+      ${t.format === 'copa' ? groupsView(t) : standingsTable(finalTable(t), { clave: t.id })}
     </section>
 
     ${t.format === 'copa' && !t.bracket ? copaGate(t, groupsDone, admin) : ''}

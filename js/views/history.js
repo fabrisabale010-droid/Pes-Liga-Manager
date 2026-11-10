@@ -155,7 +155,7 @@ function row(t) {
         ${podium.map((r, i) => `<div>${['🥇','🥈','🥉'][i]} ${flag(r.id)} ${esc(nameOf(r.id))}</div>`).join('')}
       </div>` : ''}
       ${t.format === 'copa' && t.bracket ? bracketView(t) : ''}
-      ${standingsTable(rows)}
+      ${standingsTable(rows, { clave: 'historial' })}
       <div class="row" style="margin-top:12px">
         ${t.finished ? `<button class="btn sm" data-share-table="${t.id}" style="flex:0 0 auto">
           <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}

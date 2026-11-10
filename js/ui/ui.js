@@ -222,7 +222,7 @@ export function aplicarTema(nombre) {
 
   /* La barra del navegador acompaña el color de fondo. */
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = tema === 'liga' ? '#eef1f6' : '#05070d';
+  if (meta) meta.content = tema === 'liga' ? '#eef1f6' : '#171a21';
 
   try { localStorage.setItem(TEMA_KEY, tema); } catch {}
   return tema;

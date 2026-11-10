@@ -6,17 +6,39 @@ import { TITLES_BEFORE_APP } from '../config.js';
 
 /* ---------- Tabla de posiciones ---------- */
 
-export function standingsTable(rows, { qualify = 0 } = {}) {
+/* Se recuerda el orden anterior para poder mostrar quién subió y quién bajó
+   cuando se carga un resultado. Es la única animación que no responde a un
+   toque: está porque muestra exactamente qué cambió en la tabla. */
+const ordenPrevio = new Map();
+
+function movimientos(clave, ids) {
+  const antes = ordenPrevio.get(clave);
+  ordenPrevio.set(clave, ids);
+  if (!antes) return new Map();                 // primera vez: nada que comparar
+
+  const cambios = new Map();
+  ids.forEach((id, ahora) => {
+    const estaba = antes.indexOf(id);
+    if (estaba >= 0 && estaba !== ahora) {
+      cambios.set(id, estaba > ahora ? 'sube' : 'baja');
+    }
+  });
+  return cambios;
+}
+
+export function standingsTable(rows, { qualify = 0, clave = 'tabla' } = {}) {
   if (!rows.length) return '';
+  const movidos = movimientos(clave, rows.map(r => r.id));
   return `<div class="table-scroll"><table class="standings">
     <thead><tr>
       <th class="sticky-l">Selección</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th class="sticky-r">Pts</th>
     </tr></thead>
     <tbody>${rows.map((r, i) => `
-      <tr class="${i === 0 ? 'lead' : ''}">
+      <tr class="${i === 0 ? 'lead' : ''} ${movidos.get(r.id) || ''}">
         <td class="sticky-l" style="border-left:3px solid ${mainColorOf(r.id)}">
           <span class="side ${qualify && i < qualify ? 'q' : ''}" data-team="${r.id}">
             <span class="rank">${i + 1}</span>${flag(r.id)}<span class="nm">${esc(nameOf(r.id))}</span>
+            ${movidos.get(r.id) ? `<i class="mov ti ti-chevron-${movidos.get(r.id) === 'sube' ? 'up' : 'down'}"></i>` : ''}
           </span>
         </td>
         <td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pe}</td>
