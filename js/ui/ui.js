@@ -134,18 +134,23 @@ export function startConfetti(container, teamId) {
 
   const papel = () => {
     const bit = document.createElement('i');
-    const ancho = 5 + Math.random() * 5;
-    const largo = ancho * (1.6 + Math.random() * 1.2);   // siempre papelitos
+    const ancho = 6 + Math.random() * 5;
+    const largo = ancho * (1 + Math.random() * .4);      // casi cuadrados
     const vida = 2.6 + Math.random() * 2.2;
 
+    /* Cada papelito gira sobre un eje distinto: así tumbean en el aire y
+       por momentos se ven de canto, como papel de verdad. */
     bit.style.cssText = `
       left:${Math.random() * 100}%;
       width:${ancho}px; height:${largo}px;
       background:${colors[Math.floor(Math.random() * colors.length)]};
       border-radius:1px;
       --caida:${alto()}px;
-      --giro:${420 + Math.random() * 500}deg;
+      --giro:${540 + Math.random() * 720}deg;
       --vaiven:${8 + Math.random() * 16}px;
+      --ejex:${(Math.random() * 2 - 1).toFixed(2)};
+      --ejey:${(0.4 + Math.random() * 0.6).toFixed(2)};
+      --ejez:${(Math.random() * 2 - 1).toFixed(2)};
       animation-duration:${vida}s;
       animation-delay:-${Math.random() * 0.6}s`;
 
