@@ -127,19 +127,35 @@ export function startConfetti(container, teamId) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const colors = colorsOf(teamId);
-  const drop = () => {
+
+  /* Caen hasta el fondo de la placa, sea cual sea su alto: en escritorio es
+     bastante más alta que en el celular y antes se quedaban por la mitad. */
+  const alto = () => Math.max(260, container.offsetHeight || 0) + 40;
+
+  const papel = () => {
     const bit = document.createElement('i');
-    const size = 5 + Math.random() * 5;
-    const round = Math.random() > .5;
-    const life = 2.2 + Math.random() * 1.6;
-    bit.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${round ? size : size * 1.7}px;
+    const ancho = 5 + Math.random() * 5;
+    const largo = ancho * (1.6 + Math.random() * 1.2);   // siempre papelitos
+    const vida = 2.6 + Math.random() * 2.2;
+
+    bit.style.cssText = `
+      left:${Math.random() * 100}%;
+      width:${ancho}px; height:${largo}px;
       background:${colors[Math.floor(Math.random() * colors.length)]};
-      border-radius:${round ? '50%' : '2px'};animation-duration:${life}s`;
+      border-radius:1px;
+      --caida:${alto()}px;
+      --giro:${420 + Math.random() * 500}deg;
+      --vaiven:${8 + Math.random() * 16}px;
+      animation-duration:${vida}s;
+      animation-delay:-${Math.random() * 0.6}s`;
+
     container.appendChild(bit);
-    setTimeout(() => bit.remove(), life * 1000 + 200);
+    setTimeout(() => bit.remove(), vida * 1000 + 300);
   };
-  for (let i = 0; i < 9; i++) setTimeout(drop, i * 90);
-  rain = setInterval(drop, 240);
+
+  /* Arranca con una lluvia pareja y después sigue cayendo sin parar. */
+  for (let i = 0; i < 34; i++) setTimeout(papel, i * 45);
+  rain = setInterval(papel, 110);
 }
 
 export function stopConfetti() {

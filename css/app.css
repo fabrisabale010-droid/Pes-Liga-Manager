@@ -230,12 +230,20 @@ main{
    el contraste al nombre del campeón. */
 .fall::after{
   content:''; position:absolute; inset:0; pointer-events:none;
-  background:radial-gradient(115% 62% at 50% 46%,
-    rgba(var(--scrim),.86) 0%, rgba(var(--scrim),.62) 42%, rgba(var(--scrim),0) 76%);
+  background:radial-gradient(62% 44% at 50% 44%,
+    rgba(var(--scrim),.74) 0%, rgba(var(--scrim),.42) 55%, rgba(var(--scrim),0) 100%);
 }
+/* Caen hasta el fondo de la placa (--caida), balanceándose de costado
+   (--vaiven) y girando sobre sí mismos (--giro), como papel de verdad. */
 @keyframes fall{
-  from{transform:translateY(0) rotate(0); opacity:.85;}
-  to{transform:translateY(300px) rotate(400deg); opacity:0;}
+  0%   {transform:translate3d(0,0,0) rotate(0deg); opacity:.95;}
+  25%  {transform:translate3d(var(--vaiven),calc(var(--caida) * .25),0)
+                  rotate(calc(var(--giro) * .25));}
+  50%  {transform:translate3d(calc(var(--vaiven) * -1),calc(var(--caida) * .5),0)
+                  rotate(calc(var(--giro) * .5));}
+  75%  {transform:translate3d(var(--vaiven),calc(var(--caida) * .75),0)
+                  rotate(calc(var(--giro) * .75));}
+  100% {transform:translate3d(0,var(--caida),0) rotate(var(--giro)); opacity:0;}
 }
 
 /* ---------- Tarjeta de próximo partido ---------- */
@@ -927,4 +935,68 @@ tr.baja .mov{color:var(--red);}
   table.standings tr.baja td,
   .side .mov{animation:none;}
   .side .mov{opacity:.7;}
+}
+
+/* ---------- Estructura: la portada ----------
+   El campeón deja de ser una pila centrada y pasa a ser una ficha
+   horizontal: el escudo manda a la izquierda y el texto lo acompaña.
+   En el celular se vuelve a apilar, que es donde una columna funciona. */
+.portada .plaque-in{display:block;}
+.portada .plaque-escudo{line-height:0; margin-bottom:14px;}
+.portada .kicker{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--trophy); opacity:1;
+}
+.portada .kicker .cup-img{height:28px;}
+.portada .plaque-acciones{margin-top:16px;}
+
+@media (min-width:720px){
+  .portada{padding:34px 40px; text-align:left;}
+  .portada .plaque-in{
+    display:grid; grid-template-columns:auto 1fr; align-items:center;
+    gap:34px;
+  }
+  .portada .plaque-escudo{margin:0;}
+  .portada .kicker{justify-content:flex-start;}
+  .portada .who{font-size:52px; margin-top:4px;}
+  .portada .meta{margin-top:8px;}
+  .portada .plaque-acciones{margin-top:20px;}
+}
+
+/* ---------- Estructura: los títulos de sección ----------
+   Una línea sale del título y recorre el ancho: separa sin encerrar, y
+   deja claro dónde empieza cada bloque sin agregar una caja más. */
+.block > h2{
+  gap:10px; padding-bottom:10px; margin-bottom:6px;
+  font-size:21px; letter-spacing:-.01em;
+}
+.block > h2::after{
+  content:''; flex:1; height:1px; margin-left:4px;
+  background:linear-gradient(90deg,var(--line),transparent);
+}
+.block > h2 i{
+  font-size:20px; padding:7px; border-radius:var(--r-s);
+  background:rgba(102,192,244,.12); color:var(--light);
+}
+
+/* ---------- Estructura: filas que se pueden recorrer ----------
+   El historial y las fichas de selección se leen como una lista continua,
+   no como tarjetas sueltas: se despegan del fondo solo al tocarlas. */
+.log-item, .ficha{transition:border-color .16s, transform .16s;}
+.log-head, .ficha-top{transition:background .16s;}
+.log-head:hover, .ficha-top:hover{background:rgba(102,192,244,.06);}
+.ficha.open{border-color:var(--light-deep);}
+
+/* El botón principal se distingue del resto por color, no por tamaño. */
+:root:not([data-theme]) .btn.gold{
+  background:linear-gradient(180deg,#a4d007,#5c7e10);
+  border:0; color:#10180a; font-weight:700;
+}
+:root:not([data-theme]) .btn.gold:hover{
+  background:linear-gradient(180deg,#c5ee28,#6f9814);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .log-item, .ficha, .log-head, .ficha-top{transition:none;}
 }

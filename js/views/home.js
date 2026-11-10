@@ -56,20 +56,24 @@ export function renderHome(view) {
 
 /* ---------- Placa del campeón ---------- */
 
+/* La placa del campeón es la portada de la app: en pantalla ancha el escudo
+   se pone a un costado y el texto al lado, como las fichas de Steam; en el
+   celular vuelve a apilarse. */
 function plaque(last, championId) {
   return `<section class="block">
-    <div class="plaque">
+    <div class="plaque portada">
       <div class="fall"></div>
       <div class="plaque-in">
-        ${cup("cup")}
-        <div class="kicker">${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
-        <div class="who">${esc(nameOf(championId))}</div>
-        <span class="flag-xl">${crest(championId, 132)}</span>
-        ${last ? `<div class="meta">${esc(last.name)}</div>` : ''}
-        ${last ? `<div style="margin-top:16px">
-          <button class="btn sm" data-share-champ>
-            <i class="ti ti-share-2"></i>Compartir
-          </button></div>` : ''}
+        <div class="plaque-escudo">${crest(championId, 150)}</div>
+        <div class="plaque-texto">
+          <div class="kicker">${cup()}${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
+          <div class="who">${esc(nameOf(championId))}</div>
+          ${last ? `<div class="meta">${esc(last.name)}</div>` : ''}
+          ${last ? `<div class="plaque-acciones">
+            <button class="btn sm" data-share-champ>
+              <i class="ti ti-share-2"></i>Compartir
+            </button></div>` : ''}
+        </div>
       </div>
     </div>
   </section>`;
