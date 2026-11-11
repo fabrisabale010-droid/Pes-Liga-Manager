@@ -8,6 +8,7 @@ import {
 import { isAdmin } from '../core/auth.js';
 import { go } from '../ui/router.js';
 import { openFixtureShare } from '../ui/fixtureShare.js';
+import { openQuickScore, pendingToday } from './quickScore.js';
 
 export function renderTournament(view) {
   /* Si no hay ninguno en juego, se muestra el próximo programado: así se puede
@@ -29,6 +30,7 @@ export function renderTournament(view) {
   const arranca = kickoff(t);
 
   const admin = isAdmin();
+  const quick = admin ? pendingToday(t) : null;
   const p = progress(t);
   const groupsDone = t.format === 'copa' && t.games.every(m => m.played);
   const decider = needsDecider(t);
@@ -60,6 +62,14 @@ export function renderTournament(view) {
 
     <section class="block">
       <h2><i class="ti ti-clipboard-list"></i>Partidos</h2>
+      ${quick && quick.ids.length ? `<button class="btn main wide quick-cta" data-quick>
+        <span class="quick-ico"><i class="ti ti-bolt" aria-hidden="true"></i></span>
+        <span class="quick-txt">
+          <strong>Carga rápida · Fecha ${quick.day}</strong>
+          <small>${quick.ids.length} ${quick.ids.length === 1 ? 'partido por cargar' : 'partidos por cargar'} · con botones grandes</small>
+        </span>
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+      </button>` : ''}
       ${fixtureBlock(t, admin)}
     </section>
 
@@ -67,6 +77,8 @@ export function renderTournament(view) {
   `;
 
   view.querySelector('[data-share-fixture]').onclick = () => openFixtureShare(t);
+  const q = view.querySelector('[data-quick]');
+  if (q) q.onclick = () => openQuickScore(t.id);
   if (admin) wire(view, t);
 }
 

@@ -124,7 +124,7 @@ function cabinet() {
       ${share(r.id, r.n)}
       <span class="shelf-crest">${crest(r.id, r.lugar === 1 ? 104 : 76)}</span>
       <span class="shelf-name">${esc(nameOf(r.id))}</span>
-      <span class="shelf-n"><b>${r.n}</b> ${r.n === 1 ? 'título' : 'títulos'}</span>
+      <span class="shelf-n"><b data-count="${r.n}">${r.n}</b> ${r.n === 1 ? 'título' : 'títulos'}</span>
       <span class="shelf-base">${r.lugar}º</span>
     </div>`).join('')}
   </div>`;

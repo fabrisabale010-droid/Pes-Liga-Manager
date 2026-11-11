@@ -111,7 +111,7 @@ function kpis() {
   const d = crunch({ year });
   const jugados = tournaments().filter(t => t.finished && (!year || playedAt(t).getFullYear() === year)).length;
   if (!d.partidos && !jugados) return '';
-  const tile = (v, l) => `<div class="kpi"><span class="kpi-l">${l}</span><b class="kpi-v">${v}</b></div>`;
+  const tile = (v, l) => `<div class="kpi"><span class="kpi-l">${l}</span><b class="kpi-v" data-count="${v}">${v}</b></div>`;
   return `<div class="kpis">
     ${tile(jugados, 'Torneos terminados')}
     ${tile(d.partidos, 'Partidos')}
@@ -138,7 +138,7 @@ function spotlight() {
       <span class="spot-k">Líder${year ? ' ' + year : ''}</span>
       <strong>${esc(nameOf(lider.id))}</strong>
     </span>
-    <span class="spot-v"><b>${valor}</b><span>${unidad}</span></span>
+    <span class="spot-v"><b data-count="${valor}">${valor}</b><span>${unidad}</span></span>
   </div>`;
 }
 

@@ -119,52 +119,99 @@ export function closeSheet() {
 /* ---------- Papelitos ---------- */
 
 let rain = null;
+let rainBox = null;
 
-/* Caen dentro del contenedor que se le pase, con los colores de esa bandera. */
-export function startConfetti(container, teamId) {
+const reducido = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Un papelito cuadrado con un color de la bandera del campeón. */
+function papelito(container, colors, { burst = false } = {}) {
+  const bit = document.createElement('i');
+  const lado = 7 + Math.random() * 5;
+  const vida = burst ? 1.9 + Math.random() * 1.2 : 2.8 + Math.random() * 2.4;
+  const alto = Math.max(260, container.offsetHeight || 0) + 40;
+
+  bit.className = burst ? 'burst' : '';
+  bit.style.cssText = `
+    left:${burst ? 50 + (Math.random() * 16 - 8) : Math.random() * 100}%;
+    ${burst ? 'top:auto; bottom:6%;' : ''}
+    width:${lado}px; height:${lado}px;
+    background:${colors[Math.floor(Math.random() * colors.length)]};
+    border-radius:1px;
+    --caida:${alto}px;
+    --giro:${540 + Math.random() * 720}deg;
+    --vaiven:${8 + Math.random() * 16}px;
+    --ejex:${(Math.random() * 2 - 1).toFixed(2)};
+    --ejey:${(0.4 + Math.random() * 0.6).toFixed(2)};
+    --ejez:${(Math.random() * 2 - 1).toFixed(2)};
+    --dx:${(Math.random() * 2 - 1) * 46}vw;
+    --dy:${-(alto * (.55 + Math.random() * .45))}px;
+    animation-duration:${vida}s;
+    animation-delay:-${burst ? 0 : Math.random() * 0.6}s`;
+
+  container.appendChild(bit);
+  setTimeout(() => bit.remove(), vida * 1000 + 300);
+}
+
+/* Una explosión desde abajo, como el cañón de papelitos al levantar la copa. */
+export function burstConfetti(container, teamId, cantidad = 70) {
+  if (!container || reducido()) return;
+  const colors = colorsOf(teamId);
+  for (let i = 0; i < cantidad; i++) setTimeout(() => papelito(container, colors, { burst: true }), i * 6);
+}
+
+/* Caen dentro del contenedor que se le pase, con los colores de esa
+   bandera. Arranca con una explosión y después sigue la lluvia. */
+export function startConfetti(container, teamId, { burst = true } = {}) {
   stopConfetti();
   if (!container) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (reducido()) return;
 
   const colors = colorsOf(teamId);
-
-  /* Caen hasta el fondo de la placa, sea cual sea su alto: en escritorio es
-     bastante más alta que en el celular y antes se quedaban por la mitad. */
-  const alto = () => Math.max(260, container.offsetHeight || 0) + 40;
-
-  const papel = () => {
-    const bit = document.createElement('i');
-    const ancho = 6 + Math.random() * 5;
-    const largo = ancho * (1 + Math.random() * .4);      // casi cuadrados
-    const vida = 2.6 + Math.random() * 2.2;
-
-    /* Cada papelito gira sobre un eje distinto: así tumbean en el aire y
-       por momentos se ven de canto, como papel de verdad. */
-    bit.style.cssText = `
-      left:${Math.random() * 100}%;
-      width:${ancho}px; height:${largo}px;
-      background:${colors[Math.floor(Math.random() * colors.length)]};
-      border-radius:1px;
-      --caida:${alto()}px;
-      --giro:${540 + Math.random() * 720}deg;
-      --vaiven:${8 + Math.random() * 16}px;
-      --ejex:${(Math.random() * 2 - 1).toFixed(2)};
-      --ejey:${(0.4 + Math.random() * 0.6).toFixed(2)};
-      --ejez:${(Math.random() * 2 - 1).toFixed(2)};
-      animation-duration:${vida}s;
-      animation-delay:-${Math.random() * 0.6}s`;
-
-    container.appendChild(bit);
-    setTimeout(() => bit.remove(), vida * 1000 + 300);
-  };
-
-  /* Arranca con una lluvia pareja y después sigue cayendo sin parar. */
-  for (let i = 0; i < 34; i++) setTimeout(papel, i * 45);
-  rain = setInterval(papel, 110);
+  rainBox = container;
+  if (burst) burstConfetti(container, teamId, 60);
+  setTimeout(() => {
+    if (rainBox !== container) return;
+    for (let i = 0; i < 24; i++) setTimeout(() => papelito(container, colors), i * 60);
+    rain = setInterval(() => {
+      /* Si la portada ya no está en pantalla, se corta la lluvia. */
+      if (!container.isConnected) return stopConfetti();
+      papelito(container, colors);
+    }, 130);
+  }, 700);
 }
 
 export function stopConfetti() {
   if (rain) { clearInterval(rain); rain = null; }
+  rainBox = null;
+}
+
+/* ---------- Números que suben ----------
+   Cualquier elemento con data-count arranca en cero y llega a su valor.
+   Respeta los decimales que traiga (1.7 sube con un decimal). */
+
+function countUp(node) {
+  node.dataset.counted = '1';
+  const raw = node.dataset.count;
+  const target = Number(raw);
+  if (!isFinite(target) || reducido()) return;
+  const dec = (raw.split('.')[1] || '').length;
+  const dur = Math.min(1400, 600 + Math.abs(target) * 25);
+  const t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    node.textContent = (target * eased).toFixed(dec);
+    if (k < 1 && node.isConnected) requestAnimationFrame(step);
+    else node.textContent = raw;
+  };
+  node.textContent = (0).toFixed(dec);
+  requestAnimationFrame(step);
+}
+
+export function enableCountUps() {
+  const scan = () => document.querySelectorAll('[data-count]:not([data-counted])').forEach(countUp);
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+  scan();
 }
 
 /* ---------- Sonido y vibración ---------- */

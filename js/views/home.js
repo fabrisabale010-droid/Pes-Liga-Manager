@@ -1,8 +1,8 @@
 import {
   flag, esc, nameOf, cup, longDate, countdown, pad,
-  startConfetti, stopConfetti, crest
+  startConfetti, stopConfetti, burstConfetti, cheer, crest
 } from '../ui/ui.js';
-import { standingsTable, gameRow, bracketView, groupsView } from '../ui/parts.js';
+import { standingsTable, gameRow, bracketView, groupsView, titlesCount } from '../ui/parts.js';
 import { championCard, eventCard, compartirImagen } from '../ui/cards.js';
 import { liveTournament, nextTournament, scheduled, lastChampion } from '../core/store.js';
 import { currentDay, formatName, progress, finalTable, kickoff } from '../domain/engine.js';
@@ -11,6 +11,10 @@ import { isAdmin } from '../core/auth.js';
 import { openFixtureShare } from '../ui/fixtureShare.js';
 
 let tick = null;
+
+/* La explosión de papelitos es para cuando se llega a Inicio, no para cada
+   vez que la pantalla se redibuja porque llegó un dato de otro celular. */
+let lastBurst = 0;
 
 export function renderHome(view) {
   clearInterval(tick);
@@ -29,7 +33,21 @@ export function renderHome(view) {
     ${!live && !proximo ? invite() : ''}
   `;
 
-  startConfetti(view.querySelector('.fall'), championId);
+  /* Si la pantalla se redibuja enseguida (llegan los datos de la nube al
+     abrir), la explosión anterior se perdió con ella: se repite. */
+  const now = Date.now();
+  const cortada = now - lastBurst < 2500;
+  const burst = cortada || now - lastBurst > 20000;
+  if (burst) lastBurst = now;
+  startConfetti(view.querySelector('.fall'), championId, { burst });
+
+  /* Tocar la copa la vuelve a festejar. */
+  const stage = view.querySelector('[data-cup]');
+  if (stage) stage.onclick = () => {
+    burstConfetti(view.querySelector('.fall'), championId, 80);
+    stage.classList.remove('lift'); void stage.offsetWidth; stage.classList.add('lift');
+    cheer();
+  };
 
   const btn = view.querySelector('[data-share-champ]');
   if (btn) btn.onclick = () => compartirImagen(btn,
@@ -61,16 +79,33 @@ export function renderHome(view) {
 /* ---------- Placa del campeón ---------- */
 
 /* La portada: todo centrado, con la copa grande arriba. */
+/* La portada: rayos de luz que giran detrás de la copa, la copa con un
+   brillo que la recorre, destellos alrededor, el nombre en dorado y los
+   números del campeón. Tocar la copa larga otra tanda de papelitos. */
 function plaque(last, championId) {
+  const titulos = titlesCount()[championId] || 0;
+  const desde = last && (last.finishedAt ? new Date(last.finishedAt) : null);
+  const dias = desde && !isNaN(desde) ? Math.max(0, Math.floor((Date.now() - desde) / 86400000)) : null;
+  const stat = (n, label) => `<div class="champ-stat"><b data-count="${n}">${n}</b><span>${label}</span></div>`;
+
   return `<section class="block">
     <div class="plaque portada">
-      <div class="fall"></div>
+      <div class="rays" aria-hidden="true"></div>
+      <div class="fall" aria-hidden="true"></div>
       <div class="plaque-in">
-        ${cup('cup')}
-        <div class="kicker">${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
+        <button type="button" class="cup-stage" data-cup aria-label="Festejar de nuevo">
+          <span class="cup-glow" aria-hidden="true"></span>
+          <span class="cup-wrap">${cup('cup')}<span class="cup-shine" aria-hidden="true"></span></span>
+          ${[1, 2, 3, 4, 5, 6].map(i => `<span class="sparkle s${i}" aria-hidden="true"></span>`).join('')}
+        </button>
+        <div class="kicker"><i class="ti ti-crown" aria-hidden="true"></i>${last ? 'Campeón vigente' : 'Último campeón antes de la app'}</div>
         <div class="who">${esc(nameOf(championId))}</div>
         <span class="flag-xl">${crest(championId, 150)}</span>
         ${last ? `<div class="meta">${esc(last.name)}</div>` : ''}
+        ${titulos || dias !== null ? `<div class="champ-stats">
+          ${titulos ? stat(titulos, titulos === 1 ? 'título' : 'títulos') : ''}
+          ${dias !== null ? stat(dias, dias === 1 ? 'día de reinado' : 'días de reinado') : ''}
+        </div>` : ''}
         ${last ? `<div class="plaque-acciones">
           <button class="btn sm" data-share-champ>
             <i class="ti ti-share-2"></i>Compartir

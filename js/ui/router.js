@@ -53,8 +53,23 @@ function paint() {
      la tabla) se conserva la posición: si no, la página salta al principio. */
   const sigueIgual = current === id;
   const alturaAntes = window.scrollY;
+  const antes = SECTIONS.findIndex(s => s.id === current);
+  const ahora = SECTIONS.findIndex(s => s.id === id);
   current = id;
 
+  /* Cambio de sección con la transición nativa del navegador (View
+     Transitions): la pantalla nueva entra desde el lado hacia el que se fue
+     en el menú. Donde no existe, o con "reducir movimiento", un fundido. */
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const nativa = !sigueIgual && antes >= 0 && !calm && typeof document.startViewTransition === 'function';
+  document.documentElement.dataset.navDir = ahora < antes ? 'back' : 'fwd';
+
+  const render = () => draw(id, param, sigueIgual, alturaAntes, nativa);
+  if (nativa) document.startViewTransition(render);
+  else render();
+}
+
+function draw(id, param, sigueIgual, alturaAntes, nativa) {
   /* Contenedor nuevo en cada render: los listeners que engancha cada vista
      mueren con el anterior y no se heredan marcas de estado. */
   const old = el('view');
@@ -65,7 +80,14 @@ function paint() {
 
   /* Al cambiar de sección la pantalla entra con un fundido corto; al
      redibujar la misma (por ejemplo al cargar un gol) no se anima nada. */
-  if (!sigueIgual) view.classList.add('enter');
+  if (!sigueIgual && !nativa) view.classList.add('enter');
+
+  /* Las tarjetas entran escalonadas sólo al llegar a la sección; después
+     se saca la marca para que redibujar (buscar, filtrar) no las repita. */
+  if (!sigueIgual) {
+    view.classList.add('stagger');
+    setTimeout(() => view.classList.remove('stagger'), 900);
+  }
 
   views.get(id)?.(view, param);
   view.focus({ preventScroll: true });

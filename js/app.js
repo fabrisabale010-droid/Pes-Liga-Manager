@@ -2,7 +2,7 @@ import { loadLocal, connect, subscribe, featured, lastChampion, purgeTrash,
          whenSynced, onRemoteChange } from './core/store.js';
 import { isAdmin, signIn, signOut, onAdminChange, lockRemaining } from './core/auth.js';
 import { el, say, openModal, closeModal, closeSheet, setSound, esc, nameOf,
-         aplicarTema, alternarTema, temaActual } from './ui/ui.js';
+         aplicarTema, alternarTema, temaActual, enableCountUps } from './ui/ui.js';
 import { enableTeamCards, enablePagers, standingsTable, groupsView, bracketView, gameRow } from './ui/parts.js';
 import { register, startRouter, drawNav, repaint, go, currentSection } from './ui/router.js';
 import { renderHome, stopHome } from './views/home.js';
@@ -185,6 +185,7 @@ document.addEventListener('keydown', e => {
 
 enableTeamCards();
 enablePagers();
+enableCountUps();
 startRouter();
 
 /* ---------- Funciona sin señal ---------- */
