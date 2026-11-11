@@ -7,6 +7,7 @@ import {
 } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 import { go } from '../ui/router.js';
+import { openFixtureShare } from '../ui/fixtureShare.js';
 
 export function renderTournament(view) {
   /* Si no hay ninguno en juego, se muestra el próximo programado: así se puede
@@ -39,6 +40,11 @@ export function renderTournament(view) {
       <p class="block-note">
         ${esc(formatName(t.format))} · ${t.teamIds.length} selecciones · ${p.played} de ${p.total} partidos
       </p>
+      <div class="row actions-row" style="margin:-2px 0 14px">
+        <button class="btn sm" data-share-fixture>
+          <i class="ti ti-share-2" aria-hidden="true"></i>${porJugarse ? 'Compartir fixture e invitación' : 'Compartir fixture'}
+        </button>
+      </div>
       ${porJugarse ? `<div class="aviso">
         <i class="ti ti-clock"></i>
         <div>Todavía no empezó${arranca ? `: se juega el ${arranca.toLocaleDateString('es-AR',
@@ -60,6 +66,7 @@ export function renderTournament(view) {
     ${admin ? actions(t, champ) : ''}
   `;
 
+  view.querySelector('[data-share-fixture]').onclick = () => openFixtureShare(t);
   if (admin) wire(view, t);
 }
 

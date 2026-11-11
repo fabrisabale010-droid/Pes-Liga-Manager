@@ -24,19 +24,39 @@ const FILTERS = [
   { id:'anual',  label:'Copa Anual' }
 ];
 
+let recTab = 'presumir';
+
+const REC_TABS = [
+  { id:'presumir', label:'Para presumir' },
+  { id:'cargar',   label:'Para cargarse' },
+  { id:'partidos', label:'Partidos' }
+];
+
+/* El listener se engancha una sola vez por visita; cambiar de filtro o de
+   pestaña sólo vuelve a dibujar. (Antes se sumaba uno nuevo en cada cambio
+   y "Compartir" se disparaba varias veces.) */
 export function renderShowcase(view) {
-  view.innerHTML = `
-    <section class="block">
-      <h2>${cup()}Vitrina</h2>
-      <p class="block-note">Las ligas, las copas y la Copa Anual se cuentan por separado, más los títulos que ya existían antes de la app.</p>
-      <div class="opts stack">
-        ${FILTERS.map(f => `<button class="opt ${filter === f.id ? 'on' : ''}" data-filter="${f.id}">${f.label}</button>`).join('')}
-      </div>
-      ${cabinet()}
-    </section>
-    ${records()}`;
+  const paint = () => {
+    view.innerHTML = `
+      <section class="block">
+        <h2>${cup()}Vitrina</h2>
+        <p class="block-note">Las ligas, las copas y la Copa Anual se cuentan por separado, más los títulos que ya existían antes de la app.</p>
+        <div class="opts stack" role="tablist" aria-label="Tipo de título">
+          ${FILTERS.map(f => `<button class="opt ${filter === f.id ? 'on' : ''}" role="tab"
+            aria-selected="${filter === f.id}" data-filter="${f.id}">${f.label}</button>`).join('')}
+        </div>
+        ${cabinet()}
+      </section>
+      ${records()}`;
+  };
 
   view.addEventListener('click', async e => {
+    const f = e.target.closest('[data-filter]');
+    if (f) { filter = f.dataset.filter; return paint(); }
+
+    const rt = e.target.closest('[data-rec-tab]');
+    if (rt) { recTab = rt.dataset.recTab; return paint(); }
+
     const slot = e.target.closest('[data-share-slot]');
     if (slot) return compartirSlot(slot);
 
@@ -56,12 +76,7 @@ export function renderShowcase(view) {
       `${datos.value}${datos.unit} ${datos.label}${detalle}`);
   });
 
-  view.querySelector('.opts').addEventListener('click', e => {
-    const btn = e.target.closest('[data-filter]');
-    if (!btn) return;
-    filter = btn.dataset.filter;
-    renderShowcase(view);
-  });
+  paint();
 }
 
 /* ---------- Vitrina ---------- */
@@ -80,24 +95,54 @@ function counts() {
   return out;
 }
 
+/* Los tres primeros en un podio; el resto en una lista con una barra que
+   muestra cuánto le falta a cada uno para alcanzar al que más ganó. */
 function cabinet() {
-  const list = Object.entries(counts()).sort((a, b) => b[1] - a[1]);
+  const list = Object.entries(counts()).sort((a, b) => b[1] - a[1] || nameOf(a[0]).localeCompare(nameOf(b[0])));
   if (!list.length) {
     return `<div class="empty"><i class="ti ti-trophy-off"></i>
       <strong>Vitrina vacía</strong>Todavía nadie ganó un torneo de este tipo.</div>`;
   }
   const best = list[0][1];
-  return `<div class="cabinet">${list.map(([id, n]) => `
-    <div class="slot ${n === best ? 'top' : ''}">
-      <button class="rec-share slot-share" data-share-slot="${id}:${n}" title="Compartir" aria-label="Compartir">
-        <i class="ti ti-share-2"></i>
-      </button>
-      <span class="fl">${crest(id, 92)}</span>
-      <span class="nm">${esc(nameOf(id))}</span>
-      <span class="n"><b>${n}</b>${cup()}</span>
-      <span class="u">${n === 1 ? 'título' : 'títulos'}</span>
-    </div>`).join('')}</div>
-    <div style="margin-top:12px">
+  const total = list.reduce((n, [, v]) => n + v, 0);
+
+  /* Puesto real: los que empatan comparten lugar. */
+  let lugar = 0, previo = null;
+  const ranked = list.map(([id, n], i) => {
+    if (n !== previo) { lugar = i + 1; previo = n; }
+    return { id, n, lugar };
+  });
+
+  const share = (id, n) => `<button class="rec-share slot-share" data-share-slot="${id}:${n}"
+      title="Compartir" aria-label="Compartir los títulos de ${esc(nameOf(id))}"><i class="ti ti-share-2"></i></button>`;
+
+  const top3 = ranked.slice(0, 3);
+  /* En el podio el primero va al medio, como en una entrega de premios. */
+  const orden = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
+  const podio = `<div class="shelf" role="list" aria-label="Podio de títulos">
+    ${orden.map(r => `<div class="shelf-step p${r.lugar}" role="listitem">
+      ${share(r.id, r.n)}
+      <span class="shelf-crest">${crest(r.id, r.lugar === 1 ? 104 : 76)}</span>
+      <span class="shelf-name">${esc(nameOf(r.id))}</span>
+      <span class="shelf-n"><b>${r.n}</b> ${r.n === 1 ? 'título' : 'títulos'}</span>
+      <span class="shelf-base">${r.lugar}º</span>
+    </div>`).join('')}
+  </div>`;
+
+  const resto = ranked.slice(3);
+  const filas = resto.length ? `<ol class="rank-list" aria-label="Resto de la vitrina">
+    ${resto.map(r => `<li class="rank-row">
+      <span class="rank-pos">${r.lugar}</span>
+      <span class="rank-who">${flag(r.id)}<span>${esc(nameOf(r.id))}</span></span>
+      <span class="meter" role="img" aria-label="${r.n} de ${best}"><i style="width:${Math.round(r.n / best * 100)}%"></i></span>
+      <span class="rank-n">${r.n}</span>
+      ${share(r.id, r.n)}
+    </li>`).join('')}
+  </ol>` : '';
+
+  return `${podio}${filas}
+    <div class="shelf-foot">
+      <span>${total} ${total === 1 ? 'título' : 'títulos'} entre ${list.length} ${list.length === 1 ? 'selección' : 'selecciones'}</span>
       <button class="btn sm" data-share-cabinet><i class="ti ti-share-2"></i>Compartir la vitrina</button>
     </div>`;
 }
@@ -223,24 +268,28 @@ function records() {
   const duelo = m =>
     `${flag(m.home)} <span>${esc(nameOf(m.home))} ${m.hg}–${m.ag} ${esc(nameOf(m.away))}</span> ${flag(m.away)}`;
 
+  const partidos = (g || mg) ? [
+    g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande', 0, null, g.m, g.t) : '',
+    mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles', 0, null, mg.m, mg.t) : ''
+  ].join('') : '';
+
+  const tabs = REC_TABS.filter(x => x.id !== 'partidos' || partidos);
+  if (!tabs.some(x => x.id === recTab)) recTab = 'presumir';
+  const nota = {
+    presumir: `Sobre ${d.partidos} partidos y ${d.goles} goles. Para entrar hay que tener ${MIN_PJ} partidos o más.`,
+    cargar: 'Esto también queda guardado. No es personal, son los números.',
+    partidos: 'Los partidos que nadie se olvida.'
+  }[recTab];
+  const cuerpo = recTab === 'cargar' ? mal : recTab === 'partidos' ? partidos : bien;
+
   return `
     <section class="block">
-      <h2><i class="ti ti-award"></i>Para presumir</h2>
-      <p class="block-note">Sobre ${d.partidos} partidos y ${d.goles} goles. Para entrar hay que tener ${MIN_PJ} partidos o más.</p>
-      <div class="recs">${bien}</div>
-    </section>
-
-    <section class="block">
-      <h2><i class="ti ti-mood-sad"></i>Para cargarse un rato</h2>
-      <p class="block-note">Esto también queda guardado. No es personal, son los números.</p>
-      <div class="recs">${mal}</div>
-    </section>
-
-    ${(g || mg) ? `<section class="block">
-      <h2><i class="ti ti-flame"></i>Partidos que quedaron</h2>
-      <div class="recs">
-        ${g ? card(g.gap, '', duelo(g.m), 'la diferencia más grande', 0, null, g.m, g.t) : ''}
-        ${mg ? card(mg.total, '', duelo(mg.m), 'el partido con más goles', 0, null, mg.m, mg.t) : ''}
+      <h2><i class="ti ti-award"></i>Récords</h2>
+      <div class="opts stack" role="tablist" aria-label="Tipo de récord">
+        ${tabs.map(x => `<button class="opt ${recTab === x.id ? 'on' : ''}" role="tab"
+          aria-selected="${recTab === x.id}" data-rec-tab="${x.id}">${x.label}</button>`).join('')}
       </div>
-    </section>` : ''}`;
+      <p class="block-note">${nota}</p>
+      <div class="recs">${cuerpo}</div>
+    </section>`;
 }

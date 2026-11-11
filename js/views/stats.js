@@ -1,7 +1,8 @@
-import { flag, esc, nameOf } from '../ui/ui.js';
+import { flag, esc, nameOf, crest } from '../ui/ui.js';
 import { mainColorOf } from '../domain/teams.js';
 import { crunch, byPoints, byAverage, byTitles, years, reached, coming } from '../domain/stats.js';
 import { tournaments } from '../core/store.js';
+import { playedAt } from '../domain/engine.js';
 
 let tab = 'puntos';
 let year = null;          // null = toda la historia
@@ -37,7 +38,7 @@ function hitos() {
   const cerca = coming(teams);
 
   const ficha = (h, pendiente) => `
-    <article class="rec ${h.metric.good ? '' : 'bad'}">
+    <article class="rec hito ${h.metric.good ? '' : 'bad'}">
       <div class="rec-n"><b>${h.step}</b></div>
       <div class="rec-b">
         <div class="rec-w">${flag(h.id)} <span>${esc(nameOf(h.id))}</span></div>
@@ -45,6 +46,8 @@ function hitos() {
           ${h.metric.label}
           ${pendiente ? ` · le faltan ${h.missing}` : ` · va por ${h.value}`}
         </div>
+        ${pendiente ? `<span class="meter" role="img" aria-label="${h.value} de ${h.step}">
+          <i style="width:${Math.min(100, Math.round(h.value / h.step * 100))}%"></i></span>` : ''}
       </div>
     </article>`;
 
@@ -76,11 +79,14 @@ function html() {
     <h2><i class="ti ti-chart-bar"></i>Estadísticas</h2>
     <p class="block-note">Todo lo que dejaron los torneos, sumado.</p>
 
-    <div class="opts stack">
-      ${TABS.map(t => `<button class="opt ${tab === t.id ? 'on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+    <div class="opts stack" role="tablist" aria-label="Qué ver">
+      ${TABS.map(t => `<button class="opt ${tab === t.id ? 'on' : ''}" role="tab"
+        aria-selected="${tab === t.id}" data-tab="${t.id}">${t.label}</button>`).join('')}
     </div>
 
     ${tab === 'hitos' ? '' : yearPicker(false)}
+    ${tab === 'hitos' ? '' : kpis()}
+    ${tab === 'hitos' ? '' : spotlight()}
     ${tab === 'puntos'   ? tablaPuntos()   : ''}
     ${tab === 'promedio' ? tablaPromedio() : ''}
     ${tab === 'titulos'  ? tablaTitulos()  : ''}
@@ -99,6 +105,42 @@ function yearPicker(soloAnios) {
 }
 
 const rows = () => crunch({ year }).teams;
+
+/* Los números grandes del período elegido. */
+function kpis() {
+  const d = crunch({ year });
+  const jugados = tournaments().filter(t => t.finished && (!year || playedAt(t).getFullYear() === year)).length;
+  if (!d.partidos && !jugados) return '';
+  const tile = (v, l) => `<div class="kpi"><span class="kpi-l">${l}</span><b class="kpi-v">${v}</b></div>`;
+  return `<div class="kpis">
+    ${tile(jugados, 'Torneos terminados')}
+    ${tile(d.partidos, 'Partidos')}
+    ${tile(d.goles, 'Goles')}
+    ${tile(d.partidos ? (d.goles / d.partidos).toFixed(1) : '0', 'Goles por partido')}
+  </div>`;
+}
+
+/* El que manda en la tabla elegida, destacado arriba. */
+function spotlight() {
+  const all = rows();
+  const lider =
+    tab === 'puntos'   ? byPoints(all.filter(r => r.pj > 0))[0] :
+    tab === 'promedio' ? byAverage(all)[0] :
+    tab === 'titulos'  ? byTitles(all)[0] : null;
+  if (!lider) return '';
+  const [valor, unidad] =
+    tab === 'puntos'   ? [lider.pts, 'puntos'] :
+    tab === 'promedio' ? [lider.prom.toFixed(2), 'puntos por partido'] :
+                         [lider.titulos, lider.titulos === 1 ? 'título' : 'títulos'];
+  return `<div class="spot">
+    <span class="spot-crest">${crest(lider.id, 64)}</span>
+    <span class="spot-txt">
+      <span class="spot-k">Líder${year ? ' ' + year : ''}</span>
+      <strong>${esc(nameOf(lider.id))}</strong>
+    </span>
+    <span class="spot-v"><b>${valor}</b><span>${unidad}</span></span>
+  </div>`;
+}
 
 function shell(head, body, note) {
   if (!body) {

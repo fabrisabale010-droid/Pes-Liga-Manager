@@ -6,6 +6,7 @@ import { tournaments, trashed, trashDaysLeft,
 import { finalTable, formatName, progress, isLive, playedAt } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 import { TRASH_DAYS } from '../config.js';
+import { openFixtureShare } from '../ui/fixtureShare.js';
 
 let search = '';
 let showTrash = false;
@@ -54,6 +55,12 @@ export function renderHistory(view, openId = null) {
       }
       detail = 'resultados';
       location.hash = `#/historial/${encodeURIComponent(id)}`;
+      return;
+    }
+    const fx = e.target.closest('[data-share-fx]');
+    if (fx) {
+      const t = tournaments().find(x => x.id === fx.dataset.shareFx);
+      if (t) openFixtureShare(t);
       return;
     }
     const compartir = e.target.closest('[data-share-table]');
@@ -305,6 +312,8 @@ function detailBody(t) {
     </div>
     <div class="detail-panel">${panel}</div>
     <div class="row actions-row">
+      <button class="btn sm" data-share-fx="${t.id}">
+        <i class="ti ti-list-details"></i>${t.finished ? 'Compartir resultados' : 'Compartir fixture'}</button>
       ${t.finished ? `<button class="btn sm" data-share-table="${t.id}">
         <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}
       ${isAdmin() ? `<button class="btn danger sm" data-del="${t.id}"><i class="ti ti-trash"></i>Borrar torneo</button>` : ''}

@@ -3,8 +3,8 @@
    ese caso salen los resultados. */
 
 import { openModal, closeModal, say, esc } from './ui.js';
-import { fixtureCards, fixtureText, compartirImagen } from './cards.js';
-import { isLive } from '../domain/engine.js';
+import { fixtureCards, fixtureText, eventCard, compartirImagen } from './cards.js';
+import { isLive, kickoff } from '../domain/engine.js';
 
 async function copiar(texto) {
   try {
@@ -32,6 +32,11 @@ export function openFixtureShare(t, { recien = false } = {}) {
   const pronta = fixtureCards(t);
   pronta.catch(() => {});
 
+  /* La invitación sólo tiene sentido mientras el torneo no empezó. */
+  const conInvitacion = !t.finished && !isLive(t);
+  const invitacion = conInvitacion ? eventCard(t, kickoff(t)) : null;
+  invitacion?.catch(() => {});
+
   const enJuego = !t.finished && isLive(t);
   const nota = t.finished ? 'Sale con los resultados.'
     : enJuego ? 'Sale con los resultados hasta ahora.'
@@ -50,7 +55,8 @@ export function openFixtureShare(t, { recien = false } = {}) {
       <span><i class="ti ti-loader-2 spin" aria-hidden="true"></i> Preparando imagen…</span>
     </div>
     <div class="share-opts">
-      <button class="btn main wide" data-img disabled><i class="ti ti-photo" aria-hidden="true"></i>Enviar como imagen</button>
+      <button class="btn main wide" data-img disabled><i class="ti ti-photo" aria-hidden="true"></i>Enviar fixture como imagen</button>
+      ${conInvitacion ? `<button class="btn wide" data-inv><i class="ti ti-ticket" aria-hidden="true"></i>Enviar invitación</button>` : ''}
       <button class="btn wide" data-text><i class="ti ti-message-2" aria-hidden="true"></i>Enviar como texto</button>
       <button class="btn wide" data-copy><i class="ti ti-copy" aria-hidden="true"></i>Copiar texto</button>
       ${recien ? `<button class="btn wide ghost" data-later>Ahora no</button>` : ''}
@@ -74,6 +80,10 @@ export function openFixtureShare(t, { recien = false } = {}) {
       await compartirImagen(imgBtn, () => pronta, archivo, `⚽ ${t.name}`);
       closeModal();
     };
+
+    const inv = box.querySelector('[data-inv]');
+    if (inv) inv.onclick = () => compartirImagen(inv, () => invitacion, 'invitacion-' + archivo.replace(/^fixture-/, ''),
+      `⚽ ${t.name}${t.place ? ' en ' + t.place : ''}`);
 
     box.querySelector('[data-text]').onclick = async () => {
       if (navigator.share) {

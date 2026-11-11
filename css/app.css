@@ -308,7 +308,8 @@ main{
   box-shadow:0 0 0 3px rgba(47,194,122,.25);}
 .matchday-top .dot.wait{background:var(--cyan); box-shadow:0 0 0 3px rgba(0,217,247,.25);}
 .matchday-body{padding:20px 16px;}
-.matchday-when{font-family:var(--f-display); font-size:26px; font-weight:800; text-transform:capitalize; letter-spacing:-.02em;}
+.matchday-when{font-family:var(--f-display); font-size:26px; font-weight:800; letter-spacing:-.02em;}
+.matchday-when::first-letter{text-transform:uppercase;}
 .matchday-where{font-size:13px; color:var(--ink-dim); margin-top:2px;}
 .matchday-who{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:14px; font-size:20px;}
 .matchday-nombre{
@@ -1132,3 +1133,96 @@ main.enter{animation:viewIn .22s cubic-bezier(.2,.8,.2,1);}
 .log-item{scroll-margin-top:calc(84px + env(safe-area-inset-top));}
 @media (min-width:820px){ .log-item{scroll-margin-top:130px;} }
 .search-box input[type=search]{padding-left:40px;}
+
+/* ---------- Compartir fixture e invitación ---------- */
+.actions-center{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:18px;}
+.share-prev{
+  display:grid; place-items:center; gap:6px; min-height:140px; margin:4px 0 14px;
+  padding:10px; border-radius:12px; background:var(--stand-2);
+  color:var(--ink-dim); font-size:13px;
+}
+.share-prev img{display:block; width:auto; max-width:100%; max-height:36dvh; border-radius:8px; box-shadow:0 8px 24px rgba(0,16,56,.25);}
+.share-prev small{color:var(--ink-faint); font-size:12px;}
+.share-opts{display:flex; flex-direction:column; gap:8px;}
+.btn.ghost{border-color:transparent; background:transparent; color:var(--ink-dim);}
+.btn.ghost:hover{background:var(--stand-2); color:var(--ink);}
+.spin{display:inline-block; animation:spin 1s linear infinite;}
+
+/* ---------- Vitrina: podio y ranking ---------- */
+.shelf{
+  display:grid; grid-template-columns:1fr 1.15fr 1fr; align-items:end; gap:8px;
+  padding:22px 12px 0; border-radius:var(--r-l); background:var(--hero); color:#fff;
+  box-shadow:0 14px 40px rgba(0,27,89,.22); overflow:hidden;
+}
+.shelf:has(> :only-child){grid-template-columns:minmax(0,260px); justify-content:center;}
+.shelf:has(> :nth-child(2):last-child){grid-template-columns:1.15fr 1fr;}
+.shelf-step{position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; min-width:0;}
+.shelf-crest{line-height:0;}
+.shelf-name{font-weight:800; font-size:14px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.shelf-n{font-size:12px; color:rgba(255,255,255,.75);}
+.shelf-n b{font-size:22px; color:#f3cf6a; font-weight:800; margin-right:2px;}
+.shelf-base{
+  align-self:stretch; display:grid; place-items:center; margin-top:6px;
+  border-radius:10px 10px 0 0; background:rgba(255,255,255,.1);
+  font-size:20px; font-weight:800; color:rgba(255,255,255,.85);
+}
+.shelf-step.p1 .shelf-base{height:74px; background:linear-gradient(180deg,rgba(243,207,106,.35),rgba(243,207,106,.12)); color:#f3cf6a;}
+.shelf-step.p2 .shelf-base{height:52px;}
+.shelf-step.p3 .shelf-base{height:38px;}
+.shelf-step.p1 .shelf-name{font-size:16px;}
+.shelf .slot-share{position:absolute; top:-10px; right:0; background:rgba(255,255,255,.1); border-color:transparent; color:rgba(255,255,255,.8);}
+.shelf .slot-share:hover{background:rgba(255,255,255,.22); color:#fff;}
+
+.rank-list{
+  list-style:none; margin-top:10px;
+  background:var(--stand); border:1px solid var(--card-border); border-radius:var(--r-m);
+  box-shadow:var(--sombra); overflow:hidden;
+}
+.rank-row{
+  display:grid; grid-template-columns:28px minmax(0,1.3fr) minmax(60px,1fr) 30px 32px;
+  align-items:center; gap:10px; padding:10px 12px 10px 14px; border-bottom:1px solid var(--line-soft);
+}
+.rank-row:last-child{border-bottom:0;}
+.rank-pos{font-weight:800; color:var(--ink-faint); font-size:13px;}
+.rank-who{display:flex; align-items:center; gap:8px; font-weight:700; min-width:0;}
+.rank-who span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rank-n{font-weight:800; text-align:right;}
+.rank-row .slot-share{position:static; width:30px; height:30px;}
+.shelf-foot{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  margin-top:12px; font-size:12.5px; color:var(--ink-faint); font-weight:600;
+}
+
+/* Barra de progreso: relleno del color de marca sobre un riel del mismo tono, más claro. */
+.meter{display:block; height:8px; border-radius:4px; background:rgba(0,94,180,.12); overflow:hidden;}
+.meter i{display:block; height:100%; border-radius:4px; background:var(--light); min-width:4px;}
+.rec.bad .meter{background:rgba(200,16,46,.12);}
+.rec.bad .meter i{background:var(--red);}
+.rec.hito .meter{margin-top:8px;}
+:root[data-theme="oscuro"] .meter{background:rgba(0,217,247,.14);}
+:root[data-theme="oscuro"] .rec.bad .meter{background:rgba(255,90,110,.16);}
+
+/* Récords: dos columnas cuando entra. */
+.recs{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));}
+
+/* ---------- Estadísticas: indicadores y líder ---------- */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;}
+@media (max-width:560px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+.kpi{
+  display:flex; flex-direction:column; gap:2px; padding:12px 14px;
+  background:var(--stand); border:1px solid var(--card-border); border-radius:12px; box-shadow:var(--sombra);
+}
+.kpi-l{font-size:12px; color:var(--ink-dim); font-weight:600;}
+.kpi-v{font-size:24px; font-weight:800; letter-spacing:-.02em; color:var(--ink);}
+
+.spot{
+  display:flex; align-items:center; gap:14px; margin-bottom:12px;
+  padding:14px 16px; border-radius:var(--r-m); background:var(--hero); color:#fff;
+}
+.spot-crest{line-height:0; flex:0 0 auto;}
+.spot-txt{flex:1; min-width:0;}
+.spot-k{display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--cyan);}
+.spot-txt strong{display:block; font-size:19px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.spot-v{text-align:right; flex:0 0 auto;}
+.spot-v b{display:block; font-size:28px; font-weight:800; line-height:1; color:#f3cf6a;}
+.spot-v span{font-size:11px; color:rgba(255,255,255,.7); font-weight:600;}
