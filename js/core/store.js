@@ -2,12 +2,26 @@
    por suscripción: ninguna vista habla con Firebase directamente. */
 
 import { firebaseConfig, DOC_PATH, LEGACY_DOC_PATH, LOCAL_KEY, TRASH_DAYS } from '../config.js';
-import { uid, advance, isLive, isScheduled, kickoff } from '../domain/engine.js';
+import { uid, advance, isLive, isScheduled, kickoff, playedAt } from '../domain/engine.js';
+import { merge3, clone, same } from './merge.js';
+import { isAdmin } from './auth.js';
 
 const listeners = new Set();
 let db = null;
 let online = false;
 let writing = false;
+
+/* La última foto que se vio de la nube. Sirve de punto de partida para
+   fundir lo que cambió acá con lo que cambió otro organizador mientras tanto. */
+let base = null;
+let dirty = false;          // hay cambios locales que todavía no subieron
+let edits = 0;              // cuenta cambios, para saber si hubo alguno durante un guardado
+let retry = null;
+
+/* Se resuelve con la primera respuesta de la nube (o enseguida si no hay nube). */
+let syncedResolve;
+const synced = new Promise(r => { syncedResolve = r; });
+export const whenSynced = () => synced;
 
 export let state = blank();
 
@@ -107,29 +121,113 @@ function importLegacy(old) {
 /* ---------- Guardar ---------- */
 
 let timer = null;
+let pendingRemote = null;   // lo que llegó de la nube mientras se guardaba
+
+/* Avisos de que el estado cambió por algo que vino de afuera (otro celular):
+   las pantallas se tienen que volver a dibujar con los datos nuevos. */
+const remoteListeners = new Set();
+export function onRemoteChange(fn) {
+  remoteListeners.add(fn);
+  return () => remoteListeners.delete(fn);
+}
+
+const persist = () => {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
+};
+
+/* Compara dos estados sin mirar el número de revisión. */
+const sameContent = (a, b) => same({ ...a, rev: 0 }, { ...b, rev: 0 });
+
+/* Reemplaza el estado sólo si de verdad cambió algo: así las pantallas que
+   tienen agarrado un torneo no se quedan apuntando a una copia vieja. */
+function adopt(next) {
+  if (sameContent(next, state)) { state.rev = next.rev; persist(); return; }
+  state = next;
+  persist();
+  emit();
+  remoteListeners.forEach(fn => fn(state));
+}
 
 /* Un cambio no dispara una escritura: se juntan los cambios de medio segundo
-   y se manda uno solo. Cargar cinco goles seguidos ya no son cinco viajes. */
+   y se manda uno solo. Cargar cinco goles seguidos ya no son cinco viajes.
+   Sólo el organizador escribe en la nube: los demás nunca pueden pisar nada. */
 function save() {
   emit();
-  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
-  if (!db) return;
+  persist();
+  edits++;
+  if (!db || !isAdmin()) return;
+  dirty = true;
   clearTimeout(timer);
   timer = setTimeout(push, 500);
 }
 
-function push() {
-  if (!db) return;
+/* Guarda fundiendo con lo que haya en la nube en ese momento. Si otro
+   organizador cargó algo mientras tanto, se conservan los cambios de los dos
+   en vez de que el último pise al primero. */
+async function push(force = false) {
+  if (!db || (!force && !isAdmin())) return;
+  if (writing) { clearTimeout(timer); timer = setTimeout(push, 500); return; }
+
   writing = true;
-  db.doc(DOC_PATH).set(state)
-    .catch(err => console.warn('No se pudo guardar en la nube:', err))
-    .finally(() => { setTimeout(() => { writing = false; }, 300); });
+  clearTimeout(retry);
+  const sent = clone(state);
+  const startEdits = edits;
+  const ref = db.doc(DOC_PATH);
+
+  try {
+    const merged = await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const remote = snap.exists ? snap.data() : null;
+      const out = normalize(clone(remote && base ? merge3(base, sent, remote) : sent));
+      out.rev = Math.max(remote?.rev || 0, base?.rev || 0) + 1;
+      tx.set(ref, out);
+      return out;
+    });
+
+    base = clone(merged);
+    if (edits === startEdits) {
+      dirty = false;
+      adopt(normalize(clone(merged)));
+    } else {
+      /* Se siguió cargando mientras se guardaba: lo nuevo va encima de lo
+         guardado, y el próximo guardado (ya programado) lo sube. */
+      adopt(normalize(merge3(sent, clone(state), clone(merged))));
+    }
+  } catch (err) {
+    console.warn('No se pudo guardar en la nube, se reintenta:', err);
+    retry = setTimeout(() => push(force), 5000);
+  } finally {
+    writing = false;
+    if (pendingRemote) {
+      const r = pendingRemote;
+      pendingRemote = null;
+      applyRemote(r);
+    }
+  }
+}
+
+/* Llega una versión de la nube. Las más viejas que la última conocida se
+   ignoran (son ecos); si hay cambios locales sin subir, se funden. */
+let gotFirst = false;
+function applyRemote(remote) {
+  if (gotFirst && base && (remote.rev || 0) < (base.rev || 0)) return;
+  if (writing) {
+    if (!pendingRemote || (remote.rev || 0) >= (pendingRemote.rev || 0)) pendingRemote = remote;
+    return;
+  }
+  const next = dirty && base ? merge3(base, clone(state), remote) : remote;
+  gotFirst = true;
+  base = clone(remote);
+  adopt(normalize(clone(next)));
 }
 
 export function update(fn) {
   fn(state);
   save();
 }
+
+/* Si se cortó internet con cambios sin subir, se mandan al volver. */
+window.addEventListener('online', () => { if (dirty) push(); });
 
 /* ---------- Arrancar ---------- */
 
@@ -138,6 +236,9 @@ export function loadLocal() {
     const raw = localStorage.getItem(LOCAL_KEY);
     if (raw) state = normalize(JSON.parse(raw));
   } catch {}
+  /* Lo último guardado en el teléfono es lo último que se supo de la nube:
+     sirve de punto de partida hasta que llegue la primera respuesta. */
+  base = clone(state);
   return state;
 }
 
@@ -149,6 +250,7 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
     online = true;
   } catch (err) {
     console.warn('Sin conexión a la nube, se trabaja local:', err);
+    syncedResolve(false);
     return false;
   }
 
@@ -159,10 +261,9 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
     if (first) { onSyncEnd?.(); first = false; }
 
     if (snap.exists) {
-      if (writing) return;              // eco de nuestra propia escritura
-      state = normalize(snap.data());
-      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {}
-      emit();
+      if (snap.metadata.hasPendingWrites) return;
+      applyRemote(snap.data());
+      syncedResolve(true);
       return;
     }
 
@@ -173,13 +274,17 @@ export async function connect({ onSyncStart, onSyncEnd } = {}) {
       if (brought && brought.tournaments.length) {
         state = brought;
         emit();
+        remoteListeners.forEach(fn => fn(state));
       }
     } catch (err) {
       console.warn('No se pudo importar la versión anterior:', err);
     }
-    push();
+    base = null;
+    await push(true);
+    syncedResolve(true);
   }, err => {
     onSyncEnd?.();
+    syncedResolve(false);
     console.warn('Se cortó la sincronización:', err);
   });
 
@@ -248,6 +353,6 @@ export const featured = () => liveTournament() || nextTournament();
 export const lastChampion = () =>
   tournaments()
     .filter(t => t.finished && t.champion)
-    .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt))[0] || null;
+    .sort((a, b) => new Date(b.finishedAt || playedAt(b)) - new Date(a.finishedAt || playedAt(a)))[0] || null;
 
 

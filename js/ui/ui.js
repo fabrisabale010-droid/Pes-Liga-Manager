@@ -20,7 +20,7 @@ export function flag(id) {
   const t = team(id);
   if (!t) return '<span class="fi fi-xx"></span>';
   if (t.iso.includes('-')) {
-    return `<span class="fi-x" title="${esc(t.name)}" style="background-image:url('https://cdn.jsdelivr.net/npm/flag-icons/flags/4x3/${t.iso}.svg')"></span>`;
+    return `<span class="fi-x" title="${esc(t.name)}" style="background-image:url('https://cdn.jsdelivr.net/npm/flag-icons@7.6.0/flags/4x3/${t.iso}.svg')"></span>`;
   }
   return `<span class="fi fi-${t.iso}" title="${esc(t.name)}"></span>`;
 }
@@ -226,24 +226,25 @@ export { nameOf };
 
 /* ---------- Aspecto ---------- */
 
-/* Dos temas: el oscuro de siempre y uno claro estilo sitio de liga.
-   La elección queda guardada en el teléfono. */
-const TEMA_KEY = 'pes6_v2_tema';
-const TEMAS = ['oscuro', 'liga'];
+/* Dos temas con el mismo diseño: el claro (fondo gris y tarjetas blancas,
+   el de siempre de los sitios de competición) y el oscuro, todo en marino.
+   La elección queda guardada en el teléfono. La clave cambió con el
+   rediseño, así que todos arrancan una vez en el claro. */
+const TEMA_KEY = 'pes6_v3_tema';
+const TEMAS = ['liga', 'oscuro'];
 
 export function temaActual() {
-  try { return localStorage.getItem(TEMA_KEY) || 'oscuro'; }
-  catch { return 'oscuro'; }
+  try { return localStorage.getItem(TEMA_KEY) || 'liga'; }
+  catch { return 'liga'; }
 }
 
 export function aplicarTema(nombre) {
-  const tema = TEMAS.includes(nombre) ? nombre : 'oscuro';
-  if (tema === 'oscuro') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', tema);
+  const tema = TEMAS.includes(nombre) ? nombre : 'liga';
+  document.documentElement.setAttribute('data-theme', tema);
 
-  /* La barra del navegador acompaña el color de fondo. */
+  /* La barra del navegador acompaña a la barra marino de arriba. */
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = tema === 'liga' ? '#eef1f6' : '#171a21';
+  if (meta) meta.content = '#001b59';
 
   try { localStorage.setItem(TEMA_KEY, tema); } catch {}
   return tema;

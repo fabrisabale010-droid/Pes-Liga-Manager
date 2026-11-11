@@ -1,7 +1,7 @@
 /* Guarda la app en el teléfono para que abra aunque no haya señal.
    Los datos siguen viniendo de Firebase cuando hay conexión. */
 
-const CACHE = 'pes6-v2-28';
+const CACHE = 'pes6-v3-1';
 
 const SHELL = [
   './',
@@ -67,19 +67,24 @@ self.addEventListener('fetch', e => {
 
   const sameOrigin = url.origin === location.origin;
 
-  // Lo propio: primero la copia guardada, y se actualiza de fondo.
+  // Lo propio: primero la red, así una versión nueva se ve apenas se publica.
+  // Sin señal (o si tarda más de 4 segundos) se usa la copia guardada.
   if (sameOrigin) {
-    e.respondWith(
-      caches.match(e.request).then(hit => {
-        const fresh = fetch(e.request)
-          .then(res => {
-            if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-            return res;
-          })
-          .catch(() => hit);
-        return hit || fresh;
-      })
-    );
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      try {
+        const res = await Promise.race([
+          fetch(e.request),
+          new Promise((_, no) => setTimeout(() => no(new Error('lento')), 4000))
+        ]);
+        if (res.ok) cache.put(e.request, res.clone());
+        return res;
+      } catch {
+        const hit = await cache.match(e.request) ||
+                    (e.request.mode === 'navigate' ? await cache.match('./index.html') : null);
+        return hit || Response.error();
+      }
+    })());
     return;
   }
 

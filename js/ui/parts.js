@@ -3,6 +3,7 @@ import { mainColorOf } from '../domain/teams.js';
 import { table, tieWinner, roundName, groupTable } from '../domain/engine.js';
 import { tournaments } from '../core/store.js';
 import { TITLES_BEFORE_APP } from '../config.js';
+import { crunch } from '../domain/stats.js';
 
 /* ---------- Tabla de posiciones ---------- */
 
@@ -127,14 +128,11 @@ export function titlesCount() {
   return count;
 }
 
+/* Usa las mismas cuentas que Estadísticas (incluye los partidos de llaves),
+   así la ficha y las tablas históricas nunca muestran números distintos. */
 function openTeamCard(id) {
-  let pj = 0, pts = 0, played = 0;
-  tournaments().forEach(t => {
-    if (!t.teamIds.includes(id)) return;
-    played++;
-    const row = table(t.teamIds, t.games).find(r => r.id === id);
-    if (row) { pj += row.pj; pts += row.pts; }
-  });
+  const s = crunch().teams.find(x => x.id === id);
+  const played = s?.torneos || 0, pj = s?.pj || 0, pts = s?.pts || 0;
   const titles = titlesCount()[id] || 0;
 
   openModal(`

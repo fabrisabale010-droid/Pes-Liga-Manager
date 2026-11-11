@@ -321,6 +321,10 @@ export function kickoff(t) {
   return isNaN(d) ? null : d;
 }
 
+/* Cuándo se jugó: la fecha programada; si no tiene, cuando se cerró o se
+   creó. Es la que manda para ordenar y para saber de qué año es un torneo. */
+export const playedAt = t => kickoff(t) || new Date(t.finishedAt || t.createdAt);
+
 /* Ya se cargó algún resultado. */
 const started = t =>
   t.games.some(g => g.played) ||

@@ -17,8 +17,8 @@ export const DOC_PATH = 'pes6_liga/estado_v2';
 export const LEGACY_DOC_PATH = 'pes6_liga/estado';
 export const LOCAL_KEY = 'pes6_liga_v2';
 
-/* SHA-256 del PIN. El actual corresponde a "2026".
-   Para cambiarlo, abrí la consola del navegador y pegá:
+/* SHA-256 del PIN (nunca escribas el PIN en sí en este archivo: el
+   repositorio es público). Para cambiarlo, abrí la consola del navegador y pegá:
      crypto.subtle.digest('SHA-256', new TextEncoder().encode('TU_PIN'))
        .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
 */

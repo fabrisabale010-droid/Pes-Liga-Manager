@@ -202,10 +202,10 @@ function wire(view) {
     paintCopa(view);
   });
 
-  view.querySelector('#confirm').onclick = () => confirm(view);
+  view.querySelector('#confirm').onclick = () => confirmar(view);
 }
 
-function confirm(view) {
+function confirmar(view) {
   if (draft.teams.length < 2) return say('Elegí al menos dos selecciones');
   if (!draft.date) return say('Falta el día');
 

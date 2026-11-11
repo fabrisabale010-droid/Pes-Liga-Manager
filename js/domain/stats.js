@@ -2,7 +2,7 @@
    Estadísticas (tablas históricas y cara a cara). */
 
 import { tournaments } from '../core/store.js';
-import { finalTable } from './engine.js';
+import { finalTable, playedAt } from './engine.js';
 import { nameOf } from './teams.js';
 
 /* Todos los partidos jugados, en el orden real en que ocurrieron.
@@ -10,9 +10,9 @@ import { nameOf } from './teams.js';
 export function allGames({ year = null } = {}) {
   const out = [];
   [...tournaments()]
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .sort((a, b) => playedAt(a) - playedAt(b))
     .forEach(t => {
-      if (year && new Date(t.createdAt).getFullYear() !== year) return;
+      if (year && playedAt(t).getFullYear() !== year) return;
       const grupos = [...t.games].sort((a, b) => a.day - b.day || a.id - b.id);
       const llaves = t.bracket
         ? [...t.bracket.games].filter(m => !m.bye && m.home && m.away)
@@ -24,7 +24,7 @@ export function allGames({ year = null } = {}) {
 }
 
 export function years() {
-  return [...new Set(tournaments().map(t => new Date(t.createdAt).getFullYear()))]
+  return [...new Set(tournaments().map(t => playedAt(t).getFullYear()))]
     .sort((a, b) => b - a);
 }
 
@@ -46,7 +46,7 @@ export function crunch({ year = null } = {}) {
   let goles = 0, partidos = 0, mayorGoleada = null, masGoles = null;
 
   tournaments().forEach(t => {
-    if (year && new Date(t.createdAt).getFullYear() !== year) return;
+    if (year && playedAt(t).getFullYear() !== year) return;
     t.teamIds.forEach(id => { get(id).torneos++; });
   });
 
@@ -97,7 +97,7 @@ export function crunch({ year = null } = {}) {
 
   tournaments().forEach(t => {
     if (!t.finished) return;
-    if (year && new Date(t.createdAt).getFullYear() !== year) return;
+    if (year && playedAt(t).getFullYear() !== year) return;
     const orden = finalTable(t);
     if (t.champion) get(t.champion).titulos++;
     orden.slice(0, 3).forEach(r => { get(r.id).podios++; });

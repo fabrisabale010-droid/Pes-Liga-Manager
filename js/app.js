@@ -1,4 +1,5 @@
-import { state, loadLocal, connect, subscribe, update, featured, lastChampion, purgeTrash } from './core/store.js';
+import { loadLocal, connect, subscribe, featured, lastChampion, purgeTrash,
+         whenSynced, onRemoteChange } from './core/store.js';
 import { isAdmin, signIn, signOut, onAdminChange, lockRemaining } from './core/auth.js';
 import { el, say, openModal, closeModal, closeSheet, setSound, esc, nameOf,
          aplicarTema, alternarTema, temaActual } from './ui/ui.js';
@@ -35,21 +36,50 @@ el('btnTema').onclick = () => {
 };
 
 loadLocal();
-setSound(state.sound);
 
-subscribe(s => {
-  setSound(s.sound);
-  paintSound();
+/* El sonido es una preferencia de cada teléfono: no viaja a la nube, así
+   que tocarlo nunca puede pisar los datos del torneo. */
+const SOUND_KEY = 'pes6_v2_sonido';
+let soundOn = true;
+try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch {}
+setSound(soundOn);
+
+subscribe(() => {
   if (!el('screenMode').hidden) paintScreen();
+});
+
+/* Cuando llega algo de otro celular, la pantalla se redibuja con los datos
+   nuevos. Si justo se está escribiendo en un casillero, se espera a que
+   termine para no sacarle el foco. */
+let repaintPending = false;
+const typing = () => {
+  const a = document.activeElement;
+  return a && a.closest?.('#view') && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);
+};
+onRemoteChange(() => {
+  if (typing()) { repaintPending = true; return; }
+  repaint();
+});
+document.addEventListener('focusout', () => {
+  if (!repaintPending) return;
+  setTimeout(() => {
+    if (typing() || !repaintPending) return;
+    repaintPending = false;
+    repaint();
+  }, 0);
 });
 
 connect({
   onSyncStart: () => { el('sync').hidden = false; },
   onSyncEnd:   () => { el('sync').hidden = true; }
 }).then(ok => {
-  if (ok) repaint();
-  else say('Sin conexión: se guarda en este dispositivo');
-  purgeTrash();          // saca lo que ya cumplió los días en la papelera
+  if (!ok) say('Sin conexión: se guarda en este dispositivo');
+});
+
+/* La papelera se limpia recién cuando llegaron los datos de la nube, y sólo
+   desde el celular del organizador: así nunca se guarda una copia vieja. */
+whenSynced().then(() => {
+  if (isAdmin()) purgeTrash();
 });
 
 /* ---------- Sesión de organizador ---------- */
@@ -100,11 +130,14 @@ el('btnAdmin').onclick = () => {
 
 function paintSound() {
   const btn = el('btnSound');
-  btn.innerHTML = `<i class="ti ti-${state.sound ? 'volume' : 'volume-3'}"></i>`;
+  btn.innerHTML = `<i class="ti ti-${soundOn ? 'volume' : 'volume-3'}"></i>`;
 }
 el('btnSound').onclick = () => {
-  update(() => { state.sound = !state.sound; });
-  say(state.sound ? 'Sonido activado' : 'Sonido en silencio');
+  soundOn = !soundOn;
+  try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch {}
+  setSound(soundOn);
+  paintSound();
+  say(soundOn ? 'Sonido activado' : 'Sonido en silencio');
 };
 paintSound();
 
