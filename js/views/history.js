@@ -1,23 +1,23 @@
-import { flag, esc, nameOf, say, sayUndo, clip, whenDate } from '../ui/ui.js';
-import { standingsTable, bracketView, gameRow } from '../ui/parts.js';
+import { flag, esc, nameOf, say, sayUndo, clip } from '../ui/ui.js';
+import { standingsTable, bracketView, roundsOf, matchdayPager } from '../ui/parts.js';
 import { tableCard, compartirImagen } from '../ui/cards.js';
 import { tournaments, trashed, trashDaysLeft,
          sendToTrash, restoreFromTrash, emptyTrash } from '../core/store.js';
-import { finalTable, formatName, progress, isLive, roundName, playedAt } from '../domain/engine.js';
+import { finalTable, formatName, progress, isLive, playedAt } from '../domain/engine.js';
 import { isAdmin } from '../core/auth.js';
 import { TRASH_DAYS } from '../config.js';
 
 let search = '';
-let openId = null;
 let showTrash = false;
 let mode = 'torneos';       // 'torneos' | 'resultados'
 let teamFilter = '';        // '' = todas las selecciones
+let detail = 'resultados';  // pestaña dentro de un torneo abierto
 
-/* El router entrega un contenedor nuevo en cada visita, así que el listener
-   se engancha una sola vez acá y todo lo demás sólo repinta el contenido. */
-export function renderHistory(view) {
+/* El torneo abierto vive en la dirección (#/historial/<id>): así se puede
+   compartir el enlace, y el botón "atrás" del celular lo cierra. */
+export function renderHistory(view, openId = null) {
   const paint = () => {
-    view.innerHTML = html();
+    view.innerHTML = html(openId);
     const box = view.querySelector('#q');
     if (!box) return;
     box.oninput = e => {
@@ -38,10 +38,23 @@ export function renderHistory(view) {
       mode = modo.dataset.histMode;
       return paint();
     }
+    const tab = e.target.closest('[data-detail]');
+    if (tab) {
+      detail = tab.dataset.detail;
+      return paint();
+    }
     const head = e.target.closest('[data-open]');
     if (head) {
-      openId = openId === head.dataset.open ? null : head.dataset.open;
-      return paint();
+      const id = head.dataset.open;
+      if (openId === id) {
+        /* Cerrar vuelve a la lista sin dejar un paso más en el "atrás". */
+        history.replaceState(null, '', '#/historial');
+        openId = null;
+        return paint();
+      }
+      detail = 'resultados';
+      location.hash = `#/historial/${encodeURIComponent(id)}`;
+      return;
     }
     const compartir = e.target.closest('[data-share-table]');
     if (compartir) return compartirTabla(compartir);
@@ -68,9 +81,20 @@ export function renderHistory(view) {
   });
 
   paint();
+
+  /* Al abrir un torneo desde la lista o desde un enlace, se lo trae a la vista. */
+  if (openId) {
+    requestAnimationFrame(() => {
+      const card = view.querySelector('.log-item.open');
+      if (card) card.scrollIntoView({
+        block: 'start',
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      });
+    });
+  }
 }
 
-function html() {
+function html(openId) {
   const all = [...tournaments()].sort((a, b) => cuandoSeJugo(b) - cuandoSeJugo(a));
 
   if (!all.length) {
@@ -82,21 +106,22 @@ function html() {
   }
 
   const q = search.trim().toLowerCase();
-  const list = q ? all.filter(t => t.name.toLowerCase().includes(q)) : all;
+  const list = q ? all.filter(t => t.name.toLowerCase().includes(q) || t.id === openId) : all;
 
   return `<section class="block">
     <h2><i class="ti ti-history"></i>Historial</h2>
     <p class="block-note">${all.length} ${all.length === 1 ? 'torneo' : 'torneos'}. ${mode === 'resultados'
-      ? 'Todos los partidos de los torneos terminados.'
-      : 'Tocá uno para ver cómo terminó.'}</p>
-    <div class="opts stack">
-      <button class="opt ${mode === 'torneos' ? 'on' : ''}" data-hist-mode="torneos">Torneos</button>
-      <button class="opt ${mode === 'resultados' ? 'on' : ''}" data-hist-mode="resultados">Todos los resultados</button>
+      ? 'Los partidos de los torneos terminados, fecha por fecha.'
+      : 'Tocá uno para ver sus resultados, la tabla y las llaves.'}</p>
+    <div class="opts stack" role="tablist" aria-label="Qué mostrar">
+      <button class="opt ${mode === 'torneos' ? 'on' : ''}" role="tab" aria-selected="${mode === 'torneos'}" data-hist-mode="torneos">Torneos</button>
+      <button class="opt ${mode === 'resultados' ? 'on' : ''}" role="tab" aria-selected="${mode === 'resultados'}" data-hist-mode="resultados">Todos los resultados</button>
     </div>
-    <div class="stack">
-      <input type="search" id="q" placeholder="Buscar por nombre" value="${esc(search)}">
+    <div class="stack search-box">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input type="search" id="q" placeholder="Buscar torneo" aria-label="Buscar torneo por nombre" value="${esc(search)}">
     </div>
-    ${mode === 'resultados' ? allResults(list) : list.length ? `<div class="log">${list.map(row).join('')}</div>` : `
+    ${mode === 'resultados' ? allResults(list) : list.length ? `<div class="log">${list.map(t => row(t, openId)).join('')}</div>` : `
       <div class="empty"><i class="ti ti-search-off"></i>
         <strong>Ningún torneo se llama así</strong>Probá con otra palabra.</div>`}
   </section>
@@ -105,71 +130,30 @@ function html() {
 
 /* ---------- Resultados ---------- */
 
-/* Los partidos jugados de un torneo, en el orden en que se jugaron:
-   primero la fase de liga o de grupos (por fecha) y después las llaves. */
-function sections(t, teamId = '') {
-  const plays = m => m.played && !m.bye && m.home && m.away &&
-    (!teamId || m.home === teamId || m.away === teamId);
-  const out = [];
-
-  const byKey = new Map();
-  [...t.games]
-    .filter(plays)
-    .sort((a, b) => (a.group || '').localeCompare(b.group || '') || a.day - b.day || a.id - b.id)
-    .forEach(m => {
-      const label = `${m.group ? `Grupo ${m.group} · ` : ''}Fecha ${m.day}`;
-      if (!byKey.has(label)) byKey.set(label, []);
-      byKey.get(label).push(m);
-    });
-  byKey.forEach((games, label) => out.push({ label, games }));
-
-  if (t.bracket) {
-    const byRound = new Map();
-    [...t.bracket.games]
-      .filter(plays)
-      .sort((a, b) => a.round - b.round || a.pos - b.pos)
-      .forEach(m => {
-        if (!byRound.has(m.round)) byRound.set(m.round, []);
-        byRound.get(m.round).push(m);
-      });
-    byRound.forEach((games, r) => out.push({ label: roundName(r, t.bracket.rounds), games }));
-  }
-  return out;
+/* Dónde arranca el carrusel: en la fecha que se está jugando, o en la
+   primera si el torneo ya terminó. */
+function startOf(t, rounds) {
+  if (t.finished) return 0;
+  const i = rounds.findIndex(r => r.games.some(m => !m.played));
+  return i < 0 ? rounds.length - 1 : i;
 }
 
-const countGames = secs => secs.reduce((n, s) => n + s.games.length, 0);
-
-/* Un partido con su aclaración de penales, si la hubo. */
-function resultRow(m) {
-  const pen = m.penWinner && m.hg === m.ag
-    ? `<div class="res-pen">Pasó ${flag(m.penWinner)} ${esc(nameOf(m.penWinner))} por penales</div>`
-    : '';
-  return gameRow(m) + pen;
+function deciderNote(t) {
+  return t.penWinner ? `<div class="res-pen"><i class="ti ti-trophy" aria-hidden="true"></i>Desempate: salió campeón
+    ${flag(t.penWinner)} ${esc(nameOf(t.penWinner))}</div>` : '';
 }
 
-function resultsList(t, teamId = '') {
-  const secs = sections(t, teamId);
-  if (!secs.length) return '';
-  return secs.map(s => `<div class="fixture-head">${esc(s.label)}</div>
-    ${s.games.map(resultRow).join('')}`).join('') +
-    (t.penWinner && !teamId ? `<div class="res-pen">Desempate: salió campeón
-      ${flag(t.penWinner)} ${esc(nameOf(t.penWinner))}</div>` : '');
-}
-
-/* Dentro de cada torneo: se despliega para no alargar la tarjeta. */
-function resultsBlock(t) {
-  const n = countGames(sections(t));
-  if (!n) return '';
-  return `<details class="res-box">
-    <summary><i class="ti ti-list-details"></i>Ver los ${n} ${n === 1 ? 'resultado' : 'resultados'}</summary>
-    ${resultsList(t)}
-  </details>`;
+function resultsPager(t, keyPrefix, teamId = '') {
+  const rounds = roundsOf(t, { played: true, teamId });
+  if (!rounds.length) return '';
+  return matchdayPager(`${keyPrefix}-${t.id}-${teamId}`, rounds, { start: startOf(t, rounds) }) +
+    (teamId ? '' : deciderNote(t));
 }
 
 /* Cómo le fue a una selección en los partidos que se muestran. */
 function teamSummary(teamId, list) {
   let pj = 0, pg = 0, pe = 0, pp = 0, gf = 0, gc = 0;
-  list.forEach(t => sections(t, teamId).forEach(s => s.games.forEach(m => {
+  list.forEach(t => roundsOf(t, { played: true, teamId }).forEach(r => r.games.forEach(m => {
     const home = m.home === teamId;
     const a = home ? m.hg : m.ag, b = home ? m.ag : m.hg;
     pj++; gf += a; gc += b;
@@ -178,9 +162,14 @@ function teamSummary(teamId, list) {
     else pe++;
   })));
   if (!pj) return '';
-  return `<p class="block-note res-sum">${flag(teamId)} <b>${esc(nameOf(teamId))}</b>:
-    ${pj} ${pj === 1 ? 'partido' : 'partidos'} · ${pg} G · ${pe} E · ${pp} P · ${gf}-${gc} en goles
-    <span class="res-hint">(los ganados por penales cuentan como victoria)</span></p>`;
+  const cell = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="res-sum">
+    <div class="res-sum-who">${flag(teamId)} <b>${esc(nameOf(teamId))}</b></div>
+    <div class="res-sum-nums">
+      ${cell(pj, 'PJ')}${cell(pg, 'G')}${cell(pe, 'E')}${cell(pp, 'P')}${cell(`${gf}-${gc}`, 'Goles')}
+    </div>
+    <div class="res-hint">Los ganados por penales cuentan como victoria.</div>
+  </div>`;
 }
 
 /* La vista de todos los resultados, torneo por torneo. */
@@ -192,14 +181,15 @@ function allResults(list) {
   if (teamFilter && !teams.includes(teamFilter)) teamFilter = '';
 
   const picker = `<div class="stack">
-    <select id="histTeam" aria-label="Filtrar por selección">
+    <label class="field" for="histTeam">Selección</label>
+    <select id="histTeam">
       <option value="">Todas las selecciones</option>
       ${teams.map(id => `<option value="${id}" ${teamFilter === id ? 'selected' : ''}>${esc(nameOf(id))}</option>`).join('')}
     </select>
   </div>`;
 
   const blocks = done
-    .map(t => ({ t, body: resultsList(t, teamFilter) }))
+    .map(t => ({ t, body: resultsPager(t, 'todos', teamFilter) }))
     .filter(x => x.body);
 
   if (!blocks.length) {
@@ -210,14 +200,14 @@ function allResults(list) {
 
   return picker + (teamFilter ? teamSummary(teamFilter, done) : '') +
     `<div class="log">${blocks.map(({ t, body }) => `
-      <article class="log-item open res-item">
-        <div class="log-head" style="cursor:default">
+      <article class="log-item res-item">
+        <div class="log-head static">
           <div class="grow">
             <div class="nm">${esc(t.name)}</div>
             <div class="sub">${cuandoSeJugo(t).toLocaleDateString('es-AR')} · ${esc(formatName(t.format))}${
               t.champion ? ` · Campeón ${esc(nameOf(t.champion))}` : ''}</div>
           </div>
-          ${t.champion ? `<span style="font-size:20px">${flag(t.champion)}</span>` : ''}
+          ${t.champion ? `<span class="log-flag">${flag(t.champion)}</span>` : ''}
         </div>
         <div class="log-body">${body}</div>
       </article>`).join('')}</div>`;
@@ -231,7 +221,7 @@ function trashBlock() {
   if (!list.length) return '';
 
   return `<section class="block">
-    <button class="btn sm" data-trash-toggle>
+    <button class="btn sm" data-trash-toggle aria-expanded="${showTrash}">
       <i class="ti ti-trash"></i>Papelera (${list.length})
       <i class="ti ti-chevron-${showTrash ? 'up' : 'down'}"></i>
     </button>
@@ -242,7 +232,7 @@ function trashBlock() {
       <div class="log">
         ${list.map(t => `
           <article class="log-item">
-            <div class="log-head" style="cursor:default">
+            <div class="log-head static">
               <div class="grow">
                 <div class="nm">${esc(t.name)}</div>
                 <div class="sub">
@@ -263,39 +253,62 @@ function trashBlock() {
 /* La fecha que importa es la que se jugó, no la que se cargó en la app. */
 const cuandoSeJugo = playedAt;
 
-function row(t) {
+function row(t, openId) {
   const open = openId === t.id;
   const p = progress(t);
-  const rows = finalTable(t);
-  const podium = rows.slice(0, 3);
+  const estado = t.finished ? 'done' : isLive(t) ? 'live' : 'soon';
 
   return `<article class="log-item ${open ? 'open' : ''}">
-    <div class="log-head" data-open="${t.id}">
-      <div class="grow">
-        <div class="nm">${esc(t.name)}
-          <span class="tag ${t.finished ? 'done' : isLive(t) ? 'live' : 'soon'}">
+    <button type="button" class="log-head" data-open="${t.id}" aria-expanded="${open}">
+      <span class="grow">
+        <span class="nm">${esc(t.name)}
+          <span class="tag ${estado}">
             ${t.finished ? 'terminado' : isLive(t) ? 'en juego' : 'programado'}
           </span>
-        </div>
-        <div class="sub">${cuandoSeJugo(t).toLocaleDateString('es-AR')} · ${esc(formatName(t.format))} · ${p.played}/${p.total} partidos</div>
-      </div>
-      ${t.champion ? `<span style="font-size:20px">${flag(t.champion)}</span>` : ''}
-      <i class="ti ti-chevron-down chev"></i>
-    </div>
-    <div class="log-body">
-      ${t.finished && podium.length ? `<div class="podium">
-        ${podium.map((r, i) => `<div>${['🥇','🥈','🥉'][i]} ${flag(r.id)} ${esc(nameOf(r.id))}</div>`).join('')}
-      </div>` : ''}
-      ${t.format === 'copa' && t.bracket ? bracketView(t) : ''}
-      ${standingsTable(rows, { clave: 'historial-' + t.id })}
-      ${resultsBlock(t)}
-      <div class="row" style="margin-top:12px">
-        ${t.finished ? `<button class="btn sm" data-share-table="${t.id}" style="flex:0 0 auto">
-          <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}
-        ${isAdmin() ? `<button class="btn danger sm" data-del="${t.id}" style="flex:0 0 auto">Borrar torneo</button>` : ''}
-      </div>
-    </div>
+        </span>
+        <span class="sub">${cuandoSeJugo(t).toLocaleDateString('es-AR')} · ${esc(formatName(t.format))} · ${p.played}/${p.total} partidos</span>
+      </span>
+      ${t.champion ? `<span class="log-flag">${flag(t.champion)}</span>` : ''}
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    ${open ? `<div class="log-body">${detailBody(t)}</div>` : ''}
   </article>`;
+}
+
+/* Lo de adentro de un torneo, separado en pestañas para no tener que
+   recorrer una tarjeta larguísima. */
+function detailBody(t) {
+  const rows = finalTable(t);
+  const podium = t.finished ? rows.slice(0, 3) : [];
+  const llaves = t.format === 'copa' && t.bracket;
+  const tabs = [
+    { id: 'resultados', label: 'Resultados' },
+    { id: 'tabla', label: 'Tabla' },
+    ...(llaves ? [{ id: 'llaves', label: 'Llaves' }] : [])
+  ];
+  if (!tabs.some(x => x.id === detail)) detail = 'resultados';
+
+  const results = resultsPager(t, 'h');
+  const panel =
+    detail === 'tabla'  ? standingsTable(rows, { clave: 'historial-' + t.id }) :
+    detail === 'llaves' ? bracketView(t) :
+    results || `<div class="empty"><i class="ti ti-ball-football"></i>
+      <strong>Todavía no se jugó ningún partido</strong>Cuando se carguen, aparecen acá fecha por fecha.</div>`;
+
+  return `
+    ${podium.length ? `<ol class="podium" aria-label="Podio">
+      ${podium.map((r, i) => `<li><span class="medal m${i + 1}">${i + 1}</span>${flag(r.id)} ${esc(nameOf(r.id))}</li>`).join('')}
+    </ol>` : ''}
+    <div class="opts detail-tabs" role="tablist" aria-label="Ver del torneo">
+      ${tabs.map(x => `<button class="opt ${detail === x.id ? 'on' : ''}" role="tab"
+        aria-selected="${detail === x.id}" data-detail="${x.id}">${x.label}</button>`).join('')}
+    </div>
+    <div class="detail-panel">${panel}</div>
+    <div class="row actions-row">
+      ${t.finished ? `<button class="btn sm" data-share-table="${t.id}">
+        <i class="ti ti-share-2"></i>Compartir tabla</button>` : ''}
+      ${isAdmin() ? `<button class="btn danger sm" data-del="${t.id}"><i class="ti ti-trash"></i>Borrar torneo</button>` : ''}
+    </div>`;
 }
 
 function compartirTabla(btn) {
@@ -314,5 +327,6 @@ function remove(id, paint) {
     say('Torneo restaurado');
     paint();
   });
+  if (location.hash.startsWith('#/historial/')) history.replaceState(null, '', '#/historial');
   paint();
 }

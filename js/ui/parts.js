@@ -153,3 +153,168 @@ export function enableTeamCards() {
     if (hit) openTeamCard(hit.dataset.team);
   });
 }
+
+
+/* ---------- Fechas, una por una ----------
+
+   Los resultados se recorren fecha por fecha, como en las apps de fútbol:
+   flechas a los costados, una tira para saltar a cualquier fecha y, en el
+   celular, deslizar con el dedo. Por dentro es un carril con scroll-snap,
+   así el gesto es el nativo del teléfono y no hay que reinventarlo. */
+
+const shortRound = (round, total) => {
+  const name = roundName(round, total);
+  return name === 'Final' ? 'Final'
+    : name === 'Semifinal' ? 'Semis'
+    : name === 'Cuartos de final' ? 'Cuartos'
+    : name === 'Octavos de final' ? 'Octavos'
+    : `R${round}`;
+};
+
+/* Las fechas de un torneo, en orden: primero las de liga o grupos y
+   después cada ronda de las llaves. */
+export function roundsOf(t, { teamId = '', played = false, bracket = true } = {}) {
+  const ok = m => m.home && m.away && !m.bye && (!played || m.played) &&
+    (!teamId || m.home === teamId || m.away === teamId);
+  const out = [];
+
+  [...new Set(t.games.map(m => m.day))].sort((a, b) => a - b).forEach(day => {
+    const games = t.games.filter(m => m.day === day && ok(m))
+      .sort((a, b) => (a.group || '').localeCompare(b.group || '') || a.id - b.id);
+    if (games.length) out.push({ label: `Fecha ${day}`, short: `F${day}`, kind: 'g', day, games });
+  });
+
+  if (bracket && t.bracket) {
+    [...new Set(t.bracket.games.map(m => m.round))].sort((a, b) => a - b).forEach(r => {
+      const games = t.bracket.games.filter(m => m.round === r && ok(m)).sort((a, b) => a.pos - b.pos);
+      if (games.length) out.push({
+        label: roundName(r, t.bracket.rounds), short: shortRound(r, t.bracket.rounds), kind: 'b', games
+      });
+    });
+  }
+  return out;
+}
+
+/* Qué fecha estaba mirando cada uno, para no perderla al redibujar. */
+const pagerAt = new Map();
+
+const penNote = m => m.penWinner && m.played && m.hg === m.ag
+  ? `<div class="res-pen"><i class="ti ti-target-arrow" aria-hidden="true"></i>Pasó ${flag(m.penWinner)} ${esc(nameOf(m.penWinner))} por penales</div>`
+  : '';
+
+export function matchdayPager(key, rounds, { start = 0, editable = false, live = -1 } = {}) {
+  if (!rounds.length) return '';
+  const at = Math.min(Math.max(0, pagerAt.get(key) ?? start), rounds.length - 1);
+  const n = rounds.length;
+
+  const slides = rounds.map((r, i) => {
+    const played = r.games.filter(m => m.played).length;
+    const goals = r.games.reduce((g, m) => g + (m.played ? m.hg + m.ag : 0), 0);
+    const sub = `${played} de ${r.games.length} ${r.games.length === 1 ? 'partido jugado' : 'partidos jugados'}` +
+      (played ? ` · ${goals} ${goals === 1 ? 'gol' : 'goles'}` : '');
+    let group = null;
+    const body = r.games.map(m => {
+      const head = m.group && m.group !== group ? `<div class="pager-group">Grupo ${esc(m.group)}</div>` : '';
+      group = m.group || group;
+      return head + gameRow(m, { editable, kind: r.kind }) + penNote(m);
+    }).join('');
+    return `<section class="pager-slide" role="tabpanel" id="${esc(key)}-s${i}" aria-label="${esc(r.label)}"
+      data-label="${esc(r.label)}" data-sub="${esc(sub)}" data-live="${i === live ? 1 : ''}">${body}</section>`;
+  }).join('');
+
+  const chips = rounds.map((r, i) => `<button type="button" class="pager-chip ${i === live ? 'live' : ''}"
+      role="tab" aria-controls="${esc(key)}-s${i}" aria-selected="${i === at}" data-pg-go="${i}">${esc(r.short)}</button>`).join('');
+
+  return `<div class="pager" data-pager="${esc(key)}" data-start="${at}">
+    <div class="pager-head">
+      <button type="button" class="pager-nav" data-pg="prev" aria-label="Fecha anterior"><i class="ti ti-chevron-left"></i></button>
+      <div class="pager-title" aria-live="polite">
+        <strong>${esc(rounds[at].label)}</strong>
+        <span>${at + 1} de ${n}</span>
+      </div>
+      <button type="button" class="pager-nav" data-pg="next" aria-label="Fecha siguiente"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    ${n > 1 ? `<div class="pager-strip" role="tablist" aria-label="Elegir fecha">${chips}</div>` : ''}
+    <div class="pager-track" tabindex="0" aria-label="Partidos de la fecha">${slides}</div>
+    <div class="pager-foot"></div>
+  </div>`;
+}
+
+function mountPager(pager) {
+  pager.dataset.mounted = '1';
+  const key = pager.dataset.pager;
+  const track = pager.querySelector('.pager-track');
+  const slides = [...track.children];
+  const chips = [...pager.querySelectorAll('[data-pg-go]')];
+  const strip = pager.querySelector('.pager-strip');
+  const title = pager.querySelector('.pager-title');
+  const foot = pager.querySelector('.pager-foot');
+  const prev = pager.querySelector('[data-pg="prev"]');
+  const next = pager.querySelector('[data-pg="next"]');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let index = -1;
+
+  const sync = i => {
+    if (i === index) return;
+    index = i;
+    pagerAt.set(key, i);
+    const s = slides[i];
+    title.innerHTML = `<strong>${esc(s.dataset.label)}${s.dataset.live ? ' <span class="tag live">en juego</span>' : ''}</strong>
+      <span>${i + 1} de ${slides.length}</span>`;
+    foot.textContent = s.dataset.sub;
+    prev.disabled = i === 0;
+    next.disabled = i === slides.length - 1;
+    slides.forEach((x, k) => x.classList.toggle('on', k === i));
+    chips.forEach((c, k) => c.setAttribute('aria-selected', String(k === i)));
+    const chip = chips[i];
+    if (chip && strip) {
+      const want = chip.offsetLeft - strip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2;
+      strip.scrollTo({ left: Math.max(0, want), behavior: calm ? 'auto' : 'smooth' });
+    }
+  };
+
+  const goTo = (i, smooth = true) => {
+    i = Math.min(Math.max(0, i), slides.length - 1);
+    track.scrollTo({ left: i * track.clientWidth, behavior: smooth && !calm ? 'smooth' : 'auto' });
+    sync(i);
+  };
+
+  let ticking = false;
+  track.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (track.clientWidth) sync(Math.round(track.scrollLeft / track.clientWidth));
+    });
+  }, { passive: true });
+
+  pager.addEventListener('click', e => {
+    const nav = e.target.closest('[data-pg]');
+    if (nav) return goTo(index + (nav.dataset.pg === 'next' ? 1 : -1));
+    const chip = e.target.closest('[data-pg-go]');
+    if (chip) goTo(Number(chip.dataset.pgGo));
+  });
+
+  pager.addEventListener('keydown', e => {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(index + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(index - 1); }
+  });
+
+  /* Si cambia el ancho (girar el teléfono), se vuelve a acomodar la fecha. */
+  new ResizeObserver(() => {
+    if (index >= 0 && track.clientWidth) track.scrollLeft = index * track.clientWidth;
+  }).observe(track);
+
+  const start = Number(pager.dataset.start) || 0;
+  sync(start);
+  requestAnimationFrame(() => { track.scrollLeft = start * track.clientWidth; });
+}
+
+/* Cualquier carrusel que aparezca en pantalla se activa solo. */
+export function enablePagers() {
+  const scan = () => document.querySelectorAll('.pager:not([data-mounted])').forEach(mountPager);
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+  scan();
+}

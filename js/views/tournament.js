@@ -1,5 +1,5 @@
 import { flag, esc, nameOf, say, sayUndo, cheer, thud } from '../ui/ui.js';
-import { standingsTable, gameRow, penaltyPicker, bracketView, groupsView } from '../ui/parts.js';
+import { standingsTable, gameRow, penaltyPicker, bracketView, groupsView, roundsOf, matchdayPager } from '../ui/parts.js';
 import { update, liveTournament, nextTournament, sendToTrash, restoreFromTrash } from '../core/store.js';
 import {
   currentDay, progress, formatName, kickoff,
@@ -65,24 +65,17 @@ export function renderTournament(view) {
 
 /* ---------- Bloques ---------- */
 
+/* Los partidos van fecha por fecha, igual que en el historial. Arranca en la
+   fecha que se está jugando; las flechas y la tira llevan a las demás. */
 function fixtureBlock(t, admin) {
-  const byDay = {};
-  t.games.forEach(m => (byDay[`${m.group || ''}|${m.day}`] ||= []).push(m));
-  const keys = Object.keys(byDay).sort((a, b) => {
-    const [ga, da] = a.split('|'), [gb, db] = b.split('|');
-    return ga.localeCompare(gb) || Number(da) - Number(db);
-  });
+  const rounds = roundsOf(t, { bracket: false });
   const now = currentDay(t);
-
-  return keys.map(k => {
-    const [group, day] = k.split('|');
-    const games = byDay[k];
-    const live = now && games.some(m => m.id === now.games[0]?.id);
-    return `<div class="fixture-head">
-        ${group ? `Grupo ${group} · ` : ''}Fecha ${day}${live ? ' <span class="tag live">en juego</span>' : ''}
-      </div>
-      ${games.map(m => gameRow(m, { editable: admin, kind: 'g' })).join('')}`;
-  }).join('');
+  const live = now ? rounds.findIndex(r => r.day === now.day) : -1;
+  return matchdayPager(`curso-${t.id}`, rounds, {
+    start: live >= 0 ? live : Math.max(0, rounds.length - 1),
+    editable: admin,
+    live
+  });
 }
 
 function copaGate(t, ready, admin) {

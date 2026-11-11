@@ -41,9 +41,13 @@ export function go(id) {
   location.hash = `#/${id}`;
 }
 
+/* La dirección es #/seccion o #/seccion/detalle (por ejemplo un torneo
+   del historial): el detalle le llega a la vista como segundo dato. */
 function paint() {
-  let id = (location.hash || '').replace('#/', '') || 'inicio';
-  if (!allowed(id)) id = 'inicio';
+  const [first, ...rest] = (location.hash || '').replace('#/', '').split('/');
+  let id = first || 'inicio';
+  let param = rest.length ? decodeURIComponent(rest.join('/')) : null;
+  if (!allowed(id)) { id = 'inicio'; param = null; }
 
   /* Al quedarse en la misma sección (por ejemplo al cargar un gol y repintar
      la tabla) se conserva la posición: si no, la página salta al principio. */
@@ -59,7 +63,11 @@ function paint() {
   view.tabIndex = -1;
   old.replaceWith(view);
 
-  views.get(id)?.(view);
+  /* Al cambiar de sección la pantalla entra con un fundido corto; al
+     redibujar la misma (por ejemplo al cargar un gol) no se anima nada. */
+  if (!sigueIgual) view.classList.add('enter');
+
+  views.get(id)?.(view, param);
   view.focus({ preventScroll: true });
 
   if (sigueIgual) {

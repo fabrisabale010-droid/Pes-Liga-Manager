@@ -3,7 +3,7 @@ import { loadLocal, connect, subscribe, featured, lastChampion, purgeTrash,
 import { isAdmin, signIn, signOut, onAdminChange, lockRemaining } from './core/auth.js';
 import { el, say, openModal, closeModal, closeSheet, setSound, esc, nameOf,
          aplicarTema, alternarTema, temaActual } from './ui/ui.js';
-import { enableTeamCards, standingsTable, groupsView, bracketView, gameRow } from './ui/parts.js';
+import { enableTeamCards, enablePagers, standingsTable, groupsView, bracketView, gameRow } from './ui/parts.js';
 import { register, startRouter, drawNav, repaint, go, currentSection } from './ui/router.js';
 import { renderHome, stopHome } from './views/home.js';
 import { renderTournament } from './views/tournament.js';
@@ -20,7 +20,7 @@ import { currentDay, progress, finalTable, formatName } from './domain/engine.js
 register('inicio',    v => { renderHome(v); });
 register('curso',     v => { stopHome(); renderTournament(v); });
 register('programar', v => { stopHome(); renderSchedule(v); });
-register('historial', v => { stopHome(); renderHistory(v); });
+register('historial', (v, p) => { stopHome(); renderHistory(v, p); });
 register('vitrina',   v => { stopHome(); renderShowcase(v); });
 register('estadisticas', v => { stopHome(); renderStats(v); });
 register('premios',      v => { stopHome(); renderAwards(v); });
@@ -184,6 +184,7 @@ document.addEventListener('keydown', e => {
 });
 
 enableTeamCards();
+enablePagers();
 startRouter();
 
 /* ---------- Funciona sin señal ---------- */
